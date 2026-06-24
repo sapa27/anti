@@ -503,13 +503,6 @@
               const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
               renderResult(res.data);
             }
-          })
-          .withFailureHandler(err => {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-            showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err && err.message ? err.message : err), 'error');
-          })
-          .searchByRecNo(recNo);
       } catch (error) {
         showAlert('ข้อผิดพลาด', error.message, 'error');
       }
