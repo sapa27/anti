@@ -1,2 +1,0 @@
-# anti
-committee
