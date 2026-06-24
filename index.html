@@ -189,7 +189,6 @@
       font-weight: 700;
     }
 
-    /* Phase 29: single responsive owner for the search form */
     .search-card .input-group {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -395,7 +394,7 @@
           <button class="btn btn-search px-4" id="btn-search" onclick="doSearch()">ค้นหาข้อมูล</button>
         </div>
       </div>
-<div class="result-card" id="result-card">
+      <div class="result-card" id="result-card">
         <div class="result-header">ข้อมูลเรื่องพิจารณา</div>
         <div class="result-body" id="result-content"></div>
       </div>
@@ -412,272 +411,8 @@
   </footer>
 
   <script>
-    function showAlert(title, msg, icon) {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire(title, msg, icon);
-      } else {
-        alert(title + ': ' + msg);
-      }
-    }
-
-    function escapeHtml(value) {
-      return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.textContent = value == null || value === '' ? '0' : String(value);
-      }
-    }
-
-    function handleEnter(e) {
-      if (e.key === 'Enter') {
-        doSearch();
-      }
-    }
-
-    function getVisitorId() {
-      const storageKey = 'externalLookupVisitorId';
-      try {
-        let visitorId = localStorage.getItem(storageKey);
-        if (!visitorId) {
-          visitorId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : 'visitor-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-          localStorage.setItem(storageKey, visitorId);
-        }
-        return visitorId;
-      } catch (error) {
-        return 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-      }
-    }
-
-    function loadDashboard() {
-      google.script.run
-        .withSuccessHandler(dashboard => {
-          const counts = dashboard && dashboard.counts ? dashboard.counts : {};
-          setText('dash-total', counts.total || 0);
-          setText('dash-new', counts.new || 0);
-          setText('dash-in-progress', counts.inProgress || 0);
-          setText('dash-completed', counts.completed || 0);
-          setText('dash-users', counts.users || 0);
-        })
-        .withFailureHandler(err => {
-          setText('dash-total', 0);
-          setText('dash-new', 0);
-          setText('dash-in-progress', 0);
-          setText('dash-completed', 0);
-          setText('dash-users', 0);
-          console.warn('dashboard load failed', err);
-        })
-        .getExternalLookupDashboard(getVisitorId());
-    }
-
-    function doSearch() {
-      try {
-        const recNo = document.getElementById('recNo').value.trim();
-        if (!recNo) {
-          showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-          return;
-        }
-
-        const btn = document.getElementById('btn-search');
-        const origText = btn.innerHTML;
-        btn.innerHTML = 'กำลังค้นหา...';
-        btn.disabled = true;
-        document.getElementById('result-card').style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-            if (!res || !res.found) {
-              showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
-            } else {
-              const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
-              renderResult(res.data);
-            }
-      } catch (error) {
-        showAlert('ข้อผิดพลาด', error.message, 'error');
-      }
-    }
-
-
-    function isCommitteeMeeting(item) {
-      item = item || {};
-      const typeText = String(item.committeeType || item.meetingType || item.committeeKind || '').replace(/\s+/g, '').toLowerCase();
-      const subcommitteeName = String(item.subcommitteeName || item.meetingGroup || '').trim();
-      const sourceSheet = String(item.sourceSheet || '').trim();
-      const isSubcommittee = !!subcommitteeName
-        || typeText.includes('อนุกรรมาธิการ')
-        || typeText.includes('subcommittee')
-        || typeText.includes('sub-committee');
-
-      if (isSubcommittee) {
-        return false;
-      }
-
-      const isCommittee = typeText.includes('คณะกรรมาธิการ')
-        || typeText.includes('committee')
-        || typeText.includes('กมธ');
-
-      return isCommittee
-        || sourceSheet === 'CommitteeMeetings'
-        || sourceSheet === 'CommitteeMeetingAgendaItems'
-        || sourceSheet === 'MeetingLogs'
-        || !typeText;
-    }
-
-    function renderResult(data) {
-      document.getElementById('result-card').style.display = 'block';
-
-      const recNo = escapeHtml(data.recNo || '');
-      const recDate = escapeHtml(toThaiDate(data.recDate));
-      const displayStatus = escapeHtml(data.displayStatus || data.status || data.originalStatus || '');
-      const title = escapeHtml(data.caseTitle || data.title || '');
-      const status = String(data.originalStatus || data.status || '');
-      const meetings = (Array.isArray(data.meetings) ? data.meetings : [])
-        .filter(isCommitteeMeeting)
-        .filter(hasMeetingDisplayData);
-      let html = `
-        <table class="table table-bordered mb-0">
-          <tr><th>เลขรับเรื่อง</th><td class="fw-bold text-primary">${recNo}</td></tr>
-          <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
-          <tr><th>สถานะ</th><td class="status-text">${displayStatus}</td></tr>
-      `;
-
-      const showMeeting = status === 'กมธ. พิจารณา'
-        || status === 'ส่งหน่วยงาน'
-        || status === 'จัดทำรายงาน'
-        || meetings.length > 0;
-
-      if (title) {
-        html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
-      }
-      html += '</table>';
-
-      if (showMeeting) {
-        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>';
-        if (meetings.length > 0) {
-          html += `
-            <div class="table-responsive">
-              <table class="table table-sm table-hover border text-center mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th width="50%">ครั้งที่</th>
-                    <th width="50%">วันที่ประชุม</th>
-                  </tr>
-                </thead>
-                <tbody>
-          `;
-
-          meetings.forEach(m => {
-            html += `
-              <tr>
-                <td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td>
-                <td>${escapeHtml(toThaiDateOrBlank(m.date))}</td>
-              </tr>
-            `;
-          });
-
-          html += '</tbody></table></div>';
-        } else {
-          html += '<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>';
-        }
-
-        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี้</a></div>';
-      }
-
-      document.getElementById('result-content').innerHTML = html;
-      setTimeout(() => {
-        document.getElementById('result-card').scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }, 100);
-    }
-
-    function cleanDisplayValue(value) {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text === '-' ? '' : text;
-    }
-
-    function hasMeetingDisplayData(item) {
-      return !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date));
-    }
-
-    function toThaiDateOrBlank(dateStr) {
-      const text = cleanDisplayValue(dateStr);
-      if (!text || text === 'null') {
-        return '';
-      }
-      const formatted = toThaiDate(text);
-      return cleanDisplayValue(formatted);
-    }
-
-    function toThaiDate(dateStr) {
-      if (!dateStr || dateStr === 'null') {
-        return '-';
-      }
-
-      const raw = String(dateStr).trim();
-      const months = [
-        'มกราคม',
-        'กุมภาพันธ์',
-        'มีนาคม',
-        'เมษายน',
-        'พฤษภาคม',
-        'มิถุนายน',
-        'กรกฎาคม',
-        'สิงหาคม',
-        'กันยายน',
-        'ตุลาคม',
-        'พฤศจิกายน',
-        'ธันวาคม'
-      ];
-
-      const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (dmy) {
-        const day = Number(dmy[1]);
-        const month = Number(dmy[2]);
-        let year = Number(dmy[3]);
-        if (year < 2400) {
-          year += 543;
-        }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-
-      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        let year = Number(ymd[1]);
-        const month = Number(ymd[2]);
-        const day = Number(ymd[3]);
-        if (year < 2400) {
-          year += 543;
-        }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-
-      const date = new Date(raw);
-      if (isNaN(date.getTime())) {
-        return raw;
-      }
-
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
-    }
-
-    document.addEventListener('DOMContentLoaded', loadDashboard);
-  </script>
-
-<script>
     // --- เปลี่ยน API_URL ตรงนี้ให้เป็น URL จริงของ Google Apps Script ล่าสุด ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec"; // วาง Web App URL ที่นี่
+    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -725,15 +460,17 @@
       }
     }
 
-    // --- แก้ไข: ดึงข้อมูลแดชบอร์ดผ่าน Fetch API (GET) แทน google.script.run ---
+    // --- ดึงข้อมูลแดชบอร์ดผ่าน Fetch API (GET) ---
     async function loadDashboard() {
       try {
         const vid = getVisitorId();
         const response = await fetch(`${API_URL}?action=dashboard&visitorId=${vid}`);
         const result = await response.json();
         
-        if (result && result.ok && result.data) {
-           const counts = result.data.counts || {};
+        if (result && result.ok) {
+           const targetData = result.data && result.data.counts ? result.data : (result.counts ? result : {});
+           const counts = targetData.counts || {};
+           
            setText('dash-total', counts.total || 0);
            setText('dash-new', counts.new || 0);
            setText('dash-in-progress', counts.inProgress || 0);
@@ -752,7 +489,7 @@
       }
     }
 
-    // --- แก้ไข: ค้นหาข้อมูลผ่าน Fetch API (GET) แทน google.script.run ---
+    // --- ค้นหาข้อมูลผ่าน Fetch API (GET) ---
     async function doSearch() {
       const recNo = document.getElementById('recNo').value.trim();
       if (!recNo) {
@@ -773,10 +510,12 @@
         btn.innerHTML = origText;
         btn.disabled = false;
 
-        if (!res || !res.found) {
+        if (!res || (!res.found && !res.ok)) {
           showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
         } else {
-          renderResult(res.data);
+          // ป้องกันโครงสร้างข้อมูล JSON ที่อาจจะซ้อนกัน
+          const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
+          renderResult(targetData);
         }
       } catch (error) {
         btn.innerHTML = origText;
@@ -937,6 +676,5 @@
 
     document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
-
 </body>
 </html>
