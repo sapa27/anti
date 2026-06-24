@@ -500,6 +500,7 @@
             if (!res || !res.found) {
               showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
             } else {
+              const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
               renderResult(res.data);
             }
           })
