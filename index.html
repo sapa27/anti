@@ -1,680 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบสืบค้นสถานะเรื่องพิจารณา</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-    }
-
-    body {
-      font-family: 'Sarabun', sans-serif;
-      background-color: #f4f7f9;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .content-wrapper {
-      flex: 1 0 auto;
-    }
-
-    .header-bar {
-      background: #001e3c;
-      color: white;
-      padding: 25px 15px;
-      border-bottom: 5px solid #c5a028;
-      text-align: center;
-    }
-
-    .header-title {
-      font-weight: 700;
-      font-size: 26px;
-      margin-bottom: 5px;
-      color: #ffca2c;
-    }
-
-    .header-sub {
-      font-weight: 300;
-      font-size: 16px;
-      opacity: 0.9;
-    }
-
-    .dashboard-wrap {
-      max-width: 980px;
-      margin: 30px auto 0 auto;
-    }
-
-    .dashboard-card {
-      background: white;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
-      border-left: 5px solid #c5a028;
-      padding: 18px;
-      min-height: 118px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dashboard-label {
-      color: #4b5563;
-      font-size: 14px;
-      min-height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .dashboard-number {
-      color: #001e3c;
-      font-size: 34px;
-      font-weight: 700;
-      line-height: 1;
-      text-align: center;
-    }
-
-    .search-card {
-      max-width: 600px;
-      margin: 35px auto;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      padding: 35px 30px;
-    }
-
-    .search-input {
-      height: 55px;
-      font-size: 18px;
-      border-radius: 10px;
-      border: 2px solid #e0e0e0;
-    }
-
-    .search-input:focus {
-      border-color: #c5a028;
-      box-shadow: none;
-    }
-
-    .btn-search {
-      height: 55px;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 10px;
-      background: linear-gradient(45deg, #001e3c, #003366);
-      border: none;
-      color: white;
-      transition: 0.3s;
-    }
-
-    .btn-search:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 30, 60, 0.3);
-      color: #ffca2c;
-    }
-
-    .result-card {
-      max-width: 740px;
-      margin: 0 auto 40px auto;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      display: none;
-    }
-
-    .result-header {
-      background: #f8f9fa;
-      padding: 15px 20px;
-      border-bottom: 1px solid #eee;
-      font-weight: bold;
-      font-size: 18px;
-      color: #001e3c;
-    }
-
-    .result-body {
-      padding: 25px;
-    }
-
-    .table th {
-      background-color: #f8f9fa;
-      width: 35%;
-      color: #555;
-    }
-
-    .status-text {
-      font-size: 18px;
-      font-weight: bold;
-      color: #c5a028;
-    }
-
-    .public-footer {
-      background-color: #001e3c;
-      color: rgba(255, 255, 255, 0.7);
-      text-align: center;
-      padding: 25px 15px;
-      font-size: 14px;
-      line-height: 1.8;
-      border-top: 3px solid #c5a028;
-      width: 100%;
-      margin-top: 40px;
-    }
-
-    .public-footer strong {
-      color: #ffca2c;
-      font-weight: 600;
-    }
-
-    .public-footer-user-count {
-      max-width: 1180px;
-      margin: 12px auto 0 auto;
-      padding: 0 5px;
-      text-align: right;
-      color: rgba(255, 255, 255, 0.88);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .public-footer-user-count span {
-      color: #ffca2c;
-      font-weight: 700;
-    }
-
-    .search-card .input-group {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      width: 100%;
-      align-items: stretch;
-    }
-
-    .search-card .search-input {
-      width: 100%;
-      min-width: 0;
-      margin: 0;
-      padding-left: 16px;
-      padding-right: 16px;
-      border-radius: 10px !important;
-    }
-
-    .search-card .btn-search {
-      min-width: 150px;
-      margin: 0 !important;
-      padding-left: 22px !important;
-      padding-right: 22px !important;
-      border-radius: 10px !important;
-      white-space: nowrap;
-    }
-
-    @media (max-width: 767.98px) {
-      .header-bar {
-        padding: 20px 14px;
-      }
-
-      .header-bar img {
-        width: 58px;
-      }
-
-      .header-title {
-        font-size: 20px;
-        line-height: 1.35;
-      }
-
-      .header-sub {
-        font-size: 14px;
-        line-height: 1.55;
-      }
-
-      .container {
-        width: 100%;
-        max-width: none;
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-
-      .dashboard-wrap,
-      .search-card,
-      .result-card {
-        width: 100%;
-        max-width: none;
-        margin-left: 0;
-        margin-right: 0;
-      }
-
-      .dashboard-wrap {
-        margin-top: 18px;
-      }
-
-      .dashboard-card {
-        min-height: 106px;
-        padding: 14px 8px;
-      }
-
-      .dashboard-label {
-        min-height: 38px;
-        font-size: 13px;
-        line-height: 1.35;
-      }
-
-      .dashboard-number {
-        font-size: 30px;
-      }
-
-      .search-card {
-        margin-top: 22px;
-        margin-bottom: 24px;
-        padding: 24px 16px;
-      }
-
-      .search-card .input-group {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        width: 100%;
-      }
-
-      .search-card .search-input,
-      .search-card .btn-search {
-        width: 100% !important;
-        min-width: 0;
-        height: 54px;
-        margin: 0 !important;
-        border-radius: 10px !important;
-      }
-
-      .search-card .search-input {
-        display: block;
-        flex: none;
-        padding: 0 14px;
-        font-size: 16px;
-        line-height: 1.4;
-      }
-
-      .search-card .btn-search {
-        display: block;
-        min-width: 0;
-        padding: 0 16px !important;
-        font-size: 16px;
-      }
-
-      .result-body {
-        padding: 18px 14px;
-      }
-
-      .table th {
-        width: 40%;
-        font-size: 14px;
-        vertical-align: top;
-      }
-
-      .table td {
-        font-size: 14px;
-        overflow-wrap: anywhere;
-      }
-
-      .public-footer {
-        font-size: 12px;
-        padding: 20px 14px;
-      }
-
-      .public-footer-user-count {
-        margin-top: 10px;
-        padding: 0;
-      }
-    }
-
-    @media (max-width: 359.98px) {
-      .container {
-        padding-left: 8px;
-        padding-right: 8px;
-      }
-
-      .search-card {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-
-      .dashboard-card {
-        min-height: 100px;
-      }
-    }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f9; }
+    .search-card { max-width: 600px; margin: 35px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 30px; }
+    .result-card { max-width: 740px; margin: 0 auto 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); display: none; }
+    .result-header { background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #eee; font-weight: bold; color: #001e3c; }
+    .result-body { padding: 25px; }
   </style>
 </head>
 <body>
-  <div class="content-wrapper">
-    <div class="header-bar">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3">
-      <div class="header-title">ระบบตรวจสอบสถานะเรื่องร้องเรียน</div>
-      <div class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</div>
-    </div>
 
-    <div class="container">
-      <div class="dashboard-wrap">
-        <div class="row g-3" id="dashboard-cards">
-          <div class="col-6 col-md-4 col-lg">
-            <div class="dashboard-card">
-              <div class="dashboard-label">เรื่องร้องเรียนทั้งหมด</div>
-              <div class="dashboard-number" id="dash-total">-</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-4 col-lg">
-            <div class="dashboard-card">
-              <div class="dashboard-label">เรื่องเข้าใหม่</div>
-              <div class="dashboard-number" id="dash-new">-</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-4 col-lg">
-            <div class="dashboard-card">
-              <div class="dashboard-label">อยู่ระหว่างการพิจารณา</div>
-              <div class="dashboard-number" id="dash-in-progress">-</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-4 col-lg">
-            <div class="dashboard-card">
-              <div class="dashboard-label">พิจารณาเสร็จแล้ว</div>
-              <div class="dashboard-number" id="dash-completed">-</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="search-card text-center">
-        <h5 class="fw-bold mb-3 mb-md-4 text-navy">ค้นหาด้วยเลขรับเรื่อง</h5>
-        <div class="input-group">
-          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." onkeypress="handleEnter(event)">
-          <button class="btn btn-search px-4" id="btn-search" onclick="doSearch()">ค้นหาข้อมูล</button>
-        </div>
-      </div>
-      <div class="result-card" id="result-card">
-        <div class="result-header">ข้อมูลเรื่องพิจารณา</div>
-        <div class="result-body" id="result-content"></div>
-      </div>
+<div class="container">
+  <div class="search-card text-center">
+    <h5>ค้นหาด้วยเลขรับเรื่อง</h5>
+    <div class="input-group">
+      <input type="text" id="recNo" class="form-control" placeholder="กรอกเลขรับเรื่อง...">
+      <button class="btn btn-primary" id="btn-search" onclick="doSearch()">ค้นหาข้อมูล</button>
     </div>
   </div>
 
-  <footer class="public-footer">
-    <strong>กลุ่มงานคณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ</strong><br>
-    สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
-    โทร 0 2242 5900 ต่อ 7171
-    <div class="public-footer-user-count" aria-live="polite">
-      จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
-    </div>
-  </footer>
+  <div class="result-card" id="result-card">
+    <div class="result-header">ข้อมูลเรื่องพิจารณา</div>
+    <div class="result-body" id="result-content"></div>
+  </div>
+</div>
 
-  <script>
-    // --- เปลี่ยน API_URL ตรงนี้ให้เป็น URL จริงของ Google Apps Script ล่าสุด ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
+<script>
+  // ** เปลี่ยน URL ตรงนี้เป็น URL ที่ได้จาก Google Apps Script (ลงท้ายด้วย /exec) **
+  const API_URL = "https://script.google.com/macros/s/AKfycby1F75l7QxuJJXixSXuyFLZHQKvvA1WE49cM_TUztA4P4rQ_mcSJZrnOesbodFCzEusHw/exec";
 
-    function showAlert(title, msg, icon) {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire(title, msg, icon);
-      } else {
-        alert(title + ': ' + msg);
-      }
-    }
+  async function doSearch() {
+    const recNo = document.getElementById('recNo').value.trim();
+    if (!recNo) return;
 
-    function escapeHtml(value) {
-      return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
+    const btn = document.getElementById('btn-search');
+    btn.innerHTML = 'กำลังค้นหา...';
+    btn.disabled = true;
 
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.textContent = value == null || value === '' ? '0' : String(value);
-      }
-    }
-
-    function handleEnter(e) {
-      if (e.key === 'Enter') {
-        doSearch();
-      }
-    }
-
-    function getVisitorId() {
-      const storageKey = 'externalLookupVisitorId';
-      try {
-        let visitorId = localStorage.getItem(storageKey);
-        if (!visitorId) {
-          visitorId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : 'visitor-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-          localStorage.setItem(storageKey, visitorId);
-        }
-        return visitorId;
-      } catch (error) {
-        return 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-      }
-    }
-
-    // --- ดึงข้อมูลแดชบอร์ดผ่าน Fetch API (GET) ---
-    async function loadDashboard() {
-      try {
-        const vid = getVisitorId();
-        const response = await fetch(`${API_URL}?action=dashboard&visitorId=${vid}`);
-        const result = await response.json();
-        
-        if (result && result.ok) {
-           const targetData = result.data && result.data.counts ? result.data : (result.counts ? result : {});
-           const counts = targetData.counts || {};
-           
-           setText('dash-total', counts.total || 0);
-           setText('dash-new', counts.new || 0);
-           setText('dash-in-progress', counts.inProgress || 0);
-           setText('dash-completed', counts.completed || 0);
-           setText('dash-users', counts.users || 0);
-        } else {
-           throw new Error("Invalid Dashboard Data");
-        }
-      } catch (err) {
-        setText('dash-total', 0);
-        setText('dash-new', 0);
-        setText('dash-in-progress', 0);
-        setText('dash-completed', 0);
-        setText('dash-users', 0);
-        console.warn('dashboard load failed', err);
-      }
-    }
-
-    // --- ค้นหาข้อมูลผ่าน Fetch API (GET) ---
-    async function doSearch() {
-      const recNo = document.getElementById('recNo').value.trim();
-      if (!recNo) {
-        showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-        return;
-      }
-
-      const btn = document.getElementById('btn-search');
-      const origText = btn.innerHTML;
-      btn.innerHTML = 'กำลังค้นหา...';
-      btn.disabled = true;
-      document.getElementById('result-card').style.display = 'none';
-
-      try {
-        const response = await fetch(`${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`);
-        const res = await response.json();
-        
-        btn.innerHTML = origText;
-        btn.disabled = false;
-
-        if (!res || (!res.found && !res.ok)) {
-          showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
-        } else {
-          // ป้องกันโครงสร้างข้อมูล JSON ที่อาจจะซ้อนกัน
-          const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
-          renderResult(targetData);
-        }
-      } catch (error) {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + error.message, 'error');
-      }
-    }
-
-    function isCommitteeMeeting(item) {
-      item = item || {};
-      const typeText = String(item.committeeType || item.meetingType || item.committeeKind || '').replace(/\s+/g, '').toLowerCase();
-      const subcommitteeName = String(item.subcommitteeName || item.meetingGroup || '').trim();
-      const sourceSheet = String(item.sourceSheet || '').trim();
-      const isSubcommittee = !!subcommitteeName
-        || typeText.includes('อนุกรรมาธิการ')
-        || typeText.includes('subcommittee')
-        || typeText.includes('sub-committee');
+    try {
+      const response = await fetch(`${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`);
+      const res = await response.json();
       
-      if (isSubcommittee) {
-        return false;
+      btn.innerHTML = 'ค้นหาข้อมูล';
+      btn.disabled = false;
+
+      // ปรับจูนให้ดึงข้อมูลจาก res.data.case หรือ res.data ได้ตามโครงสร้างจริง
+      if (res && res.found) {
+        const data = (res.data && res.data.case) ? res.data.case : res.data;
+        renderResult(data);
+      } else {
+        Swal.fire('ไม่พบข้อมูล', res.msg || 'ไม่พบเลขรับเรื่องนี้', 'error');
       }
-
-      const isCommittee = typeText.includes('คณะกรรมาธิการ')
-        || typeText.includes('committee')
-        || typeText.includes('กมธ');
-
-      return isCommittee
-        || sourceSheet === 'CommitteeMeetings'
-        || sourceSheet === 'CommitteeMeetingAgendaItems'
-        || sourceSheet === 'MeetingLogs'
-        || !typeText;
+    } catch (err) {
+      btn.innerHTML = 'ค้นหาข้อมูล';
+      btn.disabled = false;
+      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ API ได้', 'error');
     }
+  }
 
-    function renderResult(data) {
-      document.getElementById('result-card').style.display = 'block';
-      const recNo = escapeHtml(data.recNo || '');
-      const recDate = escapeHtml(toThaiDate(data.recDate));
-      const displayStatus = escapeHtml(data.displayStatus || data.status || data.originalStatus || '');
-      const title = escapeHtml(data.caseTitle || data.title || '');
-      const status = String(data.originalStatus || data.status || '');
-      const meetings = (Array.isArray(data.meetings) ? data.meetings : [])
-        .filter(isCommitteeMeeting)
-        .filter(hasMeetingDisplayData);
-        
-      let html = `
-        <table class="table table-bordered mb-0">
-          <tr><th>เลขรับเรื่อง</th><td class="fw-bold text-primary">${recNo}</td></tr>
-          <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
-          <tr><th>สถานะ</th><td class="status-text">${displayStatus}</td></tr>
-      `;
-      const showMeeting = status === 'กมธ. พิจารณา'
-        || status === 'ส่งหน่วยงาน'
-        || status === 'จัดทำรายงาน'
-        || meetings.length > 0;
-        
-      if (title) {
-        html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
-      }
-      html += '</table>';
+  function renderResult(data) {
+    document.getElementById('result-card').style.display = 'block';
+    // แสดงผลข้อมูลลงในตาราง (สามารถปรับแต่ง HTML ตรงนี้ได้ตามต้องการ)
+    let html = `
+      <table class="table table-bordered">
+        <tr><th>เลขรับเรื่อง</th><td>${data.recNo || '-'}</td></tr>
+        <tr><th>เรื่อง</th><td>${data.caseTitle || data.title || '-'}</td></tr>
+        <tr><th>สถานะ</th><td>${data.displayStatus || data.status || '-'}</td></tr>
+      </table>
+    `;
+    document.getElementById('result-content').innerHTML = html;
+  }
+</script>
 
-      if (showMeeting) {
-        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>';
-        if (meetings.length > 0) {
-          html += `
-            <div class="table-responsive">
-              <table class="table table-sm table-hover border text-center mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th width="50%">ครั้งที่</th>
-                    <th width="50%">วันที่ประชุม</th>
-                  </tr>
-                </thead>
-                <tbody>
-          `;
-          meetings.forEach(m => {
-            html += `
-              <tr>
-                <td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td>
-                <td>${escapeHtml(toThaiDateOrBlank(m.date))}</td>
-              </tr>
-            `;
-          });
-          html += '</tbody></table></div>';
-        } else {
-          html += '<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>';
-        }
-
-        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี้</a></div>';
-      }
-
-      document.getElementById('result-content').innerHTML = html;
-      setTimeout(() => {
-        document.getElementById('result-card').scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }, 100);
-    }
-
-    function cleanDisplayValue(value) {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text === '-' ? '' : text;
-    }
-
-    function hasMeetingDisplayData(item) {
-      return !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date));
-    }
-
-    function toThaiDateOrBlank(dateStr) {
-      const text = cleanDisplayValue(dateStr);
-      if (!text || text === 'null') {
-        return '';
-      }
-      const formatted = toThaiDate(text);
-      return cleanDisplayValue(formatted);
-    }
-
-    function toThaiDate(dateStr) {
-      if (!dateStr || dateStr === 'null') {
-        return '-';
-      }
-
-      const raw = String(dateStr).trim();
-      const months = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-      ];
-
-      const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (dmy) {
-        const day = Number(dmy[1]);
-        const month = Number(dmy[2]);
-        let year = Number(dmy[3]);
-        if (year < 2400) {
-          year += 543;
-        }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-
-      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        let year = Number(ymd[1]);
-        const month = Number(ymd[2]);
-        const day = Number(ymd[3]);
-        if (year < 2400) {
-          year += 543;
-        }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-
-      const date = new Date(raw);
-      if (isNaN(date.getTime())) {
-        return raw;
-      }
-
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
-    }
-
-    document.addEventListener('DOMContentLoaded', loadDashboard);
-  </script>
 </body>
 </html>
