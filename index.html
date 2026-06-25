@@ -436,7 +436,7 @@
   </footer>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyg5IVnroAuQ2O9apSv37zocCQYAXJPypaRilJUcoHBjR_ofin61L8sg_S7EEdeDr8AOw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxDANQ9lgWYe4oPn65PKCzE4DNw4LNBsyyHczBLsKN1DCstT-sCgo_EXOqdxeCe4AyQyA/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -604,13 +604,58 @@
       }
     }
 
+    function isCommitteeMeeting(item) {
+      item = item || {};
+      const sourceSheet = String(item.sourceSheet || '').replace(/\s+/g, '').toLowerCase();
+      const typeText = String([
+        item.committeeType,
+        item.meetingType,
+        item.committeeKind,
+        item.committeeName,
+        item.meetingGroup
+      ].filter(Boolean).join(' ')).replace(/\s+/g, '').toLowerCase();
+      const subcommitteeText = String([
+        item.subcommitteeName,
+        item.subCommitteeName,
+        item.subcommittee,
+        item.subCommittee
+      ].filter(Boolean).join(' ')).replace(/\s+/g, '').toLowerCase();
+
+      const hasSubcommitteeMarker = !!subcommitteeText
+        || typeText.includes('อนุกรรมาธิการ')
+        || typeText.includes('subcommittee')
+        || typeText.includes('sub-committee')
+        || sourceSheet.includes('อนุกรรมาธิการ')
+        || sourceSheet.includes('subcommittee');
+
+      if (hasSubcommitteeMarker) {
+        return false;
+      }
+
+      const hasCommitteeMarker = typeText.includes('คณะกรรมาธิการ')
+        || typeText.includes('กรรมาธิการ')
+        || typeText.includes('กมธ')
+        || typeText.includes('committee');
+
+      if (hasCommitteeMarker) {
+        return true;
+      }
+
+      return sourceSheet === 'committeemeetings'
+        || sourceSheet === 'committeemeetingagendaitems'
+        || sourceSheet === 'committeemeetinglogs'
+        || sourceSheet === 'meetinglogs'
+        || sourceSheet === 'บันทึกการประชุม'
+        || sourceSheet === 'การประชุมคณะกรรมาธิการ'
+        || sourceSheet === 'วาระการประชุม'
+        || sourceSheet === 'รายการประชุม';
+    }
+
     function normalizeMeetings(data) {
       const meetings = Array.isArray(data && data.meetings) ? data.meetings : [];
-      return meetings.filter(item => {
-        return !!(cleanDisplayValue(item && item.round)
-          || cleanDisplayValue(item && item.date)
-          || cleanDisplayValue(item && item.result));
-      });
+      return meetings
+        .filter(isCommitteeMeeting)
+        .filter(item => !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date)));
     }
 
     function renderResult(data) {
