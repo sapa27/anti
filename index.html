@@ -436,7 +436,7 @@
   </footer>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxkvCMskUlGximpHfUUtwOpBxrCSlpqBJMrQnfgnj3N-I8oEv4oN6GAZLNSbMVmy6IO0g/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyWDnmI3ZjVgdaWa-9i5rmmtB2WLplh8PkSt9K9qpVTIFiygF4DDbipB7C_yKpZlL8Pag/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -699,6 +699,30 @@
       return compactIdentity(text);
     }
 
+    function thaiMonthNumber(value) {
+      const key = compactIdentity(value).replace(/[.]/g, '');
+      const months = [
+        ['มกราคม', 'มค', 'jan', 'january'],
+        ['กุมภาพันธ์', 'กพ', 'feb', 'february'],
+        ['มีนาคม', 'มีค', 'mar', 'march'],
+        ['เมษายน', 'เมย', 'apr', 'april'],
+        ['พฤษภาคม', 'พค', 'may'],
+        ['มิถุนายน', 'มิย', 'jun', 'june'],
+        ['กรกฎาคม', 'กค', 'jul', 'july'],
+        ['สิงหาคม', 'สค', 'aug', 'august'],
+        ['กันยายน', 'กย', 'sep', 'september'],
+        ['ตุลาคม', 'ตค', 'oct', 'october'],
+        ['พฤศจิกายน', 'พย', 'nov', 'november'],
+        ['ธันวาคม', 'ธค', 'dec', 'december']
+      ];
+      for (let i = 0; i < months.length; i += 1) {
+        if (months[i].some(name => key.includes(compactIdentity(name)))) {
+          return i + 1;
+        }
+      }
+      return 0;
+    }
+
     function meetingDateIdentityKey(value) {
       const text = normalizeDigits(value).trim();
       if (!text) {
@@ -723,13 +747,35 @@
         }
         return `${year}${String(Number(dmy[2])).padStart(2, '0')}${String(Number(dmy[1])).padStart(2, '0')}`;
       }
+
+      const month = thaiMonthNumber(text);
+      if (month) {
+        const nums = normalizeDigits(text).match(/\d{1,4}/g) || [];
+        if (nums.length >= 2) {
+          const day = Number(nums[0]);
+          let year = Number(nums[nums.length - 1]);
+          if (year < 100) {
+            year += 2500;
+          }
+          if (year < 2400) {
+            year += 543;
+          }
+          if (day > 0 && day <= 31) {
+            return `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+          }
+        }
+      }
+
       return compactIdentity(text);
     }
 
     function meetingDisplayIdentityKey(item) {
       const roundKey = meetingRoundIdentityKey(item && item.round);
       const dateKey = meetingDateIdentityKey(item && item.date);
-      const committeeKey = compactIdentity((item && item.committeeName) || (item && item.committeeType) || 'committee');
+      // The public lookup is scoped to this committee and subcommittee rows are
+      // filtered out. Use one stable committee identity so display-name/type
+      // differences from different sheets do not create duplicate rows.
+      const committeeKey = 'committee';
       if (roundKey && dateKey) {
         return `roundDate|${roundKey}|${dateKey}|${committeeKey}`;
       }
