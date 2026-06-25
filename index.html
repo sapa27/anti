@@ -436,7 +436,7 @@
   </footer>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbymjUA0St25y-PwJXJVa1kxgqvlLqH6L7EwYTe4pob3v62C8dwTX76pJ3xMDXAQpAL5CA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxkvCMskUlGximpHfUUtwOpBxrCSlpqBJMrQnfgnj3N-I8oEv4oN6GAZLNSbMVmy6IO0g/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -670,37 +670,153 @@
       return priority[key] || 40;
     }
 
-    function normalizeMeetingExactKey(item) {
-      const parts = [
-        item && item.round,
-        item && item.date,
-        item && item.result,
-        item && item.committeeType,
-        item && item.committeeName,
-        item && item.sourceSheet
-      ];
-      return parts.map(value => cleanDisplayValue(value).replace(/\s+/g, ' ')).join('|');
+    function normalizeDigits(value) {
+      const thai = '๐๑๒๓๔๕๖๗๘๙';
+      return String(value == null ? '' : value).replace(/[๐-๙]/g, ch => String(thai.indexOf(ch)));
+    }
+
+    function compactIdentity(value) {
+      return normalizeDigits(value).replace(/\s+/g, '').replace(/[–—−]/g, '-').toLowerCase();
+    }
+
+    function meetingRoundIdentityKey(value) {
+      const text = normalizeDigits(value);
+      if (!cleanDisplayValue(text)) {
+        return '';
+      }
+      const roundYear = text.match(/(\d{1,4})\s*[\/\\-–—−]\s*(\d{2,4})/);
+      if (roundYear) {
+        let year = roundYear[2];
+        if (year.length === 2) {
+          year = String(Number(year) + 2500);
+        }
+        return `${Number(roundYear[1]) || 0}/${year}`;
+      }
+      const firstNumber = text.match(/(\d{1,4})/);
+      if (firstNumber) {
+        return String(Number(firstNumber[1]) || 0);
+      }
+      return compactIdentity(text);
+    }
+
+    function meetingDateIdentityKey(value) {
+      const text = normalizeDigits(value).trim();
+      if (!text) {
+        return '';
+      }
+      const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (ymd) {
+        let year = Number(ymd[1]);
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${year}${String(Number(ymd[2])).padStart(2, '0')}${String(Number(ymd[3])).padStart(2, '0')}`;
+      }
+      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (dmy) {
+        let year = Number(dmy[3]);
+        if (year < 100) {
+          year += 2500;
+        }
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${year}${String(Number(dmy[2])).padStart(2, '0')}${String(Number(dmy[1])).padStart(2, '0')}`;
+      }
+      return compactIdentity(text);
+    }
+
+    function meetingDisplayIdentityKey(item) {
+      const roundKey = meetingRoundIdentityKey(item && item.round);
+      const dateKey = meetingDateIdentityKey(item && item.date);
+      const committeeKey = compactIdentity((item && item.committeeName) || (item && item.committeeType) || 'committee');
+      if (roundKey && dateKey) {
+        return `roundDate|${roundKey}|${dateKey}|${committeeKey}`;
+      }
+      if (dateKey) {
+        return `date|${dateKey}|${committeeKey}`;
+      }
+      if (roundKey) {
+        return `round|${roundKey}|${committeeKey}|${compactIdentity(item && item.sourceSheet)}`;
+      }
+      return ['exact', item && item.round, item && item.date, item && item.result, item && item.sourceSheet]
+        .map(value => cleanDisplayValue(value).replace(/\s+/g, ' '))
+        .join('|');
+    }
+
+    function appendUniqueResult(target, source) {
+      const current = cleanDisplayValue(target && target.result);
+      const incoming = cleanDisplayValue(source && source.result);
+      if (!incoming) {
+        return;
+      }
+      if (!current) {
+        target.result = incoming;
+        return;
+      }
+      const a = current.replace(/\s+/g, ' ');
+      const b = incoming.replace(/\s+/g, ' ');
+      if (a === b || a.includes(b)) {
+        return;
+      }
+      if (b.includes(a)) {
+        target.result = incoming;
+        return;
+      }
+      target.result = `${current}
+${incoming}`;
+    }
+
+    function mergeMeeting(target, source) {
+      appendUniqueResult(target, source);
+      ['round', 'date', 'committeeType', 'committeeName', 'sourceSheet'].forEach(field => {
+        if (!cleanDisplayValue(target[field]) && cleanDisplayValue(source[field])) {
+          target[field] = source[field];
+        }
+      });
+    }
+
+    function meetingDisplayScore(item) {
+      let score = meetingSourcePriority(item && item.sourceSheet);
+      if (cleanDisplayValue(item && item.result)) score += 35;
+      if (cleanDisplayValue(item && item.round)) score += 8;
+      if (cleanDisplayValue(item && item.date)) score += 8;
+      if (cleanDisplayValue(item && (item.committeeType || item.committeeName))) score += 4;
+      return score;
     }
 
     function normalizeMeetings(data) {
       const meetings = Array.isArray(data && data.meetings) ? data.meetings : [];
-      const seen = new Set();
-      const out = [];
+      const byMeeting = new Map();
+      const order = [];
 
       meetings
         .filter(isCommitteeMeeting)
         .filter(item => !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date)))
         .forEach(item => {
           const copy = Object.assign({}, item);
-          const key = normalizeMeetingExactKey(copy);
-          if (seen.has(key)) {
+          const key = meetingDisplayIdentityKey(copy);
+          const score = meetingDisplayScore(copy);
+          const current = byMeeting.get(key);
+
+          if (!current) {
+            copy.__score = score;
+            byMeeting.set(key, copy);
+            order.push(key);
             return;
           }
-          seen.add(key);
-          out.push(copy);
+
+          if (score > (current.__score || 0) + 8) {
+            mergeMeeting(copy, current);
+            copy.__score = score;
+            byMeeting.set(key, copy);
+          } else {
+            mergeMeeting(current, copy);
+            current.__score = Math.max(current.__score || 0, score);
+          }
         });
 
-      return out;
+      return order.map(key => byMeeting.get(key)).filter(Boolean);
     }
 
     function renderResult(data) {
