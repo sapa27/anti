@@ -436,7 +436,7 @@
   </footer>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyWDnmI3ZjVgdaWa-9i5rmmtB2WLplh8PkSt9K9qpVTIFiygF4DDbipB7C_yKpZlL8Pag/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwsUwm2BCRKjsizt6D6P33cL_xOQakEayPcE8sypk2bbPGzO26uiEr5sOGlL98mCciulA/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -680,18 +680,43 @@
     }
 
     function meetingRoundIdentityKey(value) {
-      const text = normalizeDigits(value);
+      const text = normalizeDigits(value).replace(/\s+/g, ' ').trim();
       if (!cleanDisplayValue(text)) {
         return '';
       }
-      const roundYear = text.match(/(\d{1,4})\s*[\/\\-–—−]\s*(\d{2,4})/);
-      if (roundYear) {
-        let year = roundYear[2];
+
+      const labeledRound = text.match(/(?:ประชุม\s*)?(?:ครั้ง\s*ที่|ครั้งประชุม|ครั้งที่ประชุม|ครั้งที่การประชุม|ประชุมครั้งที่|นัดที่|meeting\s*(?:no|number|round)|session\s*(?:no|round))\s*(\d{1,4})(?:\s*[\/\\-–—−]\s*(\d{2,4}))?/i);
+      if (labeledRound) {
+        if (labeledRound[2]) {
+          let year = labeledRound[2];
+          if (year.length === 2) {
+            year = String(Number(year) + 2500);
+          }
+          return `${Number(labeledRound[1]) || 0}/${year}`;
+        }
+        return String(Number(labeledRound[1]) || 0);
+      }
+
+      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(text)
+        || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)
+        || thaiMonthNumber(text)) {
+        return '';
+      }
+
+      const compact = text.replace(/\s+/g, '');
+      const wholeRoundYear = compact.match(/^(\d{1,4})[\/\\-–—−](\d{2,4})$/);
+      if (wholeRoundYear) {
+        let year = wholeRoundYear[2];
         if (year.length === 2) {
           year = String(Number(year) + 2500);
         }
-        return `${Number(roundYear[1]) || 0}/${year}`;
+        return `${Number(wholeRoundYear[1]) || 0}/${year}`;
       }
+
+      if (/(วันที่|วันประชุม|วันนัดประชุม|วันที่ประชุม|meeting\s*date|session\s*date|date)/i.test(text)) {
+        return '';
+      }
+
       const firstNumber = text.match(/(\d{1,4})/);
       if (firstNumber) {
         return String(Number(firstNumber[1]) || 0);
@@ -831,38 +856,40 @@ ${incoming}`;
       return score;
     }
 
+    function exactMeetingDuplicateKey(item) {
+      return [
+        meetingRoundIdentityKey(item && item.round),
+        meetingDateIdentityKey(item && item.date),
+        cleanDisplayValue(item && item.result).replace(/\s+/g, ' ')
+      ].join('|');
+    }
+
     function normalizeMeetings(data) {
       const meetings = Array.isArray(data && data.meetings) ? data.meetings : [];
-      const byMeeting = new Map();
-      const order = [];
+      const seenExact = new Set();
+      const out = [];
 
       meetings
         .filter(isCommitteeMeeting)
         .filter(item => !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date)))
         .forEach(item => {
           const copy = Object.assign({}, item);
-          const key = meetingDisplayIdentityKey(copy);
-          const score = meetingDisplayScore(copy);
-          const current = byMeeting.get(key);
+          const key = exactMeetingDuplicateKey(copy);
 
-          if (!current) {
-            copy.__score = score;
-            byMeeting.set(key, copy);
-            order.push(key);
+          // The backend is responsible for merging only a confirmed same meeting
+          // round/date. The browser removes exact duplicates only. It must not
+          // merge by date alone, because that can combine results from meeting
+          // round 1 and round 2 into one row.
+          if (key.replace(/\|/g, '') && seenExact.has(key)) {
             return;
           }
-
-          if (score > (current.__score || 0) + 8) {
-            mergeMeeting(copy, current);
-            copy.__score = score;
-            byMeeting.set(key, copy);
-          } else {
-            mergeMeeting(current, copy);
-            current.__score = Math.max(current.__score || 0, score);
+          if (key.replace(/\|/g, '')) {
+            seenExact.add(key);
           }
+          out.push(copy);
         });
 
-      return order.map(key => byMeeting.get(key)).filter(Boolean);
+      return out;
     }
 
     function renderResult(data) {
