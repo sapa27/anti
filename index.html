@@ -414,7 +414,7 @@
 
   <script>
     // --- ใส่ URL ของคุณตรงนี้ ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyBPlDa85AaYLw4deYXDhOggiFSLqt9wmkOxnulRKOie21hBDXHkS7vhJ6aHRAjrPm0vQ/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -521,6 +521,39 @@
       }
     }
 
+    function normalizeMeetingRows(items) {
+      const rows = Array.isArray(items) ? items : [];
+      const seen = new Set();
+      const out = [];
+
+      rows.forEach(item => {
+        const round = cleanDisplayValue(item && item.round);
+        const dateText = toThaiDateOrBlank(item && item.date);
+        if (!round && !dateText) {
+          return;
+        }
+
+        const key = `${normalizeDisplayKey(round)}|${normalizeDisplayKey(dateText)}`;
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
+        out.push({
+          round: round,
+          date: dateText
+        });
+      });
+
+      return out;
+    }
+
+    function normalizeDisplayKey(value) {
+      return String(value == null ? '' : value)
+        .replace(/[๐-๙]/g, ch => '๐๑๒๓๔๕๖๗๘๙'.indexOf(ch))
+        .replace(/\s+/g, '')
+        .trim();
+    }
+
     function renderResult(data) {
       document.getElementById('result-card').style.display = 'block';
 
@@ -530,9 +563,7 @@
       const title = escapeHtml(data.caseTitle || data.title || '');
       const status = String(data.originalStatus || data.status || '');
       
-      // ลบฟังก์ชันที่เคยกรองข้อมูลทิ้ง เพื่อแสดงข้อมูลการประชุมที่ได้รับมาทุกรายการ
-      const meetings = (Array.isArray(data.meetings) ? data.meetings : [])
-        .filter(item => !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date)));
+      const meetings = normalizeMeetingRows(data.meetings);
 
       let html = `
         <table class="table table-bordered mb-0">
@@ -569,7 +600,7 @@
             html += `
               <tr>
                 <td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td>
-                <td>${escapeHtml(toThaiDateOrBlank(m.date))}</td>
+                <td>${escapeHtml(cleanDisplayValue(m.date))}</td>
               </tr>
             `;
           });
