@@ -36,12 +36,6 @@
       text-align: center;
     }
 
-    .header-bar img {
-      width: 70px;
-      height: auto;
-      display: inline-block;
-    }
-
     .header-title {
       font-weight: 700;
       font-size: 26px;
@@ -82,7 +76,6 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      line-height: 1.45;
     }
 
     .dashboard-number {
@@ -100,10 +93,6 @@
       border-radius: 15px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       padding: 35px 30px;
-    }
-
-    .text-navy {
-      color: #001e3c;
     }
 
     .search-input {
@@ -135,15 +124,8 @@
       color: #ffca2c;
     }
 
-    .btn-search:disabled {
-      transform: none;
-      box-shadow: none;
-      opacity: 0.75;
-      cursor: not-allowed;
-    }
-
     .result-card {
-      max-width: 860px;
+      max-width: 740px;
       margin: 0 auto 40px auto;
       background: white;
       border-radius: 15px;
@@ -175,12 +157,6 @@
       font-size: 18px;
       font-weight: bold;
       color: #c5a028;
-    }
-
-    .meeting-result {
-      text-align: left;
-      white-space: pre-line;
-      overflow-wrap: anywhere;
     }
 
     .public-footer {
@@ -302,8 +278,10 @@
       }
 
       .search-card .input-group {
+        display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 12px;
+        width: 100%;
       }
 
       .search-card .search-input,
@@ -376,7 +354,7 @@
 <body>
   <div class="content-wrapper">
     <div class="header-bar">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" alt="ตรารัฐสภาไทย" class="mb-3">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3">
       <div class="header-title">ระบบตรวจสอบสถานะเรื่องร้องเรียน</div>
       <div class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</div>
     </div>
@@ -414,11 +392,10 @@
       <div class="search-card text-center">
         <h5 class="fw-bold mb-3 mb-md-4 text-navy">ค้นหาด้วยเลขรับเรื่อง</h5>
         <div class="input-group">
-          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/2567" autocomplete="off">
-          <button class="btn btn-search px-4" id="btn-search" type="button">ค้นหาข้อมูล</button>
+          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." onkeypress="handleEnter(event)">
+          <button class="btn btn-search px-4" id="btn-search" onclick="doSearch()">ค้นหาข้อมูล</button>
         </div>
       </div>
-
       <div class="result-card" id="result-card">
         <div class="result-header">ข้อมูลเรื่องพิจารณา</div>
         <div class="result-body" id="result-content"></div>
@@ -436,6 +413,7 @@
   </footer>
 
   <script>
+    // --- ใส่ URL ของคุณตรงนี้ ---
     const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
 
     function showAlert(title, msg, icon) {
@@ -455,15 +433,16 @@
         .replace(/'/g, '&#39;');
     }
 
-    function cleanDisplayValue(value) {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text === '-' ? '' : text;
-    }
-
     function setText(id, value) {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = value == null || value === '' ? '0' : String(value);
+      }
+    }
+
+    function handleEnter(e) {
+      if (e.key === 'Enter') {
+        doSearch();
       }
     }
 
@@ -483,55 +462,22 @@
       }
     }
 
-    function buildApiUrl(params) {
-      const url = new URL(API_URL);
-      Object.keys(params || {}).forEach(key => {
-        if (params[key] != null && params[key] !== '') {
-          url.searchParams.set(key, params[key]);
-        }
-      });
-      url.searchParams.set('_ts', Date.now().toString());
-      return url.toString();
-    }
-
-    async function fetchJson(params) {
-      const response = await fetch(buildApiUrl(params), {
-        method: 'GET',
-        redirect: 'follow',
-        cache: 'no-store'
-      });
-      if (!response.ok) {
-        throw new Error('HTTP ' + response.status);
-      }
-      return response.json();
-    }
-
-    function extractDashboard(response) {
-      if (!response) {
-        return null;
-      }
-      if (response.data && response.data.counts) {
-        return response.data;
-      }
-      if (response.counts) {
-        return response;
-      }
-      return null;
-    }
-
     async function loadDashboard() {
       try {
-        const result = await fetchJson({ action: 'dashboard', visitorId: getVisitorId() });
-        const dashboard = extractDashboard(result);
-        if (!dashboard || !dashboard.counts) {
-          throw new Error(result && result.msg ? result.msg : 'Invalid Dashboard Data');
+        const vid = getVisitorId();
+        const response = await fetch(`${API_URL}?action=dashboard&visitorId=${vid}`);
+        const result = await response.json();
+        
+        if (result && result.ok) {
+           const targetData = result.data && result.data.counts ? result.data : (result.counts ? result : {});
+           const counts = targetData.counts || {};
+           
+           setText('dash-total', counts.total || 0);
+           setText('dash-new', counts.new || 0);
+           setText('dash-in-progress', counts.inProgress || 0);
+           setText('dash-completed', counts.completed || 0);
+           setText('dash-users', counts.users || 0);
         }
-        const counts = dashboard.counts || {};
-        setText('dash-total', counts.total || 0);
-        setText('dash-new', counts.new || 0);
-        setText('dash-in-progress', counts.inProgress || 0);
-        setText('dash-completed', counts.completed || 0);
-        setText('dash-users', counts.users || 0);
       } catch (err) {
         setText('dash-total', 0);
         setText('dash-new', 0);
@@ -543,26 +489,26 @@
     }
 
     async function doSearch() {
-      const input = document.getElementById('recNo');
-      const recNo = input.value.trim();
+      const recNo = document.getElementById('recNo').value.trim();
       if (!recNo) {
         showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-        input.focus();
         return;
       }
 
       const btn = document.getElementById('btn-search');
       const origText = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> กำลังค้นหา...';
+      btn.innerHTML = 'กำลังค้นหา...';
       btn.disabled = true;
       document.getElementById('result-card').style.display = 'none';
 
       try {
-        const res = await fetchJson({ action: 'search', recNo: recNo });
+        const response = await fetch(`${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`);
+        const res = await response.json();
+        
         btn.innerHTML = origText;
         btn.disabled = false;
 
-        if (!res || !res.found) {
+        if (!res || (!res.found && !res.ok)) {
           showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
         } else {
           const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
@@ -575,48 +521,6 @@
       }
     }
 
-    function toThaiDateOrBlank(dateStr) {
-      const text = cleanDisplayValue(dateStr);
-      if (!text || text === 'null') {
-        return '';
-      }
-      const formatted = toThaiDate(text);
-      return cleanDisplayValue(formatted);
-    }
-
-    function toThaiDate(dateStr) {
-      if (!dateStr || dateStr === 'null') {
-        return '-';
-      }
-      const raw = String(dateStr).trim();
-      const months = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-      ];
-      const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (dmy) {
-        const day = Number(dmy[1]);
-        const month = Number(dmy[2]);
-        let year = Number(dmy[3]);
-        if (year < 100) { year += 2500; }
-        if (year < 2400) { year += 543; }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        let year = Number(ymd[1]);
-        const month = Number(ymd[2]);
-        const day = Number(ymd[3]);
-        if (year < 2400) { year += 543; }
-        return `${day} ${months[month - 1] || ''} ${year}`;
-      }
-      const date = new Date(raw);
-      if (isNaN(date.getTime())) {
-        return raw;
-      }
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
-    }
-
     function renderResult(data) {
       document.getElementById('result-card').style.display = 'block';
 
@@ -626,8 +530,7 @@
       const title = escapeHtml(data.caseTitle || data.title || '');
       const status = String(data.originalStatus || data.status || '');
       
-      // การแก้ไขหลัก: แสดงข้อมูลการประชุมทุกรายการที่ได้รับจาก Backend
-      // โดยปิดฟิลเตอร์ที่ทำให้การประชุมหายไป และตรวจสอบแค่ว่ามีตัวเลขครั้งที่ หรือวันที่ ก็ให้แสดงเลย
+      // ลบฟังก์ชันที่เคยกรองข้อมูลทิ้ง เพื่อแสดงข้อมูลการประชุมที่ได้รับมาทุกรายการ
       const meetings = (Array.isArray(data.meetings) ? data.meetings : [])
         .filter(item => !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date)));
 
@@ -638,7 +541,10 @@
           <tr><th>สถานะ</th><td class="status-text">${displayStatus}</td></tr>
       `;
 
-      const showMeeting = status === 'กมธ. พิจารณา' || status === 'ส่งหน่วยงาน' || status === 'จัดทำรายงาน' || meetings.length > 0;
+      const showMeeting = status === 'กมธ. พิจารณา'
+        || status === 'ส่งหน่วยงาน'
+        || status === 'จัดทำรายงาน'
+        || meetings.length > 0;
 
       if (title) {
         html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
@@ -646,7 +552,7 @@
       html += '</table>';
 
       if (showMeeting) {
-        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ข้อมูลการประชุม</h6>';
+        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>';
         if (meetings.length > 0) {
           html += `
             <div class="table-responsive">
@@ -684,23 +590,65 @@
       }, 100);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadDashboard();
-      
-      const input = document.getElementById('recNo');
-      if (input) {
-        input.addEventListener('keypress', function (e) {
-          if (e.key === 'Enter') {
-            doSearch();
-          }
-        });
+    function cleanDisplayValue(value) {
+      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      return text === '-' ? '' : text;
+    }
+
+    function toThaiDateOrBlank(dateStr) {
+      const text = cleanDisplayValue(dateStr);
+      if (!text || text === 'null') {
+        return '';
       }
-      
-      const btnSearch = document.getElementById('btn-search');
-      if (btnSearch) {
-        btnSearch.addEventListener('click', doSearch);
+      const formatted = toThaiDate(text);
+      return cleanDisplayValue(formatted);
+    }
+
+    function toThaiDate(dateStr) {
+      if (!dateStr || dateStr === 'null') {
+        return '-';
       }
-    });
+
+      const raw = String(dateStr).trim();
+      const months = [
+        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+      ];
+
+      const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (dmy) {
+        const day = Number(dmy[1]);
+        const month = Number(dmy[2]);
+        let year = Number(dmy[3]);
+        if (year < 100) {
+          year += 2500;
+        }
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${day} ${months[month - 1] || ''} ${year}`;
+      }
+
+      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (ymd) {
+        let year = Number(ymd[1]);
+        const month = Number(ymd[2]);
+        const day = Number(ymd[3]);
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${day} ${months[month - 1] || ''} ${year}`;
+      }
+
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) {
+        return raw;
+      }
+
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
 </html>
