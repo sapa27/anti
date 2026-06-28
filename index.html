@@ -436,7 +436,7 @@
   </footer>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwsUwm2BCRKjsizt6D6P33cL_xOQakEayPcE8sypk2bbPGzO26uiEr5sOGlL98mCciulA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
@@ -857,11 +857,19 @@ ${incoming}`;
     }
 
     function exactMeetingDuplicateKey(item) {
-      return [
-        meetingRoundIdentityKey(item && item.round),
-        meetingDateIdentityKey(item && item.date),
-        cleanDisplayValue(item && item.result).replace(/\s+/g, ' ')
-      ].join('|');
+      const roundKey = meetingRoundIdentityKey(item && item.round);
+      const dateKey = meetingDateIdentityKey(item && item.date);
+      const roundText = cleanDisplayValue(item && item.round).replace(/\s+/g, ' ');
+      const dateText = cleanDisplayValue(item && item.date).replace(/\s+/g, ' ');
+
+      // The public table now displays only round/date, so duplicate display rows
+      // must be removed by round/date only. Do not include result/resolution in
+      // this key, otherwise the same meeting can appear multiple times when the
+      // backend has several resolution texts for the same meeting.
+      if (roundKey || dateKey) {
+        return ['display', roundKey || roundText, dateKey || dateText].join('|');
+      }
+      return ['display', roundText, dateText, compactIdentity(item && item.sourceSheet)].join('|');
     }
 
     function normalizeMeetings(data) {
@@ -923,18 +931,16 @@ ${incoming}`;
         || meetings.length > 0;
 
       if (showMeeting) {
-        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>';
+        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">การประชุมคณะกรรมาธิการ</h6>';
 
         if (meetings.length > 0) {
-          const hasResult = meetings.some(m => !!cleanDisplayValue(m && m.result));
           html += `
             <div class="table-responsive">
               <table class="table table-sm table-hover border text-center mb-0">
                 <thead class="table-light">
                   <tr>
-                    <th width="${hasResult ? '25%' : '50%'}">ครั้งที่</th>
-                    <th width="${hasResult ? '25%' : '50%'}">วันที่ประชุม</th>
-                    ${hasResult ? '<th width="50%">ผลการพิจารณา/มติ</th>' : ''}
+                    <th width="50%">ครั้งที่</th>
+                    <th width="50%">วันที่ประชุม</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -945,7 +951,6 @@ ${incoming}`;
               <tr>
                 <td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td>
                 <td>${escapeHtml(toThaiDateOrBlank(m.date))}</td>
-                ${hasResult ? '<td class="meeting-result">' + escapeHtml(cleanDisplayValue(m.result)) + '</td>' : ''}
               </tr>
             `;
           });
