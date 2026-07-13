@@ -157,8 +157,79 @@
       padding: 0 18px 26px;
     }
 
-    .search-card {
+
+    .dashboard-wrap {
+      position: relative;
+      z-index: 1;
       margin: -24px auto 28px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .dashboard-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 126px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(16px);
+    }
+
+    .dashboard-card::before {
+      content: '';
+      position: absolute;
+      width: 96px;
+      height: 96px;
+      border-radius: 999px;
+      right: -32px;
+      top: -38px;
+      background: rgba(197, 160, 40, 0.13);
+    }
+
+    .dashboard-card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
+      box-shadow: 0 10px 18px rgba(16, 58, 101, 0.16);
+      margin-bottom: 12px;
+    }
+
+    .dashboard-label {
+      position: relative;
+      z-index: 1;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      min-height: 36px;
+      font-weight: 700;
+    }
+
+    .dashboard-number {
+      position: relative;
+      z-index: 1;
+      color: var(--navy-900);
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-top: 8px;
+      letter-spacing: -0.03em;
+    }
+
+
+    .search-card {
+      margin: 0 auto 28px;
       background: rgba(255, 255, 255, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.78);
       border-radius: var(--radius-lg);
@@ -485,6 +556,22 @@
       font-weight: 800;
     }
 
+
+    .public-footer-user-count {
+      max-width: 980px;
+      margin: 12px auto 0;
+      padding: 0 6px;
+      text-align: right;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .public-footer-user-count span {
+      color: #ffe08a;
+      font-weight: 800;
+    }
+
     @media (max-width: 767.98px) {
       .header-bar {
         padding: 22px 14px 46px;
@@ -506,8 +593,42 @@
         padding-right: 12px;
       }
 
-      .search-card {
+
+
+      .dashboard-wrap {
         margin-top: -28px;
+        margin-bottom: 18px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .dashboard-card {
+        min-height: 112px;
+        padding: 14px;
+        border-radius: 20px;
+      }
+
+      .dashboard-card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 13px;
+        margin-bottom: 9px;
+      }
+
+      .dashboard-label {
+        min-height: 32px;
+        font-size: 12px;
+      }
+
+      .dashboard-number {
+        font-size: 28px;
+      }
+
+      .search-card {
+        margin-top: 0;
         padding: 18px;
         border-radius: 22px;
       }
@@ -587,6 +708,10 @@
         padding-right: 8px;
       }
 
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
       .search-card,
       .result-body {
         padding-left: 12px;
@@ -617,6 +742,32 @@
     </section>
 
     <main class="page-container">
+
+      <section class="dashboard-wrap" aria-label="สรุปสถานะเรื่องพิจารณา">
+        <div class="dashboard-grid">
+          <article class="dashboard-card">
+            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="dashboard-label">เรื่องร้องเรียนทั้งหมด</div>
+            <div class="dashboard-number" id="dash-total">-</div>
+          </article>
+          <article class="dashboard-card">
+            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-plus"></i></div>
+            <div class="dashboard-label">เรื่องเข้าใหม่</div>
+            <div class="dashboard-number" id="dash-new">-</div>
+          </article>
+          <article class="dashboard-card">
+            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="dashboard-label">อยู่ระหว่างการพิจารณา</div>
+            <div class="dashboard-number" id="dash-in-progress">-</div>
+          </article>
+          <article class="dashboard-card">
+            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="dashboard-label">พิจารณาเสร็จแล้ว</div>
+            <div class="dashboard-number" id="dash-completed">-</div>
+          </article>
+        </div>
+      </section>
+
       <section class="search-card" aria-labelledby="search-title">
         <div class="search-card-header">
           <div class="search-icon" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div>
@@ -646,9 +797,15 @@
     <strong>กลุ่มงานคณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ</strong><br>
     สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
     โทร 0 2242 5900 ต่อ 7171
+    <div class="public-footer-user-count" aria-live="polite">
+      จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
+    </div>
   </footer>
 
   <script>
+    // ใส่ URL ของ Google Apps Script Web App ล่าสุดที่ลงท้ายด้วย /exec
+    const API_URL = "https://script.google.com/macros/s/AKfycbwkf6NdoMXBnz0sRGvnCLoAauPAYL_rYy_XnXAidtokTFvZhBSTUdROuNWY3zVAyGBCpA/exec";
+
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -697,36 +854,84 @@
       return '';
     }
 
-    function doSearch() {
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const n = Number(value);
+      el.textContent = Number.isFinite(n) ? n.toLocaleString('th-TH') : (value == null || value === '' ? '0' : String(value));
+    }
+
+    function getVisitorId() {
+      const storageKey = 'externalLookupVisitorId';
       try {
-        const input = document.getElementById('recNo');
-        const recNo = input ? input.value.trim() : '';
-        if (!recNo) {
-          showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-          if (input) input.focus();
+        let visitorId = localStorage.getItem(storageKey);
+        if (!visitorId) {
+          visitorId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : 'visitor-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          localStorage.setItem(storageKey, visitorId);
+        }
+        return visitorId;
+      } catch (error) {
+        return 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      }
+    }
+
+    async function loadDashboard() {
+      try {
+        const visitorId = getVisitorId();
+        const url = `${API_URL}?action=dashboard&visitorId=${encodeURIComponent(visitorId)}`;
+        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result || !result.ok) {
+          throw new Error(result && result.msg ? result.msg : 'โหลด Dashboard ไม่สำเร็จ');
+        }
+        const data = result.data && result.data.counts ? result.data : (result.counts ? result : {});
+        const counts = data.counts || {};
+        setText('dash-total', counts.total || 0);
+        setText('dash-new', counts.new || 0);
+        setText('dash-in-progress', counts.inProgress || 0);
+        setText('dash-completed', counts.completed || 0);
+        setText('dash-users', counts.users || 0);
+      } catch (error) {
+        setText('dash-total', 0);
+        setText('dash-new', 0);
+        setText('dash-in-progress', 0);
+        setText('dash-completed', 0);
+        setText('dash-users', 0);
+        console.warn('dashboard load failed', error);
+      }
+    }
+
+    async function doSearch() {
+      const input = document.getElementById('recNo');
+      const recNo = input ? input.value.trim() : '';
+      if (!recNo) {
+        showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
+        if (input) input.focus();
+        return;
+      }
+
+      const originalText = setLoading(true);
+      document.getElementById('result-card').style.display = 'none';
+
+      try {
+        const url = `${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`;
+        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+        const res = await response.json();
+        setLoading(false, originalText);
+
+        if (!response.ok || !res || (!res.found && !res.ok)) {
+          showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
           return;
         }
 
-        const originalText = setLoading(true);
-        document.getElementById('result-card').style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(res => {
-            setLoading(false, originalText);
-            if (!res || !res.found) {
-              showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
-              return;
-            }
-            renderResult(res.data || {});
-          })
-          .withFailureHandler(err => {
-            setLoading(false, originalText);
-            showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err && err.message ? err.message : err), 'error');
-          })
-          .searchByRecNo(recNo);
+        const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
+        renderResult(targetData || {});
       } catch (error) {
-        setLoading(false);
-        showAlert('ข้อผิดพลาด', error.message, 'error');
+        setLoading(false, originalText);
+        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (error && error.message ? error.message : error), 'error');
       }
     }
 
@@ -847,6 +1052,8 @@
       }
       return text;
     }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
 
     function toThaiDate(dateStr) {
       if (!dateStr || dateStr === 'null' || dateStr === '') return '-';
