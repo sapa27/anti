@@ -1,1088 +1,209 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
   <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบตรวจสอบสถานะเรื่องพิจารณา</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --navy-900: #071a33;
-      --navy-800: #0b2747;
-      --navy-700: #103a65;
-      --gold-500: #c5a028;
-      --gold-400: #e4bd43;
-      --gold-100: #fff6db;
-      --surface: #ffffff;
-      --surface-soft: #f7fafc;
-      --text: #1f2937;
-      --muted: #667085;
-      --border: rgba(15, 23, 42, 0.10);
-      --shadow-sm: 0 10px 30px rgba(10, 35, 66, 0.08);
-      --shadow-md: 0 20px 55px rgba(10, 35, 66, 0.15);
-      --radius-lg: 24px;
-      --radius-md: 18px;
-      --radius-sm: 14px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      min-height: 100%;
-      margin: 0;
-    }
-
-    body {
-      font-family: 'Sarabun', sans-serif;
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      background:
-        radial-gradient(circle at top left, rgba(197, 160, 40, 0.18), transparent 28rem),
-        radial-gradient(circle at top right, rgba(16, 58, 101, 0.18), transparent 32rem),
-        linear-gradient(180deg, #f7fafc 0%, #eef4f8 100%);
-    }
-
-    .content-wrapper {
-      flex: 1 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .content-wrapper::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(11, 39, 71, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(11, 39, 71, 0.035) 1px, transparent 1px);
-      background-size: 34px 34px;
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 75%);
-    }
-
-    .hero-shell {
-      position: relative;
-      background:
-        linear-gradient(135deg, rgba(7, 26, 51, 0.98) 0%, rgba(13, 48, 84, 0.98) 58%, rgba(7, 26, 51, 0.98) 100%);
-      color: #ffffff;
-      border-bottom: 5px solid var(--gold-500);
-      box-shadow: 0 18px 50px rgba(7, 26, 51, 0.20);
-      overflow: hidden;
-    }
-
-    .hero-shell::before,
-    .hero-shell::after {
-      content: '';
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(228, 189, 67, 0.14);
-      pointer-events: none;
-    }
-
-    .hero-shell::before {
-      width: 320px;
-      height: 320px;
-      top: -170px;
-      right: -90px;
-    }
-
-    .hero-shell::after {
-      width: 210px;
-      height: 210px;
-      left: -90px;
-      bottom: -120px;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .header-bar {
-      position: relative;
-      z-index: 1;
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 30px 16px 34px;
-      text-align: center;
-    }
-
-    .emblem-wrap {
-      width: 86px;
-      height: 86px;
-      margin: 0 auto 14px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.20);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 16px 35px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(14px);
-    }
-
-    .emblem-wrap img {
-      width: 62px;
-      height: 62px;
-      object-fit: contain;
-    }
-
-    .header-title {
-      font-weight: 800;
-      font-size: clamp(23px, 4vw, 34px);
-      line-height: 1.25;
-      margin: 0 0 8px;
-      color: #ffe08a;
-      letter-spacing: -0.02em;
-    }
-
-    .header-sub {
-      font-weight: 400;
-      font-size: clamp(14px, 2.2vw, 17px);
-      line-height: 1.6;
-      opacity: 0.92;
-      max-width: 820px;
-      margin: 0 auto;
-    }
-
-    .page-container {
-      position: relative;
-      z-index: 1;
-      width: min(100%, 980px);
-      margin: 0 auto;
-      padding: 0 18px 26px;
-    }
-
-
-    .dashboard-wrap {
-      position: relative;
-      z-index: 1;
-      margin: -24px auto 28px;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .dashboard-card {
-      position: relative;
-      overflow: hidden;
-      min-height: 126px;
-      padding: 18px;
-      border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid rgba(255, 255, 255, 0.78);
-      box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(16px);
-    }
-
-    .dashboard-card::before {
-      content: '';
-      position: absolute;
-      width: 96px;
-      height: 96px;
-      border-radius: 999px;
-      right: -32px;
-      top: -38px;
-      background: rgba(197, 160, 40, 0.13);
-    }
-
-    .dashboard-card-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      box-shadow: 0 10px 18px rgba(16, 58, 101, 0.16);
-      margin-bottom: 12px;
-    }
-
-    .dashboard-label {
-      position: relative;
-      z-index: 1;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      min-height: 36px;
-      font-weight: 700;
-    }
-
-    .dashboard-number {
-      position: relative;
-      z-index: 1;
-      color: var(--navy-900);
-      font-size: 32px;
-      font-weight: 800;
-      line-height: 1;
-      margin-top: 8px;
-      letter-spacing: -0.03em;
-    }
-
-
-    .search-card {
-      margin: 0 auto 28px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.78);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      padding: 26px;
-      backdrop-filter: blur(18px);
-    }
-
-    .search-card-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 18px;
-      text-align: left;
-    }
-
-    .search-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      box-shadow: 0 14px 24px rgba(16, 58, 101, 0.22);
-      flex: 0 0 auto;
-    }
-
-    .search-title {
-      margin: 0;
-      color: var(--navy-900);
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .search-hint {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .search-card .input-group {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      width: 100%;
-      align-items: stretch;
-    }
-
-    .search-input {
-      height: 58px;
-      width: 100%;
-      min-width: 0;
-      border-radius: 17px !important;
-      border: 1px solid rgba(15, 23, 42, 0.14);
-      background: #ffffff;
-      color: var(--navy-900);
-      font-size: 17px;
-      padding: 0 18px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-    }
-
-    .search-input:focus {
-      border-color: var(--gold-500);
-      box-shadow: 0 0 0 4px rgba(197, 160, 40, 0.16);
-      outline: none;
-      transform: translateY(-1px);
-    }
-
-    .btn-search {
-      min-width: 164px;
-      height: 58px;
-      border-radius: 17px !important;
-      border: none;
-      color: #ffffff;
-      font-size: 17px;
-      font-weight: 800;
-      padding: 0 22px !important;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
-      box-shadow: 0 15px 26px rgba(7, 26, 51, 0.22);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .btn-search:hover:not(:disabled) {
-      transform: translateY(-2px);
-      filter: brightness(1.04);
-      box-shadow: 0 20px 34px rgba(7, 26, 51, 0.28);
-      color: #ffe08a;
-    }
-
-    .btn-search:disabled {
-      opacity: 0.72;
-      cursor: wait;
-      transform: none;
-    }
-
-    .quick-note {
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      color: #5a4a17;
-      background: var(--gold-100);
-      border: 1px solid rgba(197, 160, 40, 0.22);
-      font-size: 13px;
-      line-height: 1.55;
-      text-align: left;
-    }
-
-    .result-card {
-      margin: 0 auto 42px;
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      overflow: hidden;
-      display: none;
-    }
-
-    .result-header {
-      padding: 18px 22px;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
-      font-weight: 800;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .result-header i {
-      color: #ffe08a;
-    }
-
-    .result-body {
-      padding: 22px;
-    }
-
-    .info-table {
-      margin: 0;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      background: #ffffff;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .info-table table {
-      margin: 0;
-    }
-
-    .info-table th {
-      width: 35%;
-      background: #f8fafc;
-      color: #475467;
-      font-weight: 700;
-      border-color: rgba(15, 23, 42, 0.08);
-      padding: 14px 16px;
-      vertical-align: top;
-    }
-
-    .info-table td {
-      border-color: rgba(15, 23, 42, 0.08);
-      padding: 14px 16px;
-      vertical-align: top;
-    }
-
-    .rec-no-text {
-      color: var(--navy-700);
-      font-weight: 800;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 15px;
-      font-weight: 800;
-      line-height: 1.3;
-      color: #5a4310;
-      background: linear-gradient(135deg, #fff4cf, #ffe6a1);
-      border: 1px solid rgba(197, 160, 40, 0.25);
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin: 24px 0 12px;
-      color: var(--navy-900);
-    }
-
-    .section-title h6 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .meeting-count-pill {
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--navy-800);
-      background: #eef6ff;
-      border: 1px solid rgba(16, 58, 101, 0.12);
-      white-space: nowrap;
-      font-weight: 700;
-    }
-
-    .meeting-table-wrap {
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-      background: #ffffff;
-    }
-
-    .meeting-table {
-      margin: 0;
-      vertical-align: middle;
-    }
-
-    .meeting-table thead th {
-      background: linear-gradient(180deg, #f8fafc, #eef3f7);
-      color: var(--navy-900);
-      font-weight: 800;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
-      padding: 13px 16px;
-    }
-
-    .meeting-table tbody td {
-      padding: 14px 16px;
-      border-color: rgba(15, 23, 42, 0.07);
-    }
-
-    .meeting-table tbody tr:hover {
-      background: #fbfdff;
-    }
-
-    .round-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 46px;
-      min-height: 34px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      font-weight: 800;
-      box-shadow: 0 8px 16px rgba(16, 58, 101, 0.18);
-    }
-
-    .date-text {
-      color: #344054;
-      font-weight: 600;
-    }
-
-    .meeting-note {
-      display: flex;
-      gap: 9px;
-      align-items: flex-start;
-      margin-top: 13px;
-      padding: 13px 14px;
-      border-radius: 16px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #6a4b05;
-      background: #fff8e5;
-      border: 1px solid rgba(197, 160, 40, 0.20);
-    }
-
-    .meeting-note a {
-      color: var(--navy-700);
-      font-weight: 800;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .empty-state {
-      border: 1px dashed rgba(15, 23, 42, 0.18);
-      border-radius: var(--radius-md);
-      background: #f8fafc;
-      padding: 22px;
-      text-align: center;
-      color: #667085;
-      font-size: 14px;
-    }
-
-    .empty-state i {
-      display: block;
-      margin-bottom: 10px;
-      color: var(--gold-500);
-      font-size: 24px;
-    }
-
-    .public-footer {
-      position: relative;
-      flex-shrink: 0;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-800));
-      color: rgba(255, 255, 255, 0.76);
-      text-align: center;
-      padding: 24px 15px;
-      font-size: 14px;
-      line-height: 1.8;
-      border-top: 3px solid var(--gold-500);
-      width: 100%;
-      margin-top: 16px;
-    }
-
-    .public-footer strong {
-      color: #ffe08a;
-      font-weight: 800;
-    }
-
-
-    .public-footer-user-count {
-      max-width: 980px;
-      margin: 12px auto 0;
-      padding: 0 6px;
-      text-align: right;
-      color: rgba(255, 255, 255, 0.88);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .public-footer-user-count span {
-      color: #ffe08a;
-      font-weight: 800;
-    }
-
-    @media (max-width: 767.98px) {
-      .header-bar {
-        padding: 22px 14px 46px;
-      }
-
-      .emblem-wrap {
-        width: 74px;
-        height: 74px;
-        border-radius: 22px;
-      }
-
-      .emblem-wrap img {
-        width: 54px;
-        height: 54px;
-      }
-
-      .page-container {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-
-
-
-      .dashboard-wrap {
-        margin-top: -28px;
-        margin-bottom: 18px;
-      }
-
-      .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .dashboard-card {
-        min-height: 112px;
-        padding: 14px;
-        border-radius: 20px;
-      }
-
-      .dashboard-card-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 13px;
-        margin-bottom: 9px;
-      }
-
-      .dashboard-label {
-        min-height: 32px;
-        font-size: 12px;
-      }
-
-      .dashboard-number {
-        font-size: 28px;
-      }
-
-      .search-card {
-        margin-top: 0;
-        padding: 18px;
-        border-radius: 22px;
-      }
-
-      .search-card-header {
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .search-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 16px;
-      }
-
-      .search-title {
-        font-size: 18px;
-      }
-
-      .search-card .input-group {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .search-input,
-      .btn-search {
-        width: 100% !important;
-        min-width: 0;
-        height: 54px;
-        font-size: 16px;
-      }
-
-      .result-header {
-        padding: 16px 18px;
-      }
-
-      .result-body {
-        padding: 16px;
-      }
-
-      .info-table th,
-      .info-table td {
-        padding: 12px;
-        font-size: 14px;
-      }
-
-      .info-table th {
-        width: 40%;
-      }
-
-      .section-title {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .meeting-table thead th,
-      .meeting-table tbody td {
-        padding: 12px 10px;
-        font-size: 14px;
-      }
-
-      .round-pill {
-        min-width: 40px;
-        min-height: 31px;
-        padding: 5px 10px;
-      }
-
-      .public-footer {
-        font-size: 12px;
-        padding: 20px 14px;
-      }
-    }
-
-    @media (max-width: 359.98px) {
-      .page-container {
-        padding-left: 8px;
-        padding-right: 8px;
-      }
-
-      .dashboard-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .search-card,
-      .result-body {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        scroll-behavior: auto !important;
-        transition: none !important;
-      }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f9; color: #333; display: flex; flex-direction: column; }
+    .content-wrapper { flex: 1 0 auto; }
+    .header-bar { background: #001e3c; color: white; padding: 25px 15px; border-bottom: 5px solid #c5a028; text-align: center; }
+    .header-title { font-weight: 700; font-size: 26px; margin-bottom: 5px; color: #ffca2c;}
+    .header-sub { font-weight: 300; font-size: 16px; opacity: 0.9;}
+    .search-card { max-width: 600px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 35px 30px; }
+    .search-input { height: 55px; font-size: 18px; border-radius: 10px; border: 2px solid #e0e0e0; }
+    .search-input:focus { border-color: #c5a028; box-shadow: none; }
+    .btn-search { height: 55px; font-size: 18px; font-weight: bold; border-radius: 10px; background: linear-gradient(45deg, #001e3c, #003366); border: none; color: white; transition: 0.3s; }
+    .btn-search:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,30,60,0.3); color: #ffca2c; }
+    .result-card { max-width: 700px; margin: 0 auto 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; display: none; }
+    .result-header { background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 18px; color: #001e3c; }
+    .result-body { padding: 25px; }
+    .table th { background-color: #f8f9fa; width: 35%; color: #555;}
+    .status-text { font-size: 18px; font-weight: bold; color: #c5a028; }
+    .public-footer { background-color: #001e3c; color: rgba(255, 255, 255, 0.7); text-align: center; padding: 25px 15px; font-size: 14px; line-height: 1.8; border-top: 3px solid #c5a028; width: 100%; margin-top: 40px; }
+    .public-footer strong { color: #ffca2c; font-weight: 600; }
+    @media (max-width: 575.98px) {
+        .header-title { font-size: 20px; } .header-sub { font-size: 14px; }
+        .search-card, .result-card { margin: 20px 15px; padding: 20px 15px; }
+        .search-input { height: 50px; font-size: 16px; margin-bottom: 10px; border-radius: 10px !important; }
+        .btn-search { height: 50px; font-size: 16px; width: 100%; border-radius: 10px !important; margin-left: 0 !important; }
+        .input-group { display: flex; flex-direction: column; }
+        .table th { width: 40%; font-size: 14px; } .table td { font-size: 14px; }
+        .public-footer { font-size: 12px; padding: 20px 15px; }
     }
   </style>
 </head>
 <body>
-  <div class="content-wrapper">
-    <section class="hero-shell">
-      <div class="header-bar">
-        <div class="emblem-wrap" aria-hidden="true">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" alt="">
-        </div>
-        <h1 class="header-title">ระบบตรวจสอบสถานะเรื่องพิจารณา</h1>
-        <p class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</p>
-      </div>
-    </section>
 
-    <main class="page-container">
+<div class="content-wrapper">
+    <div class="header-bar">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3">
+        <div class="header-title">ระบบตรวจสอบสถานะเรื่องพิจารณา</div>
+        <div class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</div>
+    </div>
 
-      <section class="dashboard-wrap" aria-label="สรุปสถานะเรื่องพิจารณา">
-        <div class="dashboard-grid">
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></div>
-            <div class="dashboard-label">เรื่องร้องเรียนทั้งหมด</div>
-            <div class="dashboard-number" id="dash-total">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-plus"></i></div>
-            <div class="dashboard-label">เรื่องเข้าใหม่</div>
-            <div class="dashboard-number" id="dash-new">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="dashboard-label">อยู่ระหว่างการพิจารณา</div>
-            <div class="dashboard-number" id="dash-in-progress">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="dashboard-label">พิจารณาเสร็จแล้ว</div>
-            <div class="dashboard-number" id="dash-completed">-</div>
-          </article>
+    <div class="container">
+        <div class="search-card text-center">
+            <h5 class="fw-bold mb-3 mb-md-4 text-navy">ค้นหาด้วยเลขรับเรื่อง</h5>
+            <div class="input-group">
+                <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." onkeypress="handleEnter(event)">
+                <button class="btn btn-search px-4" id="btn-search" onclick="doSearch()">ค้นหาข้อมูล</button>
+            </div>
         </div>
-      </section>
 
-      <section class="search-card" aria-labelledby="search-title">
-        <div class="search-card-header">
-          <div class="search-icon" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div>
-          <div>
-            <h2 class="search-title" id="search-title">ค้นหาด้วยเลขรับเรื่อง</h2>
-            <p class="search-hint">กรอกเลขรับเรื่องเพื่อตรวจสอบสถานะและครั้งประชุมที่เกี่ยวข้อง</p>
-          </div>
+        <div class="result-card" id="result-card">
+            <div class="result-header">ข้อมูลเรื่องพิจารณา</div>
+            <div class="result-body" id="result-content"></div>
         </div>
-        <div class="input-group">
-          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." onkeypress="handleEnter(event)" autocomplete="off" inputmode="text" aria-label="เลขรับเรื่อง">
-          <button class="btn btn-search" id="btn-search" onclick="doSearch()"><i class="fa-solid fa-search me-2"></i>ค้นหาข้อมูล</button>
-        </div>
-        <div class="quick-note">
-          <i class="fa-solid fa-circle-info mt-1" aria-hidden="true"></i>
-          <span>ระบบจะแสดงข้อมูลตามฐานข้อมูลของคณะกรรมาธิการ และแสดงผลการพิจารณาเฉพาะ “ครั้งที่” และ “วันที่ประชุม”</span>
-        </div>
-      </section>
+    </div>
+</div>
 
-      <section class="result-card" id="result-card" aria-live="polite">
-        <div class="result-header"><i class="fa-solid fa-file-lines"></i>ข้อมูลเรื่องพิจารณา</div>
-        <div class="result-body" id="result-content"></div>
-      </section>
-    </main>
-  </div>
-
-  <footer class="public-footer">
+<footer class="public-footer">
     <strong>กลุ่มงานคณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ</strong><br>
     สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
     โทร 0 2242 5900 ต่อ 7171
-    <div class="public-footer-user-count" aria-live="polite">
-      จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
-    </div>
-  </footer>
+</footer>
 
-  <script>
-    // ใส่ URL ของ Google Apps Script Web App ล่าสุดที่ลงท้ายด้วย /exec
-    const API_URL = "https://script.google.com/macros/s/AKfycbwkf6NdoMXBnz0sRGvnCLoAauPAYL_rYy_XnXAidtokTFvZhBSTUdROuNWY3zVAyGBCpA/exec";
-
+<script>
     function showAlert(title, msg, icon) {
-      if (typeof Swal !== 'undefined') {
-        Swal.fire({
-          title: title,
-          text: msg,
-          icon: icon,
-          confirmButtonText: 'ตกลง',
-          confirmButtonColor: '#0b2747'
-        });
-      } else {
-        alert(title + ': ' + msg);
-      }
+        if (typeof Swal !== 'undefined') {
+            Swal.fire(title, msg, icon);
+        } else {
+            alert(title + ": " + msg);
+        }
     }
 
     function escapeHtml(value) {
-      return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function cleanDisplayValue(value) {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text === '-' ? '' : text;
+        const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+        return text === '-' ? '' : text;
     }
 
     function handleEnter(e) {
-      if (e.key === 'Enter') {
-        doSearch();
-      }
+        if(e.key === 'Enter') doSearch();
     }
 
-    function setLoading(isLoading, originalText) {
-      const btn = document.getElementById('btn-search');
-      if (!btn) return '';
-      if (isLoading) {
-        const currentText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังค้นหา...';
-        btn.disabled = true;
-        return currentText;
-      }
-      btn.innerHTML = originalText || '<i class="fa-solid fa-search me-2"></i>ค้นหาข้อมูล';
-      btn.disabled = false;
-      return '';
-    }
+    function doSearch() {
+        try {
+            const recNo = document.getElementById('recNo').value.trim();
+            if(!recNo) {
+                showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
+                return;
+            }
 
+            const btn = document.getElementById('btn-search');
+            const origText = btn.innerHTML;
+            btn.innerHTML = 'กำลังค้นหา...';
+            btn.disabled = true;
+            document.getElementById('result-card').style.display = 'none';
 
-    function setText(id, value) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const n = Number(value);
-      el.textContent = Number.isFinite(n) ? n.toLocaleString('th-TH') : (value == null || value === '' ? '0' : String(value));
-    }
+            google.script.run
+                .withSuccessHandler(res => {
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                    if(!res || !res.found) {
+                        showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
+                    } else {
+                        renderResult(res.data);
+                    }
+                })
+                .withFailureHandler(err => {
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                    showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (err && err.message ? err.message : err), 'error');
+                })
+                .searchByRecNo(recNo);
 
-    function getVisitorId() {
-      const storageKey = 'externalLookupVisitorId';
-      try {
-        let visitorId = localStorage.getItem(storageKey);
-        if (!visitorId) {
-          visitorId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : 'visitor-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-          localStorage.setItem(storageKey, visitorId);
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในระบบ: " + error.message);
         }
-        return visitorId;
-      } catch (error) {
-        return 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-      }
-    }
-
-    async function loadDashboard() {
-      try {
-        const visitorId = getVisitorId();
-        const url = `${API_URL}?action=dashboard&visitorId=${encodeURIComponent(visitorId)}`;
-        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
-        const result = await response.json();
-        if (!response.ok || !result || !result.ok) {
-          throw new Error(result && result.msg ? result.msg : 'โหลด Dashboard ไม่สำเร็จ');
-        }
-        const data = result.data && result.data.counts ? result.data : (result.counts ? result : {});
-        const counts = data.counts || {};
-        setText('dash-total', counts.total || 0);
-        setText('dash-new', counts.new || 0);
-        setText('dash-in-progress', counts.inProgress || 0);
-        setText('dash-completed', counts.completed || 0);
-        setText('dash-users', counts.users || 0);
-      } catch (error) {
-        setText('dash-total', 0);
-        setText('dash-new', 0);
-        setText('dash-in-progress', 0);
-        setText('dash-completed', 0);
-        setText('dash-users', 0);
-        console.warn('dashboard load failed', error);
-      }
-    }
-
-    async function doSearch() {
-      const input = document.getElementById('recNo');
-      const recNo = input ? input.value.trim() : '';
-      if (!recNo) {
-        showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-        if (input) input.focus();
-        return;
-      }
-
-      const originalText = setLoading(true);
-      document.getElementById('result-card').style.display = 'none';
-
-      try {
-        const url = `${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`;
-        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
-        const res = await response.json();
-        setLoading(false, originalText);
-
-        if (!response.ok || !res || (!res.found && !res.ok)) {
-          showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
-          return;
-        }
-
-        const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
-        renderResult(targetData || {});
-      } catch (error) {
-        setLoading(false, originalText);
-        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (error && error.message ? error.message : error), 'error');
-      }
-    }
-
-    function getStatusIcon(statusGroup) {
-      if (statusGroup === 'new') return 'fa-circle-plus';
-      if (statusGroup === 'inProgress') return 'fa-clock';
-      if (statusGroup === 'completed') return 'fa-circle-check';
-      return 'fa-circle-info';
-    }
-
-    function uniqueVisibleMeetings(meetings) {
-      const out = [];
-      const seen = {};
-      (Array.isArray(meetings) ? meetings : []).forEach(item => {
-        const round = cleanDisplayValue(item && item.round);
-        const date = cleanDisplayValue(item && item.date);
-        if (!round && !date) return;
-        const key = round + '|' + normalizeDateKeyForDisplay(date);
-        if (seen[key]) return;
-        seen[key] = true;
-        out.push({ round: round, date: date });
-      });
-      return out;
     }
 
     function renderResult(data) {
-      const resultCard = document.getElementById('result-card');
-      resultCard.style.display = 'block';
+        document.getElementById('result-card').style.display = 'block';
 
-      const recNo = escapeHtml(data.recNo || '');
-      const recDate = escapeHtml(toThaiDate(data.recDate));
-      const displayStatus = escapeHtml(data.displayStatus || data.normalizedStatus || data.originalStatus || '');
-      const title = escapeHtml(data.caseTitle || '');
-      const normalizedStatus = String(data.normalizedStatus || data.originalStatus || '');
-      const statusGroup = String(data.statusGroup || '');
-      const meetings = uniqueVisibleMeetings(data.meetings);
-
-      let html = `
-        <div class="info-table">
-          <table class="table table-bordered mb-0">
-            <tr><th>เลขรับเรื่อง</th><td class="rec-no-text">${recNo}</td></tr>
-            <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
-            <tr><th>สถานะ</th><td><span class="status-badge"><i class="fa-solid ${getStatusIcon(statusGroup)}"></i>${displayStatus}</span></td></tr>
-      `;
-
-      const showMeeting = normalizedStatus === 'กมธ. พิจารณา'
-        || normalizedStatus === 'ส่งหน่วยงาน'
-        || normalizedStatus === 'จัดทำรายงาน'
-        || meetings.length > 0;
-
-      if (showMeeting && title && title !== 'null') {
-        html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
-      }
-      html += '</table></div>';
-
-      if (showMeeting) {
-        html += `
-          <div class="section-title">
-            <h6><i class="fa-solid fa-calendar-check"></i>ผลการพิจารณา</h6>
-            <span class="meeting-count-pill">${meetings.length} รายการ</span>
-          </div>
+        const recNo = escapeHtml(data.recNo || '');
+        const recDate = escapeHtml(toThaiDate(data.recDate));
+        const displayStatus = escapeHtml(data.displayStatus || data.normalizedStatus || data.originalStatus || '');
+        const title = escapeHtml(data.caseTitle || '');
+        const normalizedStatus = String(data.normalizedStatus || data.originalStatus || '');
+        const meetings = Array.isArray(data.meetings) ? data.meetings : [];
+        
+        let html = `
+            <table class="table table-bordered mb-0">
+                <tr><th>เลขรับเรื่อง</th><td class="fw-bold text-primary">${recNo}</td></tr>
+                <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
+                <tr><th>สถานะ</th><td class="status-text">${displayStatus}</td></tr>
         `;
 
-        if (meetings.length > 0) {
-          html += `
-            <div class="table-responsive meeting-table-wrap">
-              <table class="table table-sm table-hover text-center meeting-table">
-                <thead>
-                  <tr>
-                    <th width="38%">ครั้งที่</th>
-                    <th>วันที่ประชุม</th>
-                  </tr>
-                </thead>
-                <tbody>
-          `;
+        const showMeeting = (
+            normalizedStatus === "กมธ. พิจารณา" ||
+            normalizedStatus === "ส่งหน่วยงาน" ||
+            normalizedStatus === "จัดทำรายงาน" ||
+            meetings.length > 0
+        );
 
-          meetings.forEach(m => {
-            html += `
-              <tr>
-                <td><span class="round-pill">${escapeHtml(m.round)}</span></td>
-                <td class="date-text">${escapeHtml(toThaiDate(m.date))}</td>
-              </tr>
-            `;
-          });
-
-          html += '</tbody></table></div>';
-          html += `
-            <div class="meeting-note">
-              <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
-              <span>* รายละเอียดผลการพิจารณาให้ดูได้จากบันทึกการประชุม ครั้งที่และวันเดือนปีข้างต้น
-                <a href="https://web.parliament.go.th/view/126/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener">คลิกที่นี่</a>
-              </span>
-            </div>
-          `;
-        } else {
-          html += '<div class="empty-state"><i class="fa-regular fa-calendar-xmark"></i>ยังไม่มีประวัติการพิจารณา</div>';
+        if (showMeeting && title && title !== 'null') {
+            html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
         }
-      }
+        html += `</table>`; 
 
-      document.getElementById('result-content').innerHTML = html;
-      setTimeout(() => {
-        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+        if (showMeeting) {
+            html += `<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>`;
+            if (meetings.length > 0) {
+                html += `
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover border text-center mb-0">
+                        <thead class="table-light"><tr><th width="30%">ครั้งที่</th><th>วันที่</th></tr></thead>
+                        <tbody>`;
+                meetings.forEach(m => {
+                    html += `<tr><td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td><td>${escapeHtml(toThaiDate(m.date))}</td></tr>`;
+                });
+                html += `</tbody></table></div>`;
+                
+                // ปรับแต่งข้อความคลิกที่นี่
+                html += `<div class="text-danger small mt-2 fw-bold">* รายละเอียดผลการพิจารณาให้ดูได้จากบันทึกการประชุม ครั้งที่และวันเดือนปีข้างต้น <a href="https://web.parliament.go.th/view/126/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" class="text-primary text-decoration-underline ms-1" style="cursor: pointer;">คลิกที่นี่</a></div>`;
+            } else {
+                html += `<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>`;
+            }
+        }
+
+        document.getElementById('result-content').innerHTML = html;
+        setTimeout(() => {
+            document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
-
-    function normalizeDateKeyForDisplay(value) {
-      const text = String(value == null ? '' : value).trim();
-      const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        return ymd[1] + '-' + ('0' + ymd[2]).slice(-2) + '-' + ('0' + ymd[3]).slice(-2);
-      }
-      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (dmy) {
-        let year = Number(dmy[3]);
-        if (year < 100) year += 2500;
-        if (year < 2400) year += 543;
-        return year + '-' + ('0' + dmy[2]).slice(-2) + '-' + ('0' + dmy[1]).slice(-2);
-      }
-      return text;
-    }
-
-    document.addEventListener('DOMContentLoaded', loadDashboard);
 
     function toThaiDate(dateStr) {
-      if (!dateStr || dateStr === 'null' || dateStr === '') return '-';
+        if (!dateStr || dateStr === "null" || dateStr === "") return "-";
 
-      const text = String(dateStr).trim();
-      const months = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-      ];
+        const text = String(dateStr).trim();
+        const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        if (dmy) {
+            const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            let year = Number(dmy[3]);
+            if (year < 100) year += 2500;
+            if (year < 2400) year += 543;
+            return `${Number(dmy[1])} ${months[Number(dmy[2]) - 1] || ''} ${year}`;
+        }
 
-      const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        let year = Number(ymd[1]);
-        if (year < 2400) year += 543;
-        return `${Number(ymd[3])} ${months[Number(ymd[2]) - 1] || ''} ${year}`;
-      }
-
-      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (dmy) {
-        let year = Number(dmy[3]);
-        if (year < 100) year += 2500;
-        if (year < 2400) year += 543;
-        return `${Number(dmy[1])} ${months[Number(dmy[2]) - 1] || ''} ${year}`;
-      }
-
-      const date = new Date(text);
-      if (isNaN(date.getTime())) return text;
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+        const date = new Date(text);
+        if (isNaN(date.getTime())) return text;
+        const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
     }
-  </script>
+</script>
 </body>
 </html>
