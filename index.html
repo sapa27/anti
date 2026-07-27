@@ -132,6 +132,53 @@
       text-wrap: balance;
     }
 
+
+    .header-home-link {
+      position: absolute;
+      z-index: 3;
+      top: 18px;
+      right: 18px;
+      min-height: 42px;
+      padding: 8px 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0, 20, 45, 0.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition:
+        transform var(--transition-fast),
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .header-home-link svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header-home-link:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring), 0 6px 18px rgba(0, 20, 45, 0.18);
+    }
+
     .dashboard-wrap {
       max-width: 980px;
       margin: 32px auto 0;
@@ -542,6 +589,15 @@
       .header-bar img:hover {
         transform: translateY(-1px) scale(1.015);
       }
+
+
+      .header-home-link:hover {
+        color: #ffffff;
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.17);
+        border-color: rgba(255, 202, 44, 0.72);
+        box-shadow: 0 10px 24px rgba(0, 20, 45, 0.24);
+      }
     }
 
     @media (max-width: 767.98px) {
@@ -562,6 +618,21 @@
       .header-sub {
         font-size: 14px;
         line-height: 1.55;
+      }
+
+
+      .header-home-link {
+        top: 11px;
+        right: 11px;
+        min-height: 38px;
+        padding: 7px 12px;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .header-home-link svg {
+        width: 15px;
+        height: 15px;
       }
 
       .container {
@@ -725,6 +796,14 @@
 <body>
   <div class="content-wrapper" role="main">
     <div class="header-bar" role="banner">
+      <a class="header-home-link" href="https://www.parliament.go.th/view/623/%E0%B8%AB%E0%B8%99%E0%B9%89%E0%B8%B2%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%81/TH-TH" aria-label="กลับไปยังหน้าหลักเว็บไซต์รัฐสภา">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3 11.5 12 4l9 7.5"></path>
+          <path d="M5.5 10.5V20h13v-9.5"></path>
+          <path d="M9.5 20v-6h5v6"></path>
+        </svg>
+        <span>หน้าหลัก</span>
+      </a>
       <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3" alt="ตรารัฐสภา">
       <div class="header-title" role="heading" aria-level="1">ระบบตรวจสอบสถานะเรื่องร้องเรียน</div>
       <div class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</div>
