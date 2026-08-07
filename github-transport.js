@@ -10,6 +10,9 @@
   var iframe = null;
   var readyPromise = null;
   var nonce = "";
+  var bridgeLoadState = "idle";
+  var bridgeLastError = "";
+  var EXPECTED_BRIDGE_VERSION = "r242-github-pages-bridge";
 
   function text(value) { return value == null ? "" : String(value); }
   function normalizeGasUrl(value) {
@@ -50,16 +53,36 @@
   function ensureBridge() {
     if (readyPromise) return readyPromise;
     nonce = randomNonce();
+    bridgeLoadState = "creating";
+    bridgeLastError = "";
     readyPromise = new Promise(function (resolve, reject) {
       var timeout = root.setTimeout(function () {
+        var state = bridgeLoadState;
         readyPromise = null;
-        reject(createError({ message: "GAS Bridge ไม่ตอบสนอง", code: "GAS_BRIDGE_READY_TIMEOUT" }));
-      }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 30000)));
+        var hint = state === "loaded-no-ready"
+          ? "Bridge iframe โหลดแล้วแต่ไม่ส่ง READY: ตรวจ GITHUB_PAGES_ORIGIN และต้อง Deploy GAS r242 เป็น New version"
+          : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
+        reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
+      }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 20000)));
+      function cleanupReadyListener() { root.removeEventListener("message", onReady, false); }
+      function fail(data) {
+        root.clearTimeout(timeout);
+        cleanupReadyListener();
+        readyPromise = null;
+        bridgeLastError = text(data && (data.code || data.message) || "GAS_BRIDGE_ERROR");
+        reject(createError({ message: bridgeLastError, code: bridgeLastError || "GAS_BRIDGE_ERROR" }));
+      }
       function onReady(event) {
         var data = event.data || {};
-        if (!iframe || event.source !== iframe.contentWindow || data.type !== "GAS_BRIDGE_READY" || data.nonce !== nonce) return;
+        if (!iframe || event.source !== iframe.contentWindow || data.nonce !== nonce) return;
+        if (data.type === "GAS_BRIDGE_ERROR") return fail(data);
+        if (data.type !== "GAS_BRIDGE_READY") return;
+        if (data.bridgeVersion && data.bridgeVersion !== EXPECTED_BRIDGE_VERSION) {
+          return fail({ code: "GAS_BRIDGE_VERSION_MISMATCH", message: "GAS Bridge version ไม่ตรง: " + data.bridgeVersion + " (ต้องเป็น " + EXPECTED_BRIDGE_VERSION + ")" });
+        }
         root.clearTimeout(timeout);
-        root.removeEventListener("message", onReady, false);
+        cleanupReadyListener();
+        bridgeLoadState = "ready";
         resolve(true);
       }
       root.addEventListener("message", onReady, false);
@@ -67,15 +90,19 @@
       iframe.id = "app-gas-github-bridge";
       iframe.title = "GAS API Bridge";
       iframe.setAttribute("aria-hidden", "true");
+      iframe.setAttribute("referrerpolicy", "no-referrer");
       iframe.style.cssText = "position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none";
+      iframe.onload = function () { if (bridgeLoadState !== "ready") bridgeLoadState = "loaded-no-ready"; };
+      iframe.onerror = function () { bridgeLoadState = "load-error"; };
       try { iframe.src = bridgeUrl(); }
       catch (error) {
         root.clearTimeout(timeout);
-        root.removeEventListener("message", onReady, false);
+        cleanupReadyListener();
         readyPromise = null;
         reject(error);
         return;
       }
+      bridgeLoadState = "loading";
       (doc.body || doc.documentElement).appendChild(iframe);
     });
     return readyPromise;
@@ -121,7 +148,10 @@
       mode: root.AppTransport.mode,
       configured: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       parentOrigin: root.location.origin,
-      pending: Object.keys(pending).length
+      pending: Object.keys(pending).length,
+      bridgeLoadState: bridgeLoadState,
+      bridgeLastError: bridgeLastError,
+      expectedBridgeVersion: EXPECTED_BRIDGE_VERSION
     };
   };
 })(window, document);
