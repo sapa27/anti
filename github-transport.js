@@ -10,15 +10,23 @@
   var iframe = null;
   var readyPromise = null;
   var nonce = "";
+  var bridgePort = null;
+  var bridgeChannel = "";
+  var bridgeOrigin = "";
   var bridgeLoadState = "idle";
   var bridgeLastError = "";
-  var EXPECTED_BRIDGE_VERSION = "r242-github-pages-bridge";
+  var EXPECTED_BRIDGE_VERSION = "r243-github-pages-message-channel";
 
   function text(value) { return value == null ? "" : String(value); }
   function normalizeGasUrl(value) {
     value = text(value).trim();
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/i.test(value)) return "";
     return value.replace(/[?#].*$/, "");
+  }
+  function trustedBridgeOrigin(origin) {
+    origin = text(origin).toLowerCase();
+    return origin === "https://script.google.com" ||
+      /^https:\/\/(?:[a-z0-9-]+\.)*script\.googleusercontent\.com$/.test(origin);
   }
   function randomNonce() {
     var bytes = new Uint8Array(24);
@@ -39,9 +47,9 @@
       code: "GITHUB_GAS_URL_NOT_CONFIGURED"
     });
     var origin = root.location.origin;
-    var separator = gas.indexOf("?") >= 0 ? "&" : "?";
-    return gas + separator + "mode=" + encodeURIComponent(text(config.BRIDGE_MODE || "github-bridge")) +
-      "&parentOrigin=" + encodeURIComponent(origin) + "&nonce=" + encodeURIComponent(nonce);
+    return gas + "?mode=" + encodeURIComponent(text(config.BRIDGE_MODE || "github-bridge")) +
+      "&parentOrigin=" + encodeURIComponent(origin) + "&nonce=" + encodeURIComponent(nonce) +
+      "&bridgeVersion=" + encodeURIComponent(EXPECTED_BRIDGE_VERSION);
   }
   function cleanupPending(id, error) {
     var rec = pending[id];
@@ -50,17 +58,45 @@
     if (rec.timer) root.clearTimeout(rec.timer);
     if (error) rec.reject(error);
   }
+  function closeBridgePort() {
+    if (!bridgePort) return;
+    try { bridgePort.onmessage = null; } catch (_ignored1) {}
+    try { bridgePort.close(); } catch (_ignored2) {}
+    bridgePort = null;
+    bridgeChannel = "";
+  }
+  function handleResult(data) {
+    data = data || {};
+    if (data.type !== "GAS_BRIDGE_RESULT" || data.nonce !== nonce) return;
+    var id = text(data.id);
+    var rec = pending[id];
+    if (!rec) return;
+    delete pending[id];
+    if (rec.timer) root.clearTimeout(rec.timer);
+    if (data.ok) rec.resolve(data.result);
+    else rec.reject(createError(data.error, "GAS_BRIDGE_REQUEST_FAILED"));
+  }
+  function attachPort(port) {
+    closeBridgePort();
+    bridgePort = port || null;
+    if (!bridgePort) return false;
+    bridgePort.onmessage = function (event) { handleResult(event && event.data || {}); };
+    if (bridgePort.start) bridgePort.start();
+    return true;
+  }
   function ensureBridge() {
     if (readyPromise) return readyPromise;
     nonce = randomNonce();
     bridgeLoadState = "creating";
     bridgeLastError = "";
+    bridgeOrigin = "";
+    closeBridgePort();
     readyPromise = new Promise(function (resolve, reject) {
       var timeout = root.setTimeout(function () {
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ไม่ส่ง READY: ตรวจ GITHUB_PAGES_ORIGIN และต้อง Deploy GAS r242 เป็น New version"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS เป็น r243 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
       }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 20000)));
@@ -69,17 +105,25 @@
         root.clearTimeout(timeout);
         cleanupReadyListener();
         readyPromise = null;
-        bridgeLastError = text(data && (data.code || data.message) || "GAS_BRIDGE_ERROR");
-        reject(createError({ message: bridgeLastError, code: bridgeLastError || "GAS_BRIDGE_ERROR" }));
+        bridgeLastError = text(data && (data.message || data.code) || "GAS_BRIDGE_ERROR");
+        reject(createError({ message: bridgeLastError, code: text(data && data.code || "GAS_BRIDGE_ERROR") }));
       }
       function onReady(event) {
         var data = event.data || {};
-        if (!iframe || event.source !== iframe.contentWindow || data.nonce !== nonce) return;
+        if (data.nonce !== nonce) return;
+        if (!trustedBridgeOrigin(event.origin)) return;
         if (data.type === "GAS_BRIDGE_ERROR") return fail(data);
         if (data.type !== "GAS_BRIDGE_READY") return;
-        if (data.bridgeVersion && data.bridgeVersion !== EXPECTED_BRIDGE_VERSION) {
-          return fail({ code: "GAS_BRIDGE_VERSION_MISMATCH", message: "GAS Bridge version ไม่ตรง: " + data.bridgeVersion + " (ต้องเป็น " + EXPECTED_BRIDGE_VERSION + ")" });
+        if (data.bridgeVersion !== EXPECTED_BRIDGE_VERSION) {
+          return fail({ code: "GAS_BRIDGE_VERSION_MISMATCH", message: "GAS Bridge version ไม่ตรง: " + text(data.bridgeVersion || "unknown") + " (ต้องเป็น " + EXPECTED_BRIDGE_VERSION + ")" });
         }
+        var transferredPort = event.ports && event.ports[0] || null;
+        if (data.channel === "message-port" && !transferredPort) {
+          return fail({ code: "GAS_BRIDGE_PORT_MISSING", message: "GAS Bridge READY แล้วแต่ไม่ได้รับ MessagePort" });
+        }
+        if (transferredPort) attachPort(transferredPort);
+        bridgeChannel = text(data.channel || (transferredPort ? "message-port" : "window-postmessage"));
+        bridgeOrigin = text(event.origin);
         root.clearTimeout(timeout);
         cleanupReadyListener();
         bridgeLoadState = "ready";
@@ -110,15 +154,18 @@
 
   root.addEventListener("message", function (event) {
     var data = event.data || {};
-    if (!iframe || event.source !== iframe.contentWindow || data.type !== "GAS_BRIDGE_RESULT" || data.nonce !== nonce) return;
-    var id = text(data.id);
-    var rec = pending[id];
-    if (!rec) return;
-    delete pending[id];
-    if (rec.timer) root.clearTimeout(rec.timer);
-    if (data.ok) rec.resolve(data.result);
-    else rec.reject(createError(data.error, "GAS_BRIDGE_REQUEST_FAILED"));
+    if (data.nonce !== nonce || !trustedBridgeOrigin(event.origin)) return;
+    handleResult(data);
   }, false);
+
+  function sendCall(message) {
+    if (bridgePort) {
+      bridgePort.postMessage(message);
+      return;
+    }
+    if (!iframe || !iframe.contentWindow) throw createError({ message: "GAS Bridge window unavailable", code: "GAS_BRIDGE_WINDOW_UNAVAILABLE" });
+    iframe.contentWindow.postMessage(message, "*");
+  }
 
   function run(fn, args, options) {
     options = options || {};
@@ -131,7 +178,7 @@
         }, timeoutMs);
         pending[id] = { resolve: resolve, reject: reject, timer: timer, fn: fn };
         try {
-          iframe.contentWindow.postMessage({ type: "GAS_BRIDGE_CALL", nonce: nonce, id: id, fn: text(fn), args: args == null ? {} : args }, "*");
+          sendCall({ type: "GAS_BRIDGE_CALL", nonce: nonce, id: id, fn: text(fn), args: args == null ? {} : args });
         } catch (error) {
           cleanupPending(id, error);
         }
@@ -142,15 +189,28 @@
   root.AppTransport = root.AppTransport || {};
   root.AppTransport.run = run;
   root.AppTransport.mode = "github-pages-gas-bridge";
+  root.AppTransport.resetBridge = function () {
+    Object.keys(pending).forEach(function (id) { cleanupPending(id, createError({ message: "Bridge reset", code: "GAS_BRIDGE_RESET" })); });
+    closeBridgePort();
+    if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    iframe = null;
+    readyPromise = null;
+    bridgeLoadState = "idle";
+    bridgeLastError = "";
+    bridgeOrigin = "";
+    return true;
+  };
   root.AppTransport.status = function () {
     return {
-      ok: !!readyPromise,
+      ok: bridgeLoadState === "ready",
       mode: root.AppTransport.mode,
       configured: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       parentOrigin: root.location.origin,
       pending: Object.keys(pending).length,
       bridgeLoadState: bridgeLoadState,
       bridgeLastError: bridgeLastError,
+      bridgeChannel: bridgeChannel,
+      bridgeOrigin: bridgeOrigin,
       expectedBridgeVersion: EXPECTED_BRIDGE_VERSION
     };
   };
