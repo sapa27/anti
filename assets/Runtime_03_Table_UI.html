@@ -1,0 +1,289 @@
+<!-- M12 r236: extracted from Scripts_Core_Runtime.html; canonical deferred owner: Runtime_03_Table_UI -->
+<script id="app-table-pager-canonical-renderer-current">
+!function (root, doc) {
+    "use strict";
+    if (!root.__APP_TABLE_PAGER_CANONICAL_RENDERER_CURRENT__) {
+        root.__APP_TABLE_PAGER_CANONICAL_RENDERER_CURRENT__ = !0;
+        var e = root.AppPageKit && root.AppPageKit.moduleKit ? root.AppPageKit.moduleKit("TablePager") : root.AppPageKit || root.AppUtil || {}, t = function __E2_text_4(t) { return e && e.text ? e.text(t) : null == t ? "" : String(t); }, a = function __E2_byId_2(t) { return t && t.nodeType ? t : e && e.byId ? e.byId(t) : doc.getElementById(t); }, r = function __E2_esc_2(a) { return a = t(a), e && (e.esc || e.escapeHtml) ? (e.esc || e.escapeHtml)(a) : a.replace(/[&<>"']/g, function (e) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[e] || e; }); }, n = e && (e.setTrustedHtml || e.setHtml) || function (e, t) { return (e = a(e)) && (e.innerHTML = t || ""), e; }, p = function __E2_warn_2(e, t) {
+            try {
+                root.AppRuntime && __appIsFn(root.AppRuntime.recordWarning) && root.AppRuntime.recordWarning("table.pager." + e, t);
+            }
+            catch (e) {
+                __appObserve(e, "rt.ec");
+            }
+        };
+        root.AppTablePager = root.AppTablePager || {}, root.AppTablePager.renderPagerHtml = renderPagerHtml, root.AppTablePager.standardPagerHtml = renderPagerHtml, root.AppTablePager.renderStandardFooter = renderStandardFooter, root.AppTablePager.standardFooter = renderStandardFooter, root.AppTablePager.alignFooterToTable = alignFooterToTable, root.AppTablePager.applyLocalDomPaging = applyLocalDomPaging, root.AppTable = root.AppTable || {}, root.AppTable.footer = renderStandardFooter, root.AppTable.renderStandardFooter = renderStandardFooter, root.AppTable.pager = renderStandardFooter, root.AppTable.pageState = tablePageState, root.AppTable.sliceRows = function sliceRows(e, t, a) { a = a || {}; var r = tablePageState(t, (e = Array.isArray(e) ? e : []).length, a.pageSize, a.page), n = (r.page - 1) * r.pageSize; return { rows: e.slice(n, n + r.pageSize), start: n, page: r.page, pageSize: r.pageSize, total: e.length, totalPages: Math.max(1, Math.ceil(e.length / r.pageSize) || 1) }; }, root.AppTable.status = function () { return { ok: !0, owner: "AppTable:Phase4.SingleFooterOwner", gateway: "AppTable.footer", pageSizes: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], phase: "PHASE4_PAGER_FOOTER_FINAL_OWNER" }; }, root.AppTablePager.__canonicalVisualRenderer = "AppTablePager:production-standard", root.AppTablePager.__contract = "AppTablePager:phase4-single-standard-footer-width-page-size-current", root.AppTablePager.status = function () { return { ok: !0, owner: "AppTablePager.renderStandardFooter", gateway: "AppTable.footer/AppTablePager.renderStandardFooter", pageSizes: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], phase: "PHASE4_PAGER_FOOTER_FINAL_OWNER" }; };
+        var o = root.__appSingleOwnerNs("AppPageKit");
+        o.tablePagerHtml = renderPagerHtml, o.standardPagerHtml = o.standardPagerHtml || renderPagerHtml, o.renderStandardFooter = o.renderStandardFooter || renderStandardFooter, root.AppSharedUtils = Object.assign(root.AppSharedUtils || {}, { stamp: "shared-utils-pager-current", text: t, byId: a, esc: r, escapeHtml: r, setHtml: n, standardPagerHtml: renderPagerHtml, renderStandardFooter: renderStandardFooter });
+        var i = root.__appSingleOwnerNs("AppUtil");
+        Object.assign(i, { standardPagerHtml: renderPagerHtml, renderStandardFooter: renderStandardFooter, escapeHtml: i.escapeHtml || r, byId: i.byId || a, text: i.text || t });
+        var l = root.ScriptsUtils || {};
+        Object.assign(l, { standardPagerHtml: renderPagerHtml, renderStandardPagerHtml: renderPagerHtml, renderStandardFooter: renderStandardFooter }), l.renderPaginationControl = function (e, t, r, n, p) { var o = a(p); return !!o && (renderStandardFooter(o, { total: e, pageSize: t, page: r, action: n, kind: p || "", sizeClass: "app-standard-page-size" }), !0); }, Object.assign(root.__appSingleOwnerNs("ScriptsUtils"), l), root.renderPaginationControl = l.renderPaginationControl, function installDefaultBindings() {
+            root.__APP_TABLE_PAGER_DIRECT_DEFAULT_BINDING_CURRENT__ || (root.__APP_TABLE_PAGER_DIRECT_DEFAULT_BINDING_CURRENT__ = !0, doc.addEventListener("click", function (e) {
+                var a = e.target && e.target.closest ? e.target.closest(".app-table-pager button[data-action]") : null;
+                a && function dispatchPagerClick(e, a) {
+                    if (!e || e.disabled || "true" === e.getAttribute("aria-disabled"))
+                        return !1;
+                    var r = t(e.getAttribute("data-action")), n = Math.max(1, number(e.getAttribute("data-page"), 1) || 1);
+                    if ("paginationGo" === r && (r = t(e.getAttribute("data-page-callback") || e.getAttribute("data-callback")) || r), r && "function" == typeof root[r]) {
+                        a && __appIsFn(a.preventDefault) && a.preventDefault();
+                        try {
+                            root[r](n, e, a || null);
+                        }
+                        catch (e) {
+                            p("click." + r, e);
+                        }
+                        return !0;
+                    }
+                    return !!updateLocalFooter(e, n, null) && (a && __appIsFn(a.preventDefault) && a.preventDefault(), !0);
+                }(a, e) && (root.AppEvents && __appIsFn(root.AppEvents.consume) ? root.AppEvents.consume(e, { key: "table.pager.click" }) : e && e.stopPropagation && e.stopPropagation());
+            }, !0), doc.addEventListener("change", function (e) {
+                var a = e.target && e.target.closest ? e.target.closest(".app-table-page-size") : null;
+                a && function dispatchPagerSize(e, a) {
+                    if (!e || !e.classList || !e.classList.contains("app-table-page-size"))
+                        return !1;
+                    var r = e.closest ? e.closest(".app-table-pager") : null, n = t(r && r.getAttribute("data-action") || ""), o = t(e.getAttribute("data-pager-kind") || r && r.getAttribute("data-pager-kind") || ""), i = Math.max(1, number(e.value, 20) || 20);
+                    if ("pet-pagination" === o || r && r.parentNode && "pet-pagination" === r.parentNode.id)
+                        return root.petitionerPageState = root.petitionerPageState || { currentPage: 1, pageSize: i, lastQuery: "" }, root.petitionerPageState.pageSize = i, root.petitionerPageState.currentPage = 1, a && __appIsFn(a.preventDefault) && a.preventDefault(), __appIsFn(root.renderPetitionerList) && root.renderPetitionerList(), !0;
+                    if (n && "function" == typeof root[n]) {
+                        a && __appIsFn(a.preventDefault) && a.preventDefault();
+                        try {
+                            root[n](1, e, a || null);
+                        }
+                        catch (e) {
+                            p("size." + n, e);
+                        }
+                        return !0;
+                    }
+                    return !!updateLocalFooter(e, 1, i) && (a && __appIsFn(a.preventDefault) && a.preventDefault(), !0);
+                }(a, e) && (root.AppEvents && __appIsFn(root.AppEvents.consume) ? root.AppEvents.consume(e, { key: "table.pager.size" }) : e && e.stopPropagation && e.stopPropagation());
+            }, !0), root.addEventListener && root.addEventListener("resize", function () {
+                try {
+                    Array.prototype.forEach.call(doc.querySelectorAll(".app-table-footer"), alignFooterToTable);
+                }
+                catch (e) {
+                    __appObserve(e, "rt.ec");
+                }
+            }, !1));
+        }();
+    }
+    function number(e, t) { return e = Number(e), isFinite(e) ? e : Number(t || 0); }
+    function clampPageSize(e) { return function clamp(e, t, a, r) { return e = number(e, r), Math.max(t, Math.min(a, e)); }(e, 1, 500, 20); }
+    function attr(e, a) { return (e = t(e).trim()) && null != a && "" !== a ? r(e) + '="' + r(a) + '"' : ""; }
+    function tablePageState(e, a, r, n) { var p = root.__APP_TABLE_PAGE_STATE__ = root.__APP_TABLE_PAGE_STATE__ || {}, o = t(e || "default"), i = p[o] || (p[o] = { page: 1, pageSize: 20, total: 0 }); null != a && (i.total = Math.max(0, number(a, 0) || 0)), null != r && (i.pageSize = clampPageSize(r)), null != n && (i.page = Math.max(1, number(n, 1) || 1)); var pages = Math.max(1, Math.ceil(Math.max(0, i.total || 0) / Math.max(1, i.pageSize || 20)) || 1); return i.page = Math.min(Math.max(1, i.page || 1), pages), i; }
+    function renderPagerHtml(e) {
+        e = e || {};
+        var a = Math.max(0, number(e.total, 0) || 0), n = clampPageSize(e.pageSize || 20), p = Math.max(1, number(e.page, 1) || 1), pages = Math.max(1, Math.ceil(a / Math.max(1, n)) || 1);
+        p = Math.min(p, pages);
+        var o = t(e.action || "paginationGo"), i = t(e.kind || ""), l = t(e.sizeClass || "app-standard-page-size"), s = function pagerAttrs(e, a, r) { e = t(e || ""), a = t(a || "data-pager-kind"); var n = attr("data-app-standard-pager", "1") + attr("data-pager-kind", e); return e && a && (n += attr(a, e)), e && "data-people-footer" === a && (n += attr("data-people-footer-size", e)), e && r && (n += attr(r, e)), n; }(i, t(e.dataName || "data-pager-kind"), e.extraDataName || ""), d = function pageSizeOptions(e) { var t = {}, a = []; return [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].forEach(function (e) { t[e] = !0; }), e && !t[e] && (t[e] = !0), Object.keys(t).map(Number).filter(function (e) { return e > 0; }).sort(function (e, t) { return e - t; }).forEach(function (e) { a.push(e); }), a; }(n).map(function (e) { return '<option value="' + e + '" ' + (e === n ? "selected" : "") + ">" + e + "</option>"; }).join("");
+        return '<div class="app-table-pager no-print" data-app-table-pager-owner="AppTablePager:production-standard" data-total="' + a + '" data-page="' + p + '" data-page-size="' + n + '" data-action="' + r(o) + '"' + s + '><div class="app-table-pager-left"><label class="app-table-pager-label">แสดงข้อมูล <select class="form-select form-select-sm app-table-page-size ' + r(l) + '"' + s + ' aria-label="จำนวนแถวต่อหน้า">' + d + '</select> แถว/หน้า</label><span class="app-table-pager-count">หน้า ' + p + "/" + pages + "· รวม" + a.toLocaleString("th-TH") + ' รายการ</span></div><div class="app-table-pager-pages btn-group btn-group-sm" role="group" aria-label="เปลี่ยนหน้าตาราง">' + function pagesHtml(e, pages, t) {
+            var a = "", n = Math.max(1, e - 3), p = Math.min(pages, n + 6);
+            function btn(e, a, n, p) { return '<button type="button" class="btn btn-sm ' + (n ? "btn-primary active" : "btn-outline-primary") + '" data-action="paginationGo" data-page="' + a + '" data-page-callback="' + r(t || "paginationGo") + '" ' + (p ? 'disabled aria-disabled="true"' : "") + ">" + r(e) + "</button>"; }
+            n = Math.max(1, p - 6), a += btn("‹", Math.max(1, e - 1), !1, e <= 1);
+            for (var o = n; o <= p; o++)
+                a += btn(String(o), o, o === e, !1);
+            return a + btn("›", Math.min(pages, e + 1), !1, e >= pages);
+        }(p, pages, o) + "</div></div>";
+    }
+    function findTableForFooter(e) {
+        if (!e)
+            return null;
+        for (var t = null, a = e.previousElementSibling; a && !t;)
+            a.matches && a.matches("table") ? t = a : a.querySelector && (t = a.querySelector("table")), a = a.previousElementSibling;
+        if (!t && e.parentNode && e.parentNode.querySelector && (t = e.parentNode.querySelector("table")), !t && e.closest) {
+            var r = e.closest(".app-table-scroll,.table-responsive,.app-table-shell,.table-custom,.card,.tab-pane,.page,.ps-tab,.adm-tab,.b-tab") || doc;
+            t = r && r.querySelector ? r.querySelector("table") : null;
+        }
+        return t;
+    }
+    function alignFooterToTable(e) {
+        try {
+            if (!(e = a(e)) || !e.parentNode)
+                return null;
+            (function installStandardFooterStyle() {
+                try {
+                    if (root.__APP_TABLE_PAGER_STANDARD_STYLE_CURRENT__)
+                        return;
+                    root.__APP_TABLE_PAGER_STANDARD_STYLE_CURRENT__ = !0;
+                    var e = doc.createElement("style");
+                    e.id = "app-table-pager-standard-style-current", e.textContent = ".app-table-footer{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow-x:hidden}.app-table-footer>.app-table-pager,.app-table-footer.app-table-pager{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow-x:hidden;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}.app-table-footer.app-table-pager-left{min-width:0;max-width:100%;flex:1 1 auto}.app-table-footer.app-table-pager-pages{flex:0 0 auto}.app-table-footer.app-table-page-size{width:auto;display:inline-block}", (doc.head || doc.documentElement).appendChild(e);
+                }
+                catch (e) {
+                    p("installStandardFooterStyle", e);
+                }
+            })(), e.classList && e.classList.add("app-table-footer", "no-print"), e.style.boxSizing = "border-box", e.style.width = "100%", e.style.maxWidth = "100%", e.style.minWidth = "0";
+            var t = findTableForFooter(e), r = t && t.closest && (t.closest(".app-table-scroll,.table-responsive,.app-table-shell,.table-custom") || t.parentNode) || e.parentNode;
+            if (r && r.classList && (r.classList.contains("app-table-scroll") || r.classList.contains("table-responsive") || r.classList.contains("app-table-shell") || r.classList.contains("table-custom")) && e.parentNode !== r)
+                try {
+                    r.appendChild(e);
+                }
+                catch (e) {
+                    p("alignFooter.move", e);
+                }
+            var n = Math.max(t && t.scrollWidth || 0, t && t.offsetWidth || 0, r && r.scrollWidth || 0, r && r.clientWidth || 0, e.parentNode && e.parentNode.clientWidth || 0);
+            return n && (e.style.minWidth = n + "px"), e.setAttribute && e.setAttribute("data-app-table-footer-width-owner", "AppTablePager:table-width-sync"), e;
+        }
+        catch (t) {
+            return p("alignFooterToTable", t), e;
+        }
+    }
+    function visibleDataRows(e) {
+        if (!e)
+            return [];
+        var a = e.tBodies && e.tBodies[0];
+        return Array.prototype.slice.call((a || e).querySelectorAll("tr")).filter(function (e) {
+            if (e.classList && e.classList.contains("app-table-state-row"))
+                return !1;
+            var a = e.children || [];
+            if (1 === a.length && a[0].hasAttribute && a[0].hasAttribute("colspan")) {
+                var r = t(e.textContent);
+                if (/ไม่พบ|ไม่มีข้อมูล|กำลังโหลด|โหลดข้อมูล|error|ผิดพลาด/i.test(r))
+                    return !1;
+            }
+            return !0;
+        });
+    }
+    function applyLocalDomPaging(e, t) {
+        try {
+            if (e = a(e), t = t || {}, !e || !0 === t.serverPaged || !1 === t.localDomPaging)
+                return !1;
+            var r = visibleDataRows(findTableForFooter(e));
+            if (!r.length)
+                return !1;
+            var n = Math.max(0, number(t.total, r.length) || r.length), o = clampPageSize(t.pageSize || 20), i = Math.max(1, number(t.page, 1) || 1), pages = Math.max(1, Math.ceil(n / o) || 1);
+            if (i = Math.min(i, pages), r.length < n && r.length <= o)
+                return !1;
+            var l = (i - 1) * o, s = l + o;
+            return r.forEach(function (e, t) { var a = t >= l && t < s; e.style.display = a ? "" : "none", e.hidden = !a, e.classList && e.classList.toggle("app-row-paged-hidden", !a); }), e.setAttribute("data-app-local-dom-paging", "1"), !0;
+        }
+        catch (e) {
+            return p("applyLocalDomPaging", e), !1;
+        }
+    }
+    function renderStandardFooter(e, r) {
+        r = r || {};
+        var o = a(e) || e;
+        if (!o)
+            return null;
+        var i = Math.max(0, number(r.total, 0) || 0), l = clampPageSize(r.pageSize || 20), s = Math.max(1, number(r.page, 1) || 1);
+        try {
+            o.classList && o.classList.add("app-table-footer", "no-print"), o.setAttribute("data-app-table-footer-owner", "AppTablePager:renderStandardFooter"), o.setAttribute("data-app-footer-total", String(i)), o.setAttribute("data-app-footer-page-size", String(l)), o.setAttribute("data-app-footer-page", String(s)), o.setAttribute("data-app-footer-action", t(r.action || "paginationGo")), o.setAttribute("data-app-footer-kind", t(r.kind || o.id || ""));
+        }
+        catch (e) {
+            p("renderStandardFooter.mark", e);
+        }
+        return alignFooterToTable(o), n(o, renderPagerHtml({ total: i, pageSize: l, page: s, action: r.action || "paginationGo", kind: r.kind || o.id || "", sizeClass: r.sizeClass || "app-standard-page-size", dataName: r.dataName || "data-pager-kind", extraDataName: r.extraDataName || "" }), { moduleName: "AppTablePager.renderStandardFooter" }), applyLocalDomPaging(o, { total: i, pageSize: l, page: s, serverPaged: r.serverPaged, localDomPaging: r.localDomPaging }), alignFooterToTable(o), o;
+    }
+    function updateLocalFooter(e, a, r) {
+        var n = e && e.closest ? e.closest(".app-table-pager") : null, p = n && n.parentNode;
+        if (!p || !p.classList || !p.classList.contains("app-table-footer"))
+            return !1;
+        var o = number(p.getAttribute("data-app-footer-total"), 0) || visibleDataRows(findTableForFooter(p)).length, i = t(p.getAttribute("data-app-footer-action") || n && n.getAttribute("data-action") || "paginationGo"), l = t(p.getAttribute("data-app-footer-kind") || p.id || "");
+        return r = r || number(p.getAttribute("data-app-footer-page-size"), 20), a = a || number(p.getAttribute("data-app-footer-page"), 1), renderStandardFooter(p, { total: o, pageSize: r, page: a, action: i, kind: l, sizeClass: "app-standard-page-size" }), !0;
+    }
+}(window, document);
+</script>
+<script id="app-mobile-table-scroll-owner-current">
+(function(root,doc){
+  "use strict";
+  var OWNER="app-mobile-table-scroll-owner-current";
+  var WRAP="app-mobile-table-scroll app-mobile-scroll-owner";
+  var WRAPPER_SELECTOR=".table-responsive,.app-table-scroll,.app-table-shell,.app-table-responsive,.app-mobile-table-scroll,.data-table-wrap,.report-guard,.modern-dash-table-wrap,.layer-table";
+  var SKIP_SELECTOR=".app-print-standard,.app-standard-print-table,.print-only,.no-print-table-scroll,.swal2-container,#login-page,script,template";
+  function isElement(n){return n&&n.nodeType===1;}
+  function markWrapper(w){
+    if(!isElement(w))return;
+    w.classList.add("app-mobile-scroll-owner");
+    if(!w.hasAttribute("tabindex"))w.setAttribute("tabindex","0");
+    if(!w.hasAttribute("role"))w.setAttribute("role","region");
+    if(!w.hasAttribute("aria-label"))w.setAttribute("aria-label","ตารางข้อมูล เลื่อนซ้ายขวาได้");
+    w.setAttribute("data-mobile-table-scroll-owner",OWNER);
+  }
+  function shouldSkip(table){
+    if(!isElement(table)||table.__appMobileTableScrollDone)return true;
+    if(table.closest&&table.closest(SKIP_SELECTOR))return true;
+    return false;
+  }
+  function ensure(table){
+    if(shouldSkip(table))return;
+    table.__appMobileTableScrollDone=true;
+    var wrapper=table.closest&&table.closest(WRAPPER_SELECTOR);
+    if(wrapper&&wrapper!==table){markWrapper(wrapper);return;}
+    var parent=table.parentNode;
+    if(!parent||!parent.insertBefore)return;
+    var box=doc.createElement("div");
+    box.className=WRAP;
+    markWrapper(box);
+    parent.insertBefore(box,table);
+    box.appendChild(table);
+  }
+  function scan(scope){
+    scope=isElement(scope)?scope:doc;
+    var tables=[];
+    try{tables=Array.prototype.slice.call(scope.querySelectorAll?scope.querySelectorAll("table"):[]);}catch(_e){tables=[];}
+    tables.forEach(ensure);
+  }
+  function schedule(scope){
+    root.clearTimeout(root.__appMobileTableScrollTimer__);
+    root.__appMobileTableScrollScope__=scope||doc;
+    root.__appMobileTableScrollTimer__=root.setTimeout(function(){scan(root.__appMobileTableScrollScope__||doc);},60);
+  }
+  root.AppMobileTableScrollOwner={scan:scan,schedule:schedule,owner:OWNER};
+  if(doc.readyState==="loading")doc.addEventListener("DOMContentLoaded",function(){schedule(doc);},{once:true});else schedule(doc);
+  root.addEventListener("load",function(){schedule(doc);},{once:true});
+  doc.addEventListener("click",function(){schedule(doc);},true);
+  if(root.MutationObserver){
+    try{new MutationObserver(function(list){for(var i=0;i<list.length;i++){if(list[i].addedNodes&&list[i].addedNodes.length){schedule(doc);break;}}}).observe(doc.documentElement,{childList:true,subtree:true});}catch (_e) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Core_Runtime.html.ignored", _e); }
+  }
+})(window,document);
+</script>
+<script id="app-table-text-layout-owner-current">
+(function(root,doc){
+  "use strict";
+  if(root.__APP_TABLE_TEXT_LAYOUT_OWNER__)return;
+  root.__APP_TABLE_TEXT_LAYOUT_OWNER__="app-table-text-layout-owner-current";
+  var TABLE_SELECTOR=".table-responsive table,.app-table-scroll table,.app-table-shell table,.app-mobile-scroll-owner table,.app-mobile-table-scroll table,.data-table-wrap table,.report-guard table,.modern-dash-table-wrap table,.layer-table table,.budget-table-wrap table,.meeting-table-wrap table,.case-table-wrap table,.tracking-table-wrap table,.people-table-wrap table";
+  var SKIP_SELECTOR="#login-page,.swal2-container,.app-print-standard,.app-standard-print-table,.print-only,.no-print-table-scroll,template,script";
+  var pending=false;
+  function isElement(x){return !!(x&&x.nodeType===1);}
+  function text(cell){return String(cell&&cell.textContent||"").replace(/\s+/g," ").trim();}
+  function hasInteractive(cell){return !!(cell&&cell.querySelector&&cell.querySelector("button,.btn,a.dropdown-item,.dropdown,select,input,textarea,.form-check,.btn-group,[role='button']"));}
+  function clear(cell){cell.classList.remove("app-table-cell-long","app-table-cell-text","app-table-cell-date","app-table-cell-number","app-table-cell-status","app-table-cell-actions");}
+  function classify(cell){
+    if(!isElement(cell)||cell.tagName!=="TD")return;
+    if(cell.closest&&cell.closest(SKIP_SELECTOR))return;
+    clear(cell);
+    var value=text(cell);
+    if(hasInteractive(cell)){cell.classList.add("app-table-cell-actions");return;}
+    if(cell.querySelector&&cell.querySelector(".badge,.app-badge,.status-badge,[class*='status']")){cell.classList.add("app-table-cell-status");return;}
+    if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(value)||/^\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2}$/.test(value)){cell.classList.add("app-table-cell-date");return;}
+    if(/^[-+]?\d[\d,]*(?:\.\d+)?(?:\s*(?:บาท|ครั้ง|รายการ|%))?$/.test(value)){cell.classList.add("app-table-cell-number");return;}
+    if(value.length>=42||/[\n\r]/.test(cell.textContent||"")||/[ก-๙A-Za-z]{18,}/.test(value)){cell.classList.add("app-table-cell-long");return;}
+    if(value){cell.classList.add("app-table-cell-text");}
+  }
+  function decorateTable(table){
+    if(!isElement(table)||table.closest&&table.closest(SKIP_SELECTOR))return;
+    table.classList.add("app-table-text-owner");
+    var cells=[];
+    try{cells=Array.prototype.slice.call(table.querySelectorAll("tbody td"));}catch(_e){cells=[];}
+    cells.forEach(classify);
+  }
+  function run(scope){
+    pending=false;
+    var rootNode=scope&&scope.querySelectorAll?scope:doc;
+    var tables=[];
+    try{tables=Array.prototype.slice.call(rootNode.querySelectorAll(TABLE_SELECTOR));}catch(_e){tables=[];}
+    tables.forEach(decorateTable);
+  }
+  function schedule(scope){
+    if(pending)return;
+    pending=true;
+    var fire=function(){run(scope||doc);};
+    if(root.requestAnimationFrame)root.requestAnimationFrame(fire);else setTimeout(fire,32);
+  }
+  if(doc.readyState==="loading")doc.addEventListener("DOMContentLoaded",function(){schedule(doc);},{once:true});else schedule(doc);
+  root.addEventListener("load",function(){schedule(doc);},{once:true});
+  ["app:route:changed","app:data:rendered","app:page:rendered","shown.bs.tab","shown.bs.modal"].forEach(function(name){doc.addEventListener(name,function(ev){schedule(ev&&ev.target||doc);},true);});
+  try{new MutationObserver(function(list){for(var i=0;i<list.length;i++){if(list[i].addedNodes&&list[i].addedNodes.length){schedule(doc);break;}}}).observe(doc.documentElement,{childList:true,subtree:true});}catch (_e) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Core_Runtime.html.ignored", _e); }
+})(window,document);
+</script>

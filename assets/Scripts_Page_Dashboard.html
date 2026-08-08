@@ -1,0 +1,1210 @@
+<style id="p0-deferred-style-dashboard-current">#p-dash .card canvas{max-width:100%}#dash-cards .card,#p-dash .card{transition:box-shadow .18s ease,transform .18s ease}#dash-cards .card:hover,#p-dash .card:hover{box-shadow:0 10px 24px rgba(0,0,0,.08)}#p-dash .card{border:1px solid rgba(15,23,42,.06);border-radius:18px;box-shadow:0 14px 34px rgba(15,23,42,.07)}#dash-cards .card{border-radius:18px;overflow:hidden;position:relative}#dash-cards .card::after{content:"";position:absolute;inset:auto 14px 10px 14px;height:3px;border-radius:999px;background:rgba(255,255,255,.35)}#p-dash .smart-dashboard-card{background:linear-gradient(135deg,#ffffff 0%,var(--app-surface-muted) 100%);border:1px solid rgba(0,30,60,.10)}#p-dash .smart-dashboard-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eff6ff;color:#001e3c;font-weight:700;font-size:.78rem;margin:3px 5px 3px 0}#p-dash .smart-dashboard-muted{color:var(--app-muted);font-size:.88rem;line-height:1.65}#p-dash .smart-dashboard-score{font-size:clamp(28px,5vw,44px);font-weight:900;color:#001e3c;line-height:1}.modern-dashboard-page{padding-bottom:22px;background:radial-gradient(circle at 8% 2%,rgba(37,99,235,.08),transparent 30%),radial-gradient(circle at 92% 10%,rgba(20,184,166,.10),transparent 32%)}.modern-dash-hero{position:relative;overflow:hidden;padding:24px;border-radius:28px;background:linear-gradient(135deg,#001e3c 0%,#063462 48%,#0f766e 100%);box-shadow:0 24px 60px rgba(0,30,60,.22);color:#fff}.modern-dash-hero-bg{position:absolute;inset:0;background:radial-gradient(circle at 78% 22%,rgba(255,255,255,.18),transparent 24%),linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,0));opacity:.95;pointer-events:none}.modern-dash-eyebrow{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.12);color:#dbeafe;font-size:.78rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.modern-dash-title{font-size:clamp(1.35rem,2.6vw,2.25rem);font-weight:900;line-height:1.25;color:#fff}.modern-dash-subtitle{color:rgba(255,255,255,.78);max-width:780px;line-height:1.7}.modern-dash-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;color:#e0f2fe;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);font-weight:700;font-size:.86rem}.modern-dash-command-panel{position:relative;display:grid;grid-template-columns:auto 1px 1fr;grid-template-areas:"score divider meta" "button button button";align-items:center;gap:14px;padding:18px;border-radius:22px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.15);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.modern-dash-command-score{font-size:clamp(2.15rem,5vw,3.35rem);font-weight:950;line-height:1;color:#fff;letter-spacing:-.06em}.modern-dash-command-divider{grid-area:divider;width:1px;height:72px;background:rgba(255,255,255,.20)}.modern-dash-command-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.modern-dash-command-meta div{padding:10px;border-radius:16px;background:rgba(255,255,255,.12);text-align:center}.modern-dash-command-meta span{display:block;font-size:1.25rem;font-weight:900;color:#fff;line-height:1}.modern-dash-command-meta small{display:block;margin-top:5px;color:rgba(255,255,255,.70);font-size:.72rem}.modern-dash-refresh{grid-area:button;justify-self:end;font-weight:800;color:#001e3c;box-shadow:0 10px 24px rgba(15,23,42,.16)}.modern-dash-section-label{color:var(--app-muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;font-weight:900;margin-bottom:4px}.modern-dash-card,.modern-dash-insight-card{background:rgba(255,255,255,.94);border:1px solid rgba(15,23,42,.07);border-radius:24px;box-shadow:0 18px 46px rgba(15,23,42,.08);overflow:hidden}.modern-dash-insight-card{padding:20px}.modern-dash-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 10px}.modern-dash-card-head.compact{padding-bottom:14px;border-bottom:1px solid rgba(15,23,42,.06)}.modern-dash-chart{position:relative;height:310px;padding:8px 16px 18px}.modern-dash-progress-box{min-width:230px;padding:16px;border-radius:20px;background:var(--app-surface-muted);border:1px solid var(--app-border)}.modern-dash-progress{height:12px;border-radius:999px;background:var(--app-border);overflow:hidden}.modern-dash-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2563eb,#14b8a6);transition:width .24s ease}.modern-dash-insight-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border-radius:999px;background:#eff6ff;color:#1e3a8a;font-weight:800;font-size:.82rem}.modern-dash-insight-pill.danger{background:#fff1f2;color:#be123c}.modern-dash-table-wrap{padding:0 14px 16px}.modern-dash-table{border-collapse:separate;border-spacing:0 8px}.modern-dash-table tr{background:var(--app-surface-muted)}.modern-dash-table td{border:0;padding:10px 12px;vertical-align:middle}.modern-dash-table td:first-child{border-radius:14px 0 0 14px}.modern-dash-table td:last-child{border-radius:0 14px 14px 0}.modern-dash-loading{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:118px;border-radius:24px;background:#fff;border:1px solid rgba(15,23,42,.06);color:#475569;font-weight:800;box-shadow:0 18px 42px rgba(15,23,42,.08)}.modern-dash-loader{width:18px;height:18px;border-radius:50%;border:3px solid #dbeafe;border-top-color:#2563eb;animation:modernDashSpin .8s linear infinite}@media (max-width:991.98px){.modern-dash-hero{padding:18px;border-radius:22px}.modern-dash-command-panel{grid-template-columns:1fr;grid-template-areas:"score" "meta" "button"}.modern-dash-command-divider{display:none}.modern-dash-command-meta{grid-template-columns:repeat(3,1fr)}.modern-dash-refresh{justify-self:stretch}.modern-dash-chart{height:290px}}@media (max-width:575.98px){.modern-dash-command-meta{grid-template-columns:1fr}.modern-dash-chart{height:270px}}#p-dash .modern-dash-table-wrap{overflow:visible;max-height:none;height:auto;padding-bottom:0}#p-dash .modern-dash-table{min-width:0;width:100%;table-layout:auto}#p-dash .modern-dash-table td{white-space:normal;word-break:break-word;padding:.52rem .58rem}#p-dash .modern-dash-card{min-height:100%;overflow:visible}#p-dash .app-table-scroll,#p-dash .table-responsive{overflow:visible;box-shadow:none}#p-dash .modern-dash-loader.mini{width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:-2px}#p-dash .modern-dash-loading{min-height:74px}@media (min-width:1200px){#p-dash .row>[class*="col-xl-3"],#p-dash .row>[class*="col-xl-5"],#p-dash .row>[class*="col-xl-7"]{flex:0 0 50%;max-width:50%}}html[data-user-role="viewer"] #p-dash #table-budget-summary,html[data-user-role="viewer"] #p-dash #table-budget-status-summary,html[data-user-role="viewer"] #p-dash #table-letter{display:none!important}#p-dash.modern-dashboard-page{max-width:100%;overflow-x:hidden}#p-dash .modern-dash-card{display:flex;flex-direction:column;min-width:0;min-height:100%;overflow:hidden}#p-dash .modern-dash-card-head{flex:0 0 auto;min-width:0}#p-dash .modern-dash-card-head h6{line-height:1.35;white-space:normal;word-break:break-word}#p-dash .modern-dash-layer,#p-dash .modern-dash-table-wrap{flex:1 1 auto;display:block;width:100%;max-width:100%;min-width:0;overflow:hidden;padding:0 14px 16px}#p-dash .modern-dash-table{width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0 8px}#p-dash .modern-dash-table tbody{width:100%}#p-dash .modern-dash-table tr,#p-dash .modern-dash-table .modern-dash-layer-row{display:table-row;background:var(--app-surface-muted)}#p-dash .modern-dash-table td{white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.35;padding:.54rem .62rem}#p-dash .modern-dash-table td:first-child{width:68%}#p-dash .modern-dash-table td:last-child{width:32%;text-align:right}#p-dash .modern-total-row td,#p-dash .modern-section-row td{background:rgba(15,61,117,.06)}#p-dash .app-table-pager,#p-dash .app-table-pager-left,#p-dash .app-table-pager-pages,#p-dash .app-table-page-size{display:none}#p-dash .app-row-paged-hidden,#p-dash .modern-dash-table tr{display:table-row}#p-dash .table-responsive,#p-dash .app-table-scroll{overflow:visible;box-shadow:none}@media (min-width:1200px){#p-dash .row>[class*="col-xl-3"]{flex:0 0 50%;max-width:50%}#p-dash .row>[class*="col-xl-5"]{flex:0 0 41.666667%;max-width:41.666667%}#p-dash .row>[class*="col-xl-7"]{flex:0 0 58.333333%;max-width:58.333333%}}@media (max-width:575.98px){#p-dash .modern-dash-layer,#p-dash .modern-dash-table-wrap{padding:0 10px 12px}#p-dash .modern-dash-table td{font-size:.82rem;padding:.48rem .5rem}}.modern-dashboard-page .modern-dash-card,.modern-dashboard-page .modern-kpi-card,.modern-dashboard-page .dashboard-card,#p-dash .modern-dash-card,#p-dash .dashboard-card{min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box}.modern-dashboard-page .modern-dash-table-wrap,#p-dash .modern-dash-table-wrap,.modern-dashboard-page .app-table-scroll,#p-dash .app-table-scroll{max-width:100%;width:100%;overflow-x:hidden;overflow-y:visible;box-sizing:border-box}.modern-dashboard-page table,#p-dash table,.modern-dashboard-page .modern-dash-table,#p-dash .modern-dash-table{width:100%;max-width:100%;min-width:0;table-layout:fixed;border-collapse:collapse}.modern-dashboard-page th,#p-dash th,.modern-dashboard-page td,#p-dash td{white-space:normal;word-break:break-word;overflow-wrap:anywhere;vertical-align:top}.modern-dashboard-page td:last-child,#p-dash td:last-child{width:34%;min-width:72px}.modern-dashboard-page .app-table-pager,#p-dash .app-table-pager,.modern-dashboard-page .table-pager,#p-dash .table-pager,.modern-dashboard-page .pagination,#p-dash .pagination,.modern-dashboard-page [data-table-pager],#p-dash [data-table-pager]{display:none}.modern-dashboard-page .modern-dash-table tr,#p-dash .modern-dash-table tr{display:table-row}#p-dash .modern-dash-card-body,#p-dash .modern-dash-layer,#p-dash .modern-dash-table-wrap{min-width:0;max-width:100%;overflow:hidden}#p-dash .modern-dash-table td,#p-dash .modern-dash-table th{white-space:normal;word-break:break-word;overflow-wrap:anywhere}#p-dash .modern-dash-table td:last-child{white-space:nowrap;text-align:right;min-width:84px}.app-ui-standardized :where(.table-responsive,.app-table-scroll,.app-table-shell,.app-table-responsive,.table-custom,.layer-table,.data-table-wrap,.modern-dash-table-wrap){display:block;position:relative;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;overscroll-behavior-inline:contain;border-radius:var(--app-radius-md);border:1px solid var(--app-ui-line-soft);background:#fff}#p-dash:where(.modern-dash-card,.modern-kpi-card,.dashboard-card){min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box}#p-dash:where(.modern-dash-table-wrap,.app-table-scroll){max-width:100%;width:100%;overflow-x:auto;overflow-y:visible;box-sizing:border-box}#p-dash:where(table,.modern-dash-table){width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse}#p-dash:where(th,td){white-space:normal;word-break:break-word;overflow-wrap:anywhere;vertical-align:top}#p-dash .modern-dash-table td:last-child{width:34%;min-width:72px}#p-dash:where(.app-table-pager,.table-pager,.pagination,[data-table-pager]){position:static;float:none;width:100%;margin-top:.75rem;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}#p-dash .modern-dash-hero{position:relative;display:block;overflow:hidden;text-align:left;padding:1.35rem 1.45rem;box-sizing:border-box}#p-dash .modern-dash-hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}#p-dash .modern-dash-hero>.row{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;width:100%;margin:0;flex-wrap:nowrap}#p-dash .modern-dash-hero>.row>[class*="col-"]{padding-left:0;padding-right:0;min-width:0;max-width:none;float:none}#p-dash .modern-dash-hero>.row>[class*="col-"]:first-child{flex:1 1 62%;width:auto;text-align:left;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}#p-dash .modern-dash-hero>.row>[class*="col-"]:last-child{flex:0 0 min(420px,38%);width:auto;margin-left:auto;display:flex;justify-content:flex-end;align-items:center}#p-dash .modern-dash-title{max-width:780px;line-height:1.25;margin-right:auto;text-align:left}#p-dash .modern-dash-subtitle{max-width:760px;text-align:left}#p-dash .modern-dash-command-panel{width:100%;max-width:420px;margin-left:auto;box-sizing:border-box}@media(max-width:991.98px){#p-dash .modern-dash-hero{text-align:left;padding:1.1rem}#p-dash .modern-dash-hero>.row{display:flex;flex-direction:column;align-items:stretch;gap:1rem;flex-wrap:nowrap}#p-dash .modern-dash-hero>.row>[class*="col-"]{flex:1 1 auto;width:100%;max-width:100%;margin-left:0}#p-dash .modern-dash-command-panel{max-width:100%;margin-left:0;justify-self:stretch}}html[data-user-role="viewer"] #p-dash .dashboard-viewer-hidden,
+html[data-user-role="viewer"] #p-dash .dashboard-budget-card,
+html[data-user-role="viewer"] #p-dash .dashboard-tracking-card,
+html[data-user-role="viewer"] #p-dash .dashboard-budget-fy-pill,
+html[data-user-role="viewer"] #p-dash #dash-budget-fy-label,
+html[data-user-role="viewer"] #p-dash [data-dashboard-viewer-hidden="budget"],
+html[data-user-role="viewer"] #p-dash [data-dashboard-viewer-hidden="tracking"]{display:none!important;visibility:hidden!important;}html[data-user-role="viewer"] #p-dash .modern-dash-subtitle::after{content:"";}#p-dash,#p-dash *{box-sizing:border-box;}#p-dash{width:100%;max-width:100%;overflow-x:hidden;}#p-dash .row{max-width:100%;margin-left:0;margin-right:0;}#p-dash [class*="col-"]{min-width:0;}#p-dash .modern-dash-card,#p-dash .modern-dash-insight-card,#p-dash .modern-dash-hero,#p-dash .modern-dash-command-panel{max-width:100%;min-width:0;overflow:hidden;}#p-dash .modern-dash-card-head{min-width:0;gap:.65rem;}#p-dash .modern-dash-card-head h6,#p-dash .modern-dash-section-label,#p-dash .modern-dash-subtitle,#p-dash .modern-dash-title{max-width:100%;overflow-wrap:anywhere;word-break:normal;}#p-dash .modern-dash-table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:hidden!important;overflow-y:visible!important;}#p-dash table.modern-dash-table{width:100%!important;max-width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:separate;border-spacing:0 .45rem;}#p-dash table.modern-dash-table td{white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:top;line-height:1.45;max-width:0;}#p-dash table.modern-dash-table td:first-child,#p-dash table.modern-dash-table .modern-dash-label{width:68%;text-align:left;}#p-dash table.modern-dash-table td:last-child,#p-dash table.modern-dash-table .modern-dash-value{width:32%;min-width:58px;text-align:right;}@media (max-width:1366px){#p-dash{padding-inline:clamp(8px,1.8vw,18px)!important;}#p-dash .modern-dash-hero{padding:clamp(14px,2.4vw,22px)!important;border-radius:18px;}#p-dash .modern-dash-command-panel{display:grid!important;grid-template-columns:1fr!important;gap:.75rem!important;text-align:left;}#p-dash .modern-dash-command-divider{display:none!important;}#p-dash .modern-dash-command-meta{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;width:100%;}#p-dash .modern-dash-command-meta>div{min-width:0;overflow:hidden;}#p-dash .modern-dash-card{border-radius:16px;}#p-dash .modern-dash-card-head{align-items:flex-start!important;flex-wrap:wrap!important;padding:1rem 1rem .65rem!important;}#p-dash .modern-dash-table-wrap{padding:.15rem .65rem .75rem!important;}#p-dash table.modern-dash-table td{font-size:.9rem;padding:.55rem .45rem!important;}#p-dash table.modern-dash-table td:first-child{width:64%;}#p-dash table.modern-dash-table td:last-child{width:36%;}}@media (max-width:767.98px){#p-dash{padding-inline:8px!important;}#p-dash .modern-dash-title{font-size:1.28rem!important;line-height:1.35;}#p-dash .modern-dash-subtitle{font-size:.92rem!important;}#p-dash .modern-dash-pill{max-width:100%;min-width:0;white-space:normal!important;overflow-wrap:anywhere;}#p-dash .modern-dash-command-meta{grid-template-columns:1fr!important;}#p-dash .modern-dash-chart{min-height:220px;max-height:260px;overflow:hidden;}#p-dash table.modern-dash-table{border-spacing:0 .38rem;}#p-dash table.modern-dash-table tr{display:table-row;}#p-dash table.modern-dash-table td{font-size:.86rem!important;padding:.52rem .38rem!important;}#p-dash table.modern-dash-table td:first-child{width:62%;}#p-dash table.modern-dash-table td:last-child{width:38%;min-width:52px;}#p-dash .modern-table-dot{flex:0 0 auto;}}</style>
+<script type="text/x-template"id="tpl-page-dashboard">
+<div class="page modern-dashboard-page"id="p-dash">
+<section class="modern-dash-hero mb-4"aria-labelledby="modern-dash-title">
+<div class="modern-dash-hero-bg"></div>
+<div class="row g-3 align-items-center position-relative">
+<div class="col-lg-7">
+<div class="modern-dash-eyebrow"><i class="fas fa-shield-halved me-2"></i>Modern Committee</div>
+<h1 id="modern-dash-title"class="modern-dash-title app-page-heading mb-2">รายงานสถิติการพิจารณาของคณะกรรมาธิการ</h1>
+<p class="modern-dash-subtitle mb-3">ภาพรวมเรื่องพิจารณา การประชุม และสัญญาณที่ต้องติดตามในหน้าจอเดียว</p>
+<div class="d-flex flex-wrap gap-2 align-items-center">
+<span class="modern-dash-pill"><i class="fas fa-clock me-1"></i><span id="dash-last-updated">กำลังโหลดข้อมูล...</span></span>
+<span class="modern-dash-pill dashboard-budget-fy-pill" data-dashboard-viewer-hidden="budget"><i class="fas fa-calendar-check me-1"></i><span id="dash-budget-fy-label">ปีงบประมาณ-</span></span>
+</div>
+</div>
+<div class="col-lg-5">
+<div class="modern-dash-command-panel">
+<div>
+<div class="modern-dash-command-score"id="dash-smart-score">-</div>
+</div>
+<div class="modern-dash-command-divider"></div>
+<div class="modern-dash-command-meta">
+<div><span id="dash-modern-total">0</span><small>เรื่องทั้งหมด</small></div>
+<div><span id="dash-modern-active">0</span><small>กำลังดำเนินการ</small></div>
+<div><span id="dash-modern-overdue">0</span><small>ครบ/เลยกำหนด</small></div>
+</div>
+<button type="button"class="btn btn-light btn-sm rounded-pill modern-dash-refresh"id="dash-refresh-btn">
+<i class="fas fa-rotate me-1"></i>รีเฟรชข้อมูล
+</button>
+</div>
+</div>
+</div>
+</section>
+
+<section class="modern-dash-section mb-4"aria-label="ตัวชี้วัดหลัก">
+<div class="row g-3"id="dash-cards"></div>
+</section>
+
+<section class="row g-3 mb-4"id="dash-smart-insights">
+<div class="col-12">
+<div class="modern-dash-insight-card">
+<div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+<div class="flex-grow-1">
+<div class="modern-dash-section-label">Smart Dashboard Insight</div>
+<h6 class="fw-bold text-navy mb-2"><i class="fas fa-wand-magic-sparkles me-2"></i>ภาพรวมสถานะระบบแบบอัจฉริยะ</h6>
+<div class="smart-dashboard-muted"id="dash-smart-summary">กำลังวิเคราะห์ข้อมูลภาพรวม...</div>
+<div class="mt-3 d-flex flex-wrap gap-2"id="dash-smart-pills"></div>
+</div>
+<div class="modern-dash-progress-box">
+<div class="small text-muted mb-2">ความคืบหน้าปิดงาน</div>
+<div class="modern-dash-progress"><span id="dash-modern-progress-bar"style="width:0%"></span></div>
+<div class="fw-bold mt-2"id="dash-modern-completion">0%</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="row g-3 mb-4">
+<div class="col-xl-6">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head">
+<div>
+<div class="modern-dash-section-label">Case Type Mix</div>
+<h6 class="fw-bold text-navy mb-0"><i class="fas fa-chart-pie me-2"></i>สัดส่วนประเภทเรื่องพิจารณา</h6>
+</div>
+</div>
+<div class="modern-dash-chart"><canvas id="typeChart"></canvas></div>
+</div>
+</div>
+<div class="col-xl-6">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head">
+<div>
+<div class="modern-dash-section-label">Topic Analytics</div>
+<h6 class="fw-bold text-navy mb-0"><i class="fas fa-chart-bar me-2"></i>สถิติตามประเด็นพิจารณา</h6>
+</div>
+</div>
+<div class="modern-dash-chart"><canvas id="topicChart"></canvas></div>
+</div>
+</div>
+</section>
+
+<section class="row g-3 mb-4">
+<div class="col-xl-6 dashboard-viewer-hidden dashboard-budget-card" data-dashboard-viewer-hidden="budget">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head">
+<div>
+<div class="modern-dash-section-label">Budget Overview</div>
+<h6 class="fw-bold text-navy mb-0"><i class="fas fa-wallet me-2"></i>งบประมาณปีล่าสุด</h6>
+</div>
+</div>
+<div class="modern-dash-table-wrap modern-dash-layer">
+<table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-budget-summary"></tbody></table>
+</div>
+</div>
+</div>
+<div class="col-xl-6 dashboard-viewer-hidden dashboard-budget-card" data-dashboard-viewer-hidden="budget">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head">
+<div>
+<div class="modern-dash-section-label">Budget Workflow</div>
+<h6 class="fw-bold text-navy mb-0"><i class="fas fa-chart-column me-2"></i>สรุปสถานะการคืนเงิน และรายงานค่าใช้จ่าย</h6>
+</div>
+</div>
+<div class="modern-dash-table-wrap modern-dash-layer">
+<table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-budget-status-summary"></tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<section class="row g-3">
+<div class="col-xl-3">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head compact"><h6 class="fw-bold mb-0"><i class="fas fa-layer-group me-2"></i>สถานะเรื่องพิจารณา</h6></div>
+<div class="modern-dash-table-wrap modern-dash-layer"><table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-case-status"></tbody></table></div>
+</div>
+</div>
+<div class="col-xl-3">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head compact"><h6 class="fw-bold mb-0"><i class="fas fa-list-ul me-2"></i>สถิติตามประเภทเรื่อง</h6></div>
+<div class="modern-dash-table-wrap modern-dash-layer"><table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-type"></tbody></table></div>
+</div>
+</div>
+<div class="col-xl-3">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head compact"><h6 class="fw-bold mb-0"><i class="fas fa-tags me-2"></i>สถิติตามประเด็นพิจารณา</h6></div>
+<div class="modern-dash-table-wrap modern-dash-layer"><table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-topic"></tbody></table></div>
+</div>
+</div>
+<div class="col-xl-3 dashboard-viewer-hidden dashboard-tracking-card" data-dashboard-viewer-hidden="tracking">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head compact"><h6 class="fw-bold mb-0"><i class="fas fa-envelope-open-text me-2"></i>สถิติติดตามหนังสือ</h6></div>
+<div class="modern-dash-table-wrap modern-dash-layer"><table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-letter"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<section class="row g-3 mt-1"aria-label="สถิติการประชุม">
+<div class="col-12">
+<div class="modern-dash-card h-100">
+<div class="modern-dash-card-head compact">
+<h6 class="fw-bold mb-0"><i class="fas fa-people-group me-2"></i>สถิติการประชุมและผลการพิจารณา</h6>
+<span class="small text-muted"id="dash-meeting-updated">เชื่อมโยงจากการประชุมคณะกรรมาธิการ</span>
+</div>
+<div class="modern-dash-table-wrap modern-dash-layer">
+<table class="table mb-0 small modern-dash-table no-app-pager dashboard-no-pager"data-app-pager="off"><tbody id="table-meeting-summary"></tbody></table>
+</div>
+</div>
+</div>
+</section>
+</div>
+</script>
+<!--C5_MOVED_AI_RUNTIME_FROM_CORE_TO_DASHBOARD-->
+
+<script>
+!function(){
+"use strict";
+var dashboardRoot=window,dashboardUtils=dashboardRoot.ScriptsUtils||{
+},dashboardDom=dashboardRoot.AppDom||dashboardUtils.dom||{
+},dashboardRender=dashboardRoot.DashboardRender=dashboardRoot.DashboardRender||{
+};
+function dashboardById(t){
+return dashboardDom.byId&&dashboardDom.byId(t)||dashboardUtils.byId&&dashboardUtils.byId(t)||("string"==typeof t?document.getElementById(t):t)
+}
+function dashboardEscapeHtml(t){
+return dashboardUtils.esc?dashboardUtils.esc(t):String(null==t?"":t).replace(/[&<>"']/g, function(t) {
+return{
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}
+[t]
+})
+}
+function dashboardFormatMoney(t){
+return dashboardUtils.fmtMoney?dashboardUtils.fmtMoney(t||0):String(Number(t||0).toLocaleString("th-TH"))
+}
+function asDashboardObject(t){
+return t&&"object"==typeof t&&!Array.isArray(t)?t:{
+}
+}
+function asDashboardArray(t){
+return Array.isArray(t)?t:[]
+}
+function dashboardNumber(t){
+return t=Number(t||0),isFinite(t)?t:0
+}
+function dashboardWarn(t,e,a){
+try{
+if(window.AppRuntime&&__appIsFn(window.AppRuntime.recordWarning))return window.AppRuntime.recordWarning(t,e,a||{
+});
+if(window.AppRuntime&&__appIsFn(window.AppRuntime.warn))return window.AppRuntime.warn(t,e,a||{
+});
+window.console&&__appIsFn(window.console.warn)&&window.console.warn("[DashboardWarn] "+String(t||"dashboard"),e||"",a||{
+})
+}
+catch(_qErr){
+return"function"==typeof __appObserve&&__appObserve(_qErr,"ec"),!1
+}
+return!1
+}
+function formatDashboardTimestamp(t){
+var e=t?new Date(t):new Date;
+return isNaN(e.getTime())&&(e=new Date),String(e.getDate()).padStart(2,"0")+"/"+String(e.getMonth()+1).padStart(2,"0")+"/"+(e.getFullYear()+543)+" "+String(e.getHours()).padStart(2,"0")+":"+String(e.getMinutes()).padStart(2,"0")+" น."
+}
+function renderDashboardHtml(e,a){
+if(dashboardRoot.AppDom&&__appIsFn(dashboardRoot.AppDom.renderHtml))return dashboardRoot.AppDom.renderHtml(e,a,{
+moduleName:"Dashboard.renderHtml"
+});
+var s=dashboardById(e);
+if(!s)return null;
+var r=null==a?"":String(a);
+return dashboardRoot.safeSetInnerHTML?dashboardRoot.safeSetInnerHTML(s,r,{
+moduleName:"Dashboard.renderHtml"
+}):(s.textContent=r,s)
+}
+function setDashboardText(t,e){
+var a=dashboardById(t);
+return a?(a.textContent=null==e?"":String(e),a):null
+}
+function dashboardHasHtml(t){
+var e=dashboardById(t);
+return!(!e||!String(e.innerHTML||"").trim())
+}
+function positiveDashboardRows(t){
+return asDashboardArray(t).filter(function(t){
+return dashboardNumber(t&&(t.count||t.total||t.value))>0
+})
+}
+function unwrapBudgetDashboardDto(value){
+var cur=value,guard=0;
+function isObj(v){return v&&typeof v==="object"&&!Array.isArray(v)}
+function hasBudgetShape(v){return isObj(v)&&!!(v.budgetStats||v.dashboardBudget||v.budget||v.byPlan||v.plans||v.rows||v.items||v.records||v.data&&Array.isArray(v.data)||v.workflowRows||v.statusRows||v.totalBudget!=null||v.totalPaid!=null||v.totalExpense!=null||v.totalRemain!=null||v.totalRemaining!=null||v.grandTotals||v.totals||v.overviewSection||v.workflowSection||v.reportSection||v.segments||v.statusSummary||v.workflowSummary||v.budgetWorkflow)}
+while(isObj(cur)&&guard++<12){
+if(hasBudgetShape(cur))break;
+if(isObj(cur.budgetStats)){cur=cur.budgetStats;continue}
+if(isObj(cur.dashboardBudget)){cur=cur.dashboardBudget;continue}
+if(isObj(cur.budget)){cur=cur.budget;continue}
+if(isObj(cur.dashboardDto)&&isObj(cur.dashboardDto.budgetStats)){cur=cur.dashboardDto.budgetStats;continue}
+if(isObj(cur.dto)&&isObj(cur.dto.budgetStats)){cur=cur.dto.budgetStats;continue}
+if(isObj(cur.result)){cur=cur.result;continue}
+if(isObj(cur.payload)){cur=cur.payload;continue}
+if(isObj(cur.value)){cur=cur.value;continue}
+if(isObj(cur.body)){cur=cur.body;continue}
+if(isObj(cur.data)){cur=cur.data;continue}
+break
+}
+if(isObj(cur)&&!hasBudgetShape(cur)&&isObj(cur.data)&&hasBudgetShape(cur.data))cur=cur.data;
+return isObj(cur)?cur:{}
+}
+function dashboardRole(){
+try{var e=(document.documentElement&&document.documentElement.getAttribute("data-user-role"))||"";if(!e&&dashboardRoot.AppStore&&__appIsFn(dashboardRoot.AppStore.get))e=dashboardRoot.AppStore.get("auth.role")||dashboardRoot.AppStore.get("user.role")||"";if(!e&&dashboardRoot.AppVue3Bridge&&dashboardRoot.AppVue3Bridge.state&&dashboardRoot.AppVue3Bridge.state.user)e=dashboardRoot.AppVue3Bridge.state.user.role||"";return String(e||"").toLowerCase().trim()}catch(_e){return""}
+}
+function dashboardIsViewer(){
+var e=dashboardRole();return !!e&&/^(viewer|view|read|reader|guest|ผู้ดู|ดูข้อมูล)$/.test(e)
+}
+function dashboardApplyViewerMode(){
+try{var e=dashboardIsViewer(),a=dashboardById("p-dash")||document;if(document.documentElement)document.documentElement.toggleAttribute("data-dashboard-viewer",e);Array.prototype.forEach.call(a.querySelectorAll(".dashboard-viewer-hidden,.dashboard-budget-card,.dashboard-tracking-card,[data-dashboard-viewer-hidden]"),function(t){try{t.hidden=e,t.style.display=e?"none":""}catch (_e) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _e); }});if(e){setDashboardText("dash-budget-fy-label","");renderDashboardHtml("table-letter","");renderDashboardHtml("table-budget-summary","");renderDashboardHtml("table-budget-status-summary","")}}catch(e){dashboardWarn("dashboard.viewerMode",e,{owner:"dashboard-r61"})}
+}
+dashboardRender.applyViewerMode=dashboardApplyViewerMode;
+function ensureDashboardLayout(){
+!function(){
+try{
+if(document.getElementById("dash-containment-style"))return!0;
+var t=["#p-dash.modern-dashboard-page{width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box;}",'#p-dash .row,#p-dash [class*="col-"]{min-width:0;}',"html[data-user-role=\"viewer\"] #p-dash .dashboard-viewer-hidden,html[data-user-role=\"viewer\"] #p-dash .dashboard-budget-card,html[data-user-role=\"viewer\"] #p-dash .dashboard-tracking-card,html[data-dashboard-viewer] #p-dash .dashboard-viewer-hidden{display:none!important;visibility:hidden!important;}","#p-dash .modern-dash-card,#p-dash .modern-dash-layer,#p-dash .modern-dash-table-wrap{width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box;}","#p-dash .modern-dash-card-head{min-width:0;gap:.65rem;flex-wrap:wrap;}","#p-dash .modern-dash-card-head h6,#p-dash .modern-dash-section-label,#p-dash .modern-dash-subtitle,#p-dash .modern-dash-title{max-width:100%;overflow-wrap:anywhere;word-break:normal;}","#p-dash .modern-dash-table-wrap{padding:.25rem .75rem .9rem;overflow-x:hidden!important;}","#p-dash .modern-dash-table{width:100%!important;max-width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:separate;border-spacing:0 .45rem;}","#p-dash .modern-dash-table tr{display:table-row;max-width:100%;}","#p-dash .modern-dash-table td{max-width:0;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;text-overflow:clip;vertical-align:top;line-height:1.45;}","#p-dash .modern-dash-table td:first-child,#p-dash .modern-dash-table .modern-dash-label{width:68%;text-align:left;}","#p-dash .modern-dash-table td:last-child,#p-dash .modern-dash-table .modern-dash-value{width:32%;min-width:58px;text-align:right;}","#p-dash .modern-dash-table .ps-4{padding-left:.85rem;}","@media(max-width:1366px){#p-dash{padding-inline:clamp(8px,1.8vw,18px)!important;}#p-dash .modern-dash-hero{padding:clamp(14px,2.4vw,22px)!important;border-radius:18px;}#p-dash .modern-dash-command-panel{display:grid!important;grid-template-columns:1fr!important;gap:.75rem!important;text-align:left;}#p-dash .modern-dash-command-divider{display:none!important;}#p-dash .modern-dash-command-meta{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;width:100%;}#p-dash .modern-dash-table-wrap{padding:.15rem .65rem .75rem!important;}#p-dash .modern-dash-table td{font-size:.9rem;padding:.55rem .45rem!important;}#p-dash .modern-dash-table td:first-child{width:64%;}#p-dash .modern-dash-table td:last-child{width:36%;}}","@media(max-width:767.98px){#p-dash{padding-inline:8px!important;}#p-dash .modern-dash-title{font-size:1.28rem!important;line-height:1.35;}#p-dash .modern-dash-subtitle{font-size:.92rem!important;}#p-dash .modern-dash-command-meta{grid-template-columns:1fr!important;}#p-dash .modern-dash-chart{min-height:220px;max-height:260px;overflow:hidden;}#p-dash .modern-dash-table td{font-size:.86rem!important;padding:.52rem .38rem!important;}#p-dash .modern-dash-table td:first-child{width:62%;}#p-dash .modern-dash-table td:last-child{width:38%;min-width:52px;}}","#p-dash .app-table-pager,#p-dash .table-pager,#p-dash .pagination,#p-dash [data-table-pager]{display:none;}"].join("\n"),e=document.createElement("style");
+return e.id="dash-containment-style",e.type="text/css",e.appendChild(document.createTextNode(t)),(document.head||document.documentElement).appendChild(e),!0
+}
+catch(t){
+return!1
+}
+}
+();
+try{
+var t=dashboardById("p-dash")||document;
+Array.prototype.forEach.call(t.querySelectorAll(".modern-dashboard-page table,.modern-dash-table"),function(t){
+try{
+t.classList.add("modern-dash-table"),t.setAttribute("data-app-pager","off"),t.setAttribute("data-no-pager","1"),t.style.width="100%",t.style.minWidth="0";
+var e=t.closest(".modern-dash-table-wrap,.app-table-scroll,.table-responsive");
+e&&(e.classList.add("modern-dash-table-wrap"),e.style.maxWidth="100%",e.style.overflowX="hidden")
+}
+catch(t){
+dashboardWarn("dashboard.containment.table",t,{
+owner:"dashboard-observability"
+})
+}
+}),Array.prototype.forEach.call(t.querySelectorAll(".app-table-pager,.table-pager,.pagination,.dataTables_paginate,[data-table-pager]"),function(t){
+try{
+t.closest(".modern-dashboard-page,#p-dash")&&(t.style.display="none")
+}
+catch(t){
+dashboardWarn("dashboard.containment.pager",t,{
+owner:"dashboard-observability"
+})
+}
+})
+}
+catch(t){
+dashboardWarn("dashboard.containment.apply",t,{
+owner:"dashboard-observability"
+})
+}
+dashboardApplyViewerMode();
+return!0
+}
+function y(t,e){
+return'<tr><td colspan="'+Number(t||1)+'" class="text-center p-4 text-muted">'+dashboardEscapeHtml(e||"ไม่พบข้อมูล")+"</td></tr>"
+}
+function h(t,e){
+return'<tr><td colspan="'+Number(t||1)+'" class="text-center p-4 text-muted"><span class="modern-dash-loader mini me-2"></span>'+dashboardEscapeHtml(e||"กำลังโหลดข้อมูล...")+"</td></tr>"
+}
+function f(t,e){
+t=asDashboardObject(t),e=asDashboardObject(e);
+var a=asDashboardObject(t.summary);
+function s(t){
+return null!=(t=asDashboardObject(t)).total||null!=t.totalMeetings||null!=t.meetingCount||null!=t.countMeetings||null!=t.recent||null!=t.recentMeetings||Array.isArray(t.byResult)||Array.isArray(t.byStatus)||Array.isArray(t.rows)||Array.isArray(t.items)||Array.isArray(t.meetingRows)||Array.isArray(t.meetingLogs)
+}
+for(var n=[e.meetings,t.meetings,t.meetingStats,t.meetingSummary,t.meeting,t.meetingData,a.meetings,a.meetingStats,a.meetingSummary,e,a,t],r={
+},l=0;
+l<n.length;
+l++)if(n[l]&&"object"==typeof n[l]&&!Array.isArray(n[l])&&s(n[l])){
+r=n[l];
+break
+}
+for(var c=[r.rows,r.items,r.records,r.list,r.data,r.history,r.meetingRows,r.meetingsRows,r.meetingLogs,t.meetingRows,t.meetingsRows,t.meetingLogs,t.meetingHistory,e.meetingRows,e.meetingLogs],u=[],m=0;
+m<c.length;
+m++)if(Array.isArray(c[m])){
+u=c[m];
+break
+}
+var p=dashboardNumber(null!=r.totalMeetings?r.totalMeetings:null!=r.meetingCount?r.meetingCount:null!=r.countMeetings?r.countMeetings:null!=r.total?r.total:null!=r.count?r.count:null!=t.totalMeetings?t.totalMeetings:null!=e.totalMeetings?e.totalMeetings:null!=a.totalMeetings?a.totalMeetings:u.length),b=dashboardNumber(null!=r.recent?r.recent:null==r.recentMeetings||Array.isArray(r.recentMeetings)?null!=t.recentMeetings?t.recentMeetings:null!=t.recent?t.recent:null!=e.recentMeetings?e.recentMeetings:a.recentMeetings:r.recentMeetings),g=asDashboardArray(r.byResult||r.byStatus||r.statusRows||r.resultRows||r.summaryRows||t.byResult||t.byStatus||a.byResult);
+if(!g.length&&u.length){
+var y={
+};
+u.forEach(function(t){
+t=asDashboardObject(t);
+var e=String(t.result||t.meetingResult||t.meetingStatus||t.status||t.noteStatus||t.conclusion||t.resolution||t.summary||t.note||t["ผลการพิจารณา"]||t["สถานะ"]||"ไม่ระบุผลการประชุม").trim()||"ไม่ระบุผลการประชุม";
+y[e]=(y[e]||0)+1
+}),g=Object.keys(y).map(function(t){
+return{
+label:t,count:y[t]
+}
+}).sort(function(t,e){
+return dashboardNumber(e.count)-dashboardNumber(t.count)
+})
+}
+return!p&&u.length&&(p=u.length),Object.assign({
+total:0,recent:0,byResult:[]
+},r,{
+total:p,recent:b,byResult:g
+})
+}
+function w(t){
+var e=t&&t.data&&"object"==typeof t.data&&!Array.isArray(t.data)?t.data:asDashboardObject(t),a=asDashboardObject(e.dashboardDto||e.dto||e.dashboard);
+if("phaseF-dashboard-status-read-model-current"===String(a.caseStats&&a.caseStats.statusReadModelStamp||a.meta&&a.meta.statusReadModelStamp||"")||"dashboard-canonical-dto-current"===a.contractVersion){
+var s=asDashboardObject(a.summary),n=Object.assign({
+},s,{
+total:dashboardNumber(s.totalCases||a.caseStats&&a.caseStats.total),pending:dashboardNumber(s.pendingCases),completed:dashboardNumber(s.completedCases),overdueLetters:dashboardNumber(s.overdueLetters),soonOverdue:dashboardNumber(s.soonOverdue),totalMeetings:dashboardNumber(s.totalMeetings),recentMeetings:dashboardNumber(s.recentMeetings),statusRows:asDashboardArray(a.caseStats&&a.caseStats.statusRows),byType:asDashboardArray(a.typeStats),byTopic:asDashboardArray(a.issueStats),letters:asDashboardObject(a.trackingStats),meetings:asDashboardObject(a.meetingStats)
+});
+return{
+summaryStats:n,budgetStats:asDashboardObject(a.budgetStats),quickCounts:{
+total:n.total,byStatus:n.statusRows,byType:n.byType,byTopic:n.byTopic
+},meetings:n.meetings,rows:asDashboardArray(a.caseStats&&a.caseStats.rows),meta:asDashboardObject(a.meta||e.meta||{
+generatedAt:e.generatedAt
+})
+}
+}
+var r=Object.assign({
+},asDashboardObject(e.stats||e.summaryStats)),l=asDashboardObject(e.quickCounts),c=asDashboardObject(e.summary),u=Object.assign({
+},c,l,r);
+!asDashboardArray(u.byType).length&&asDashboardArray(l.byType).length&&(u.byType=l.byType),!asDashboardArray(u.byTopic).length&&asDashboardArray(l.byTopic).length&&(u.byTopic=l.byTopic),!asDashboardArray(u.statusRows).length&&asDashboardArray(l.byStatus||l.statusRows).length&&(u.statusRows=l.byStatus||l.statusRows),!asDashboardArray(u.byType).length&&asDashboardArray(e.byType).length&&(u.byType=e.byType),!asDashboardArray(u.byTopic).length&&asDashboardArray(e.byTopic).length&&(u.byTopic=e.byTopic),!asDashboardArray(u.statusRows).length&&asDashboardArray(e.statusRows||e.byStatus).length&&(u.statusRows=e.statusRows||e.byStatus),u.letters||!e.letters&&!c.letters||(u.letters=e.letters||c.letters),!u.meetings&&(e.meetings||e.meetingSummary||c.meetings)&&(u.meetings=e.meetings||e.meetingSummary||c.meetings),!dashboardNumber(u.total)&&dashboardNumber(c.totalCases)&&(u.total=dashboardNumber(c.totalCases));
+var m=asDashboardArray(e.rows||e.caseRows||u.caseRows||e.cases&&e.cases.rows),p=asDashboardArray(e.letterRows||u.letterRows||e.trackingRows||u.trackingRows||e.letters&&e.letters.rows),b=asDashboardArray(e.meetingRows||u.meetingRows||e.meetingLogs||u.meetingLogs||e.meetings&&e.meetings.rows),k="phaseF-dashboard-status-read-model-current"===String(u.statusReadModelStamp||u.dashboardStatusReadModelStamp||asDashboardObject(e.meta).statusReadModelStamp||"");
+if((!asDashboardArray(u.byType).length||!asDashboardArray(u.byTopic).length||!asDashboardArray(u.statusRows).length)&&!k&&m.length){
+var g={
+},y={
+},h={
+};
+m.forEach(function(t){
+t=asDashboardObject(t);
+var e=String(t.cat||t.caseType||t.type||t.category||t["ประเภทเรื่อง"]||"ไม่ระบุประเภท").trim()||"ไม่ระบุประเภท",a=String(t.subCat||t.subCategory||t.issue||t.topic||t.topicName||t.considerIssue||t.caseIssue||t["ประเด็นพิจารณา"]||t["ประเด็น"]||t.col3||t.col7||"ไม่ระบุประเด็น").trim()||"ไม่ระบุประเด็น",s=String(t.status||t.caseStatus||t.processStatus||t.resultStatus||t.currentStatus||t.statusText||t["สถานะเรื่อง"]||t["สถานะเรื่องพิจารณา"]||t["สถานะ"]||"ไม่ระบุสถานะ").trim()||"ไม่ระบุสถานะ";
+g[e]=(g[e]||0)+1,y[a]=(y[a]||0)+1,h[s]=(h[s]||0)+1
+}),asDashboardArray(u.byType).length||(u.byType=Object.keys(g).map(function(t){
+return{
+label:t,count:g[t]
+}
+})),asDashboardArray(u.byTopic).length||(u.byTopic=Object.keys(y).map(function(t){
+return{
+label:t,count:y[t]
+}
+}).sort(function(t,e){
+return dashboardNumber(e.count)-dashboardNumber(t.count)
+}).slice(0,10)),asDashboardArray(u.statusRows).length||(u.statusRows=Object.keys(h).map(function(t){
+return{
+label:t,count:h[t]
+}
+}).sort(function(t,e){
+return dashboardNumber(e.count)-dashboardNumber(t.count)
+}))
+}
+function P(t){
+function e(e){
+var t=String(e||"").replace(/\s+/g,"");
+return/ไม่รับเรื่อง|ไม่รับ/.test(t)?"s8":/เรื่องเข้าใหม่|ได้รับเรื่อง|เรื่องใหม่|รับเรื่อง|รับเข้า|^รับ$/.test(t)?"s0":/จัดทำรายงาน|รายงาน/.test(t)?"s7":/ยุติ|ปิดเรื่อง|เสร็จสิ้น|สำเร็จ/.test(t)?"s6":/ส่ง.*หน่วยงาน|หน่วยงาน.*เกี่ยวข้อง|ติดตาม/.test(t)?"s5":/(อนุฯ|อนุกรรมาธิการ|คณะอนุกรรมาธิการ)/.test(t)?"s2":/(กมธ|กรรมาธิการ|คณะกรรมาธิการ)/.test(t)?"s4":/รอ|รอบรรจุ|ค้างพิจารณา/.test(t)?"s3":""
+}
+var a=asDashboardArray((t=asDashboardObject(t)).statusRows||t.byStatus||t.statusSummary),s=["s0","s8","s2","s3","s4","s6","s5","s7"],n=s.reduce(function(e,a){
+return e+dashboardNumber(t[a])
+},0);
+a.length&&a.forEach(function(a){
+var s=(a=asDashboardObject(a)).key&&/^s[0-8]$/.test(String(a.key))?String(a.key):e(a.label||a.status||a.name||a.title);
+s&&(!dashboardNumber(t[s])||!n)&&(t[s]=dashboardNumber(a.count||a.total||a.value))
+});
+var r=s.reduce(function(e,a){
+return e+dashboardNumber(t[a])
+},0);
+if((!asDashboardArray(t.statusRows).length||!asDashboardArray(t.statusRows).some(function(e){
+return dashboardNumber(e&&e.count)>0
+}))&&r){
+var l={
+s0:"เรื่องเข้าใหม่",s8:"ไม่รับเรื่อง",s2:"อนุฯ พิจารณา",s3:"รอพิจารณา",s4:"กมธ. พิจารณา",s6:"ยุติเรื่อง",s5:"ส่งหน่วยงาน",s7:"จัดทำรายงาน"
+};
+t.statusRows=s.map(function(e){
+return{
+key:e,label:l[e],count:dashboardNumber(t[e])
+}
+})
+}
+return t
+}
+var w=dashboardNumber((u=P(u)).total||u.totalCases||c.totalCases||m.length),v=asDashboardArray(u.byType).some(function(t){
+return dashboardNumber(t&&t.count)>0
+}),S=asDashboardArray(u.byTopic).some(function(t){
+return dashboardNumber(t&&t.count)>0
+});
+if(w&&!v&&(u.byType=[{
+label:"ไม่ระบุประเภท",count:w
+}
+]),w&&!S&&(u.byTopic=[{
+label:"ไม่ระบุประเด็น",count:w
+}
+]),(!u.letters||!dashboardNumber(u.letters.total))&&p.length)try{
+if(t.normalizeTrackingStats&&__appIsFn(t.normalizeTrackingStats))u.letters=t.normalizeTrackingStats({
+rows:p
+}).letters||{
+};
+else{
+var L={
+total:p.length,notDue:0,overdue:0,received:0,soonDue:0
+},today=new Date;
+today.setHours(0,0,0,0);
+var parseDue=function(v){
+try{
+if(!v&&0!==v)return null;
+if(v instanceof Date){
+var dd=new Date(v.getFullYear(),v.getMonth(),v.getDate());
+return dd.setHours(0,0,0,0),dd
+}
+var x=String(null==v?"":v).replace(/[\u200B-\u200D\uFEFF]/g,"").trim();
+if(!x)return null;
+var m=x.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+if(m){
+var y=Number(m[1]);
+y>2400&&(y-=543);
+var d1=new Date(y,Number(m[2])-1,Number(m[3]));
+if(!isNaN(d1.getTime()))return d1.setHours(0,0,0,0),d1
+}
+if(m=x.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/)){
+var yy=Number(m[3]);
+yy<100&&(yy+=2500),yy>2400&&(yy-=543);
+var d2=new Date(yy,Number(m[2])-1,Number(m[1]));
+if(!isNaN(d2.getTime()))return d2.setHours(0,0,0,0),d2
+}
+var d3=new Date(x);
+return isNaN(d3.getTime())?null:(d3.getFullYear()>2400&&(d3=new Date(d3.getFullYear()-543,d3.getMonth(),d3.getDate())),d3.setHours(0,0,0,0),d3)
+}
+catch(_){
+return null
+}
+};
+p.forEach(function(row){
+row=asDashboardObject(row);
+var st=String(row.letterStatus||row.status||row.trackStatus||"").replace(/\s+/g,"");
+if(/ได้รับแล้ว|ได้รับตอบกลับแล้ว|ตอบกลับแล้ว|ตอบแล้ว|เสร็จสิ้น|เสร็จ|รายงานแล้ว/.test(st))return L.received++,void 0;
+var due=parseDue(row.extendDate||row["ขยายเวลา"]||row["วันที่ขยายเวลา"]||row.dueDate||row["วันครบกำหนดตอบ"]||row["ครบกำหนด"]||row["กำหนดตอบ"]||row["วันครบกำหนด"]);
+if(!due)return L.notDue++,void 0;
+var diff=Math.round((due.getTime()-today.getTime())/864e5);
+diff<=0?L.overdue++:(diff<=7&&L.soonDue++,L.notDue++)
+}),u.letters=L
+}
+}
+catch(trackErr){
+dashboardWarn("dashboard.trackingStats",trackErr,{
+owner:"DashboardRender"
+}),u.letters={
+total:p.length,notDue:p.length,overdue:0,received:0,soonDue:0
+}
+}
+var x=f(Object.assign({
+},e,{
+meetingRows:b
+}),u);
+return u.meetings=x,null==u.totalMeetings&&(u.totalMeetings=x.total),null==u.recentMeetings&&(u.recentMeetings=x.recent),{
+summaryStats:u,budgetStats:asDashboardObject(e.budgetStats||e.budget||e.dashboardBudget||a.budgetStats||a.budget||a.dashboardBudget),quickCounts:l,meetings:x,rows:m,meta:asDashboardObject(e.meta||a.meta||{
+generatedAt:e.generatedAt
+})
+}
+}
+function v(t){
+t=asDashboardObject(t);
+var e=["s0","s8","s1","s2","s3","s4","s6","s5","s7"].reduce(function(e,a){
+return e+dashboardNumber(t[a])
+},0),a=dashboardNumber(t.total||t.totalCases||t.caseTotal||t.count)||e,s=dashboardNumber(t.completed||t.completedCases||t.closed||t.done)||dashboardNumber(t.s6)+dashboardNumber(t.s7)+dashboardNumber(t.s8),n=dashboardNumber(t.pending||t.pendingCases||t.active||t.inProgress),r=Math.max(n||a-s,0),l=asDashboardObject(t.letters||t.letterStats||{
+}),d=f({
+},t),c=dashboardNumber(l.overdue||l.overdueLetters||t.overdueLetters||t.soonOverdue),u=a?Math.round(s/a*100):0,m=a?Math.max(0,Math.min(100,u+(c?-Math.min(20,2*c):10))):0;
+return{
+total:a,completed:s,active:r,overdue:c,meetingsTotal:dashboardNumber(d.total),meetingsRecent:dashboardNumber(d.recent),completion:u,score:m
+}
+}
+function S(t,e,a,s,n,l){
+return'<div class="'+(a||"col-6 col-xl-3")+'"><div class="modern-kpi-card tone-'+dashboardEscapeHtml(s||"blue")+'"><div class="modern-kpi-icon"><i class="'+dashboardEscapeHtml(n||"fas fa-chart-simple")+'"></i></div><div class="modern-kpi-body"><div class="modern-kpi-label">'+dashboardEscapeHtml(t)+'</div><div class="modern-kpi-value kpi-value">'+dashboardEscapeHtml(e)+'</div><div class="modern-kpi-caption">'+dashboardEscapeHtml(l||"รายการ")+"</div></div></div></div>"
+}
+function x(t,e){
+var a=v((t=w(t)).summaryStats);
+setDashboardText("dash-smart-score",a.total?String(a.score):"-"),setDashboardText("dash-modern-total",a.total),setDashboardText("dash-modern-active",a.active),setDashboardText("dash-modern-overdue",a.overdue),setDashboardText("dash-modern-completion",a.completion+"%"),setDashboardText("dash-last-updated","อัปเดตล่าสุด "+formatDashboardTimestamp(t.meta&&t.meta.generatedAt||new Date)),e&&setDashboardText("dash-budget-fy-label","ปีงบประมาณ "+String(e||"-"));
+var s=dashboardById("dash-modern-progress-bar");
+return s&&(s.style.width=Math.max(0,Math.min(100,a.completion))+"%"),setDashboardText("dash-smart-summary",a.overdue>0?"มีหนังสือครบ/เลยกำหนดที่ควรเร่งติดตาม":a.active>0?"มีเรื่องอยู่ระหว่างดำเนินการและต้องติดตามต่อเนื่อง":a.total?"ภาพรวมงานอยู่ในสถานะเรียบร้อย":"ยังไม่มีข้อมูลสำหรับวิเคราะห์ภาพรวม"),renderDashboardHtml("dash-smart-pills",'<span class="modern-dash-insight-pill"><i class="fas fa-chart-line me-1"></i>ความคืบหน้า '+dashboardEscapeHtml(a.completion)+'%</span><span class="modern-dash-insight-pill"><i class="fas fa-spinner me-1"></i>กำลังดำเนินการ '+dashboardEscapeHtml(a.active)+'</span><span class="modern-dash-insight-pill danger"><i class="fas fa-bell me-1"></i>ครบ/เลยกำหนด '+dashboardEscapeHtml(a.overdue)+'</span><span class="modern-dash-insight-pill"><i class="fas fa-people-group me-1"></i>ประชุมล่าสุด '+dashboardEscapeHtml(a.meetingsRecent)+"</span>"),a
+}
+function T(t){
+var e=w(t).summaryStats,l,a=[["เรื่องเข้าใหม่","s0","teal","fas fa-inbox","เรื่องเข้าระบบใหม่"],["ไม่รับเรื่อง","s8","rose","fas fa-ban","ไม่รับไว้พิจารณา"],["อนุฯ พิจารณา","s2","green","fas fa-people-arrows","อยู่ในอนุกรรมาธิการ"],["รอพิจารณา","s3","slate","fas fa-hourglass-half","รอดำเนินการ"],["กมธ. พิจารณา","s4","cyan","fas fa-users-viewfinder","เข้าสู่คณะกรรมาธิการ"],["ยุติเรื่อง","s6","rose","fas fa-circle-check","ปิดเรื่อง"],["ส่งหน่วยงาน","s5","amber","fas fa-paper-plane","อยู่ระหว่างติดตาม"],["จัดทำรายงาน","s7","blue","fas fa-file-circle-check","เสร็จสิ้น"]].map(function(t){
+return S(t[0],e[t[1]]||0,"col-6 col-lg-3",t[2],t[3],t[4])
+}).join("")+function(t){
+var e=v(t);
+return'<div class="col-12"><div class="modern-kpi-card tone-slate modern-kpi-wide"><div class="modern-kpi-icon"><i class="fas fa-wand-magic-sparkles"></i></div><div class="modern-kpi-body"><div class="modern-kpi-label">Smart Insight</div><div class="modern-kpi-value small-value">'+dashboardEscapeHtml(e.overdue>0?"ควรเร่งติดตาม":e.active>0?"ติดตามต่อเนื่อง":"สถานะปกติ")+'</div><div class="modern-kpi-caption">ความคืบหน้า '+dashboardEscapeHtml(e.completion)+"% · กำลังดำเนินการ "+dashboardEscapeHtml(e.active)+" · ประชุม "+dashboardEscapeHtml(e.meetingsTotal)+"</div></div></div></div>"
+}
+(e);
+return renderDashboardHtml("dash-cards",a),!0
+}
+function R(t){
+var e=w(t).summaryStats,a=asDashboardArray(e.byType),s=asDashboardArray(e.byTopic),n=dashboardNumber(e.total||e.totalCases||e.caseTotal||e.count);
+!positiveDashboardRows(a).length&&n&&(a=[{
+label:"ไม่ระบุประเภท",count:n
+}
+]),!positiveDashboardRows(s).length&&n&&(s=[{
+label:"ไม่ระบุประเด็น",count:n
+}
+]);
+var l=0,o=a.map(function(t){
+return l+=dashboardNumber(t.count),'<tr class="modern-dash-layer-row"><td><span class="modern-table-dot"></span>'+dashboardEscapeHtml(t.label)+'</td><td class="text-end fw-bold">'+dashboardEscapeHtml(t.count||0)+"</td></tr>"
+}).join("");
+return renderDashboardHtml("table-type",(o+='<tr class="modern-total-row"><td class="fw-bold">จำนวนเรื่องทั้งหมด</td><td class="text-end fw-bold">'+dashboardEscapeHtml(l)+" เรื่อง</td></tr>")||y(2,"ยังไม่มีข้อมูล")),renderDashboardHtml("table-topic",s.map(function(t){
+return'<tr class="modern-dash-layer-row"><td><span class="modern-table-dot blue"></span>'+dashboardEscapeHtml(t.label)+'</td><td class="text-end fw-bold">'+dashboardEscapeHtml(t.count||0)+"</td></tr>"
+}).join("")||y(2,"ยังไม่มีข้อมูล")),!0
+}
+function A(t){
+var e=w(t),raw=asDashboardObject(e.meetings||e.summaryStats&&e.summaryStats.meetings);
+function uniqueMeetingNoCount(rows){
+rows=asDashboardArray(rows);
+var seen={
+},count=0;
+return rows.forEach(function(row){
+row=asDashboardObject(row);
+var key=String(row.meetingNo||row.meetingNumber||row.no||row["ครั้งที่"]||"").trim();
+(key=key.replace(/^\s*(ครั้งที่|ครั้งประชุม)\s*/,"").replace(/\s+/g," ").trim())&&!seen[key]&&(seen[key]=1,count++)
+}),count
+}
+(Array.isArray(e.meetingRows)||Array.isArray(e.meetingNoRows))&&(raw=Object.assign({
+},raw,{
+meetingRows:e.meetingRows||raw.meetingRows,meetingNoRows:e.meetingNoRows||raw.meetingNoRows
+}));
+var normalizer=window.normalizeDashboardMeetingStats,a=normalizer?normalizer(raw,e.summaryStats||{
+}):raw,meetingNoRows,strictMeetingNoTotal,n=uniqueMeetingNoCount(asDashboardArray(raw.meetingNoRows||raw.meetingRows||e.meetingNoRows||e.meetingRows||e.summaryStats&&(e.summaryStats.meetingNoRows||e.summaryStats.meetingRows)||e.summaryStats&&e.summaryStats.meetings&&(e.summaryStats.meetings.meetingNoRows||e.summaryStats.meetings.meetingRows)))||dashboardNumber(a.totalMeetings||a.meetingCount||a.total||e.summaryStats&&(e.summaryStats.totalMeetings||e.summaryStats.meetingCount)),itemRows=asDashboardArray(raw.meetingRows||e.meetingRows||e.summaryStats&&e.summaryStats.meetingRows),strictItemTotal=itemRows.reduce(function(sum,row){
+row=asDashboardObject(row);
+var tx,compact=String(null==row.title?"":row.title).replace(/[\u00A0\u1680\u180E\u2000-\u200F\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]/g," ").replace(/\s+/g," ").trim().replace(/\s+/g,"");
+return sum+(compact&&!/^(?:-|—|–|_|\.|…|null|undefined|n\/?a)$/i.test(compact)?1:0)
+},0),itemTotal=itemRows.length?strictItemTotal:dashboardNumber(a.totalItems||a.itemTotal||a.totalCasesDiscussed||a.subjectCount||e.summaryStats&&e.summaryStats.meetingItemTotal),p;
+return renderDashboardHtml("table-meeting-summary",'<tr class="modern-dash-layer-row"><td class="modern-dash-label">จำนวนการประชุมทั้งหมด</td><td class="modern-dash-value text-end fw-bold text-primary">'+dashboardEscapeHtml(n)+'</td></tr><tr class="modern-dash-layer-row"><td class="modern-dash-label">จำนวนเรื่องที่ประชุม</td><td class="modern-dash-value text-end fw-bold text-info">'+dashboardEscapeHtml(itemTotal)+" เรื่อง</td></tr>"),setDashboardText("dash-meeting-updated","อัปเดตล่าสุด "+formatDashboardTimestamp(e.meta&&e.meta.generatedAt||new Date)),!0
+}
+function dashboardBudgetWorkflowSummary(a){
+a=unwrapBudgetDashboardDto(a);
+var workflowSection=asDashboardObject(a.workflowSection||a.segments&&a.segments.workflow||{}),workflowSummary=asDashboardObject(workflowSection.summary||{}),status=asDashboardObject(a.statusSummary||a.workflow||a.budgetWorkflow||a.workflowSummary||workflowSummary||a.statusStats||a.status||{}),refund=asDashboardObject(status.refund||status.refundStatus||status.refundSummary||status.return||status.returns||workflowSummary.refund||workflowSummary.refundSummary||a.refund||a.refundSummary||{}),report=asDashboardObject(status.report||status.reportStatus||status.reportSummary||status.expenseReport||status.reports||workflowSummary.report||workflowSummary.reportSummary||a.report||a.reportSummary||{});
+function pick(obj,keys){obj=asDashboardObject(obj);for(var i2=0;i2<keys.length;i2++){var k2=keys[i2];if(obj[k2]!=null&&obj[k2]!=="")return dashboardNumber(obj[k2])}return 0}
+function done(v,kind){var txt=String(v==null?"":v).replace(/[\s\u00A0\u200B-\u200D\uFEFF]+/g,"");if(!txt)return false;if(/ยังไม่|ไม่คืน|ไม่ส่ง|ค้าง|รอ|pending|notyet|none/i.test(txt))return false;return /(ไม่มีการยืมเงิน|คืนเงินแล้ว|คืนแล้ว|ส่งแล้ว|รายงานแล้ว|แล้ว|เสร็จ|ครบ|completed|done|received)/i.test(txt)}
+var rowSources=[a.workflowRows,a.statusRows,workflowSection.rows,a.segments&&a.segments.workflow&&a.segments.workflow.rows,a.budgetWorkflowRows,a.importRows,a.details,a.items,a.rows],rows=[];
+for(var si=0;si<rowSources.length&&!rows.length;si++)rows=asDashboardArray(rowSources[si]);
+rows=rows.filter(function(row){row=asDashboardObject(row);return row&&Object.keys(row).length>0});
+refund.total=dashboardNumber(refund.total)||pick(status,["refundTotal","totalRefund","refundCount","return"+"Total","คืนเงินทั้งหมด"]);
+refund.pending=dashboardNumber(refund.pending)||pick(status,["refundPending","pendingRefund","refundRemain","return"+"Pending","คืนเงินคงค้าง","ยังไม่คืนเงิน"]);
+refund.completed=dashboardNumber(refund.completed)||pick(status,["refundCompleted","completedRefund","refundDone","return"+"Completed","คืนเงินแล้ว"]);
+report.total=dashboardNumber(report.total)||pick(status,["reportTotal","totalReport","expenseReportTotal","reportCount","รายงานทั้งหมด"]);
+report.pending=dashboardNumber(report.pending)||pick(status,["reportPending","pendingReport","expenseReportPending","reportRemain","รายงานคงค้าง","ยังไม่รายงาน"]);
+report.completed=dashboardNumber(report.completed)||pick(status,["reportCompleted","completedReport","expenseReportDone","reportDone","รายงานแล้ว"]);
+if(rows.length&&(!dashboardNumber(refund.total)||!dashboardNumber(report.total))){var rt=0,rp=0,rc=0,pt=0,pp=0,pc=0;rows.forEach(function(row){row=asDashboardObject(row);var rv=row.refundStatus||row.refund_status||row["สถานะคืนเงิน"]||row["สถานะการคืนเงิน"]||row["การคืนเงิน"]||row["return"+"Status"]||row["return"+"_status"]||"ยังไม่คืนเงิน",pv=row.reportStatus||row.report_status||row["สถานะรายงาน"]||row["สถานะรายงานค่าใช้จ่าย"]||row["รายงานค่าใช้จ่าย"]||row.expenseReportStatus||row.expense_report_status||"ยังไม่รายงาน";rt++;pt++;done(rv,"refund")?rc++:rp++;done(pv,"report")?pc++:pp++});refund.total=dashboardNumber(refund.total)||rt;refund.pending=dashboardNumber(refund.pending)||rp;refund.completed=dashboardNumber(refund.completed)||rc;report.total=dashboardNumber(report.total)||pt;report.pending=dashboardNumber(report.pending)||pp;report.completed=dashboardNumber(report.completed)||pc}
+return{refund:refund,report:report,rows:rows}
+}
+function M(t){
+var e=w(t).summaryStats,l={
+s0:0,s8:1,s2:2,s3:3,s4:4,s6:5,s5:6,s7:7
+},a=asDashboardArray(e.statusRows).length?asDashboardArray(e.statusRows).slice().sort(function(t,e){
+var a,s;
+return(t&&Object.prototype.hasOwnProperty.call(l,t.key)?l[t.key]:99)-(e&&Object.prototype.hasOwnProperty.call(l,e.key)?l[e.key]:99)
+}):function(t){
+return[{
+key:"s0",label:"เรื่องเข้าใหม่",count:dashboardNumber((t=asDashboardObject(t)).s0)
+},{
+key:"s8",label:"ไม่รับเรื่อง",count:dashboardNumber(t.s8)
+},{
+key:"s2",label:"อนุฯ พิจารณา",count:dashboardNumber(t.s2)
+},{
+key:"s3",label:"รอพิจารณา",count:dashboardNumber(t.s3)
+},{
+key:"s4",label:"กมธ. พิจารณา",count:dashboardNumber(t.s4)
+},{
+key:"s6",label:"ยุติเรื่อง",count:dashboardNumber(t.s6)
+},{
+key:"s5",label:"ส่งหน่วยงาน",count:dashboardNumber(t.s5)
+},{
+key:"s7",label:"จัดทำรายงาน",count:dashboardNumber(t.s7)
+}
+]
+}
+(e),s=a.map(function(t){
+return'<tr class="modern-dash-layer-row"><td><span class="modern-table-dot blue"></span>'+dashboardEscapeHtml(t.label)+'</td><td class="text-end fw-bold">'+dashboardEscapeHtml(dashboardNumber(t.count))+"</td></tr>"
+}).join("");
+renderDashboardHtml("table-case-status",(s+='<tr class="modern-total-row"><td class="fw-bold">รวมสถานะ</td><td class="text-end fw-bold">'+dashboardEscapeHtml(a.reduce(function(t,e){
+return t+dashboardNumber(e.count)
+},0))+"</td></tr>")||y(2,"ยังไม่มีข้อมูลสถานะเรื่องพิจารณา"));
+var n=asDashboardObject(e.letters);
+return renderDashboardHtml("table-letter",'<tr><td>จำนวนหนังสือทั้งหมด</td><td class="text-end fw-bold text-primary">'+dashboardEscapeHtml(n.total||0)+'</td></tr><tr><td>หนังสือไม่ครบกำหนด</td><td class="text-end fw-bold text-info">'+dashboardEscapeHtml(n.notDue||0)+'</td></tr><tr><td>หนังสือครบ/เลยกำหนด</td><td class="text-end fw-bold text-danger">'+dashboardEscapeHtml(n.overdue||0)+'</td></tr><tr class="modern-total-row"><td class="fw-bold text-success">หนังสือตอบรับแล้ว</td><td class="text-end fw-bold text-success">'+dashboardEscapeHtml(n.received||0)+"</td></tr>"||y(2,"ยังไม่มีข้อมูล")),A(t),ensureDashboardLayout(),dashboardApplyViewerMode(),!0
+}
+function k(e){
+var a=unwrapBudgetDashboardDto(w(e).budgetStats||{}),overviewSection=asDashboardObject(a.overviewSection||a.segments&&a.segments.overview||{}),workflowSection=asDashboardObject(a.workflowSection||a.segments&&a.segments.workflow||{}),overviewTotals=asDashboardObject(overviewSection.totals||{}),overviewAll=asDashboardObject(overviewTotals.all||overviewTotals||{});
+if(workflowSection.rows&&Array.isArray(workflowSection.rows)&&!Array.isArray(a.workflowRows))a.workflowRows=workflowSection.rows;
+if(workflowSection.summary&&!a.statusSummary)a.statusSummary=workflowSection.summary;
+var rows=Array.isArray(a.byPlan)?a.byPlan:Array.isArray(a.plans)?a.plans:Array.isArray(a.rows)?a.rows:Array.isArray(a.details)?a.details:Array.isArray(overviewSection.rows)?overviewSection.rows:Array.isArray(a.reportSection&&a.reportSection.rows)?a.reportSection.rows:Array.isArray(a.segments&&a.segments.report&&a.segments.report.rows)?a.segments.report.rows:[];
+rows=asDashboardArray(rows).map(function(t){t=t||{};var budget=dashboardNumber(t.budget!=null?t.budget:t.totalBudget!=null?t.totalBudget:t.amount||0),spent=dashboardNumber(t.spent!=null?t.spent:t.totalPaid!=null?t.totalPaid:t.expense||0),remain=dashboardNumber(t.remain!=null?t.remain:t.totalRemain!=null?t.totalRemain:t.balance!=null?t.balance:budget-spent);return{label:t.label||t.item||t.plan||t.planGroup||t.category||"-",budget:budget,spent:spent,remain:remain,fy:t.fy||a.fy||a.resolvedFy||""}});
+a.byPlan=rows;
+var totals=a.grandTotals&&a.grandTotals.all||a.totals&&a.totals.all||a.grandTotals||a.totals||overviewAll||{};
+a.totalBudget=dashboardNumber(a.totalBudget!=null?a.totalBudget:totals.budget!=null?totals.budget:totals.totalBudget!=null?totals.totalBudget:0);
+a.totalPaid=dashboardNumber(a.totalPaid!=null?a.totalPaid:totals.spent!=null?totals.spent:totals.totalPaid!=null?totals.totalPaid:0);
+a.totalRemain=dashboardNumber(a.totalRemain!=null?a.totalRemain:totals.remain!=null?totals.remain:totals.totalRemain!=null?totals.totalRemain:a.totalBudget-a.totalPaid);
+if(!(dashboardNumber(a.totalBudget)||dashboardNumber(a.totalPaid)||dashboardNumber(a.totalRemain))&&rows.length){a.totalBudget=rows.reduce(function(t,e){return t+dashboardNumber(e.budget)},0);a.totalPaid=rows.reduce(function(t,e){return t+dashboardNumber(e.spent)},0);a.totalRemain=rows.reduce(function(t,e){return t+dashboardNumber(e.remain)},0)||Math.max(dashboardNumber(a.totalBudget)-dashboardNumber(a.totalPaid),0)}
+var n=a.fy||a.resolvedFy||rows[0]&&rows[0].fy||(dashboardRoot.AppCoreFormat&&dashboardRoot.AppCoreFormat.deriveBudgetFyFromDate?dashboardRoot.AppCoreFormat.deriveBudgetFyFromDate(new Date):String((new Date).getMonth()>=9?(new Date).getFullYear()+544:(new Date).getFullYear()+543))||"-",c=a.totalBudget?Math.round(dashboardNumber(a.totalPaid)/dashboardNumber(a.totalBudget)*100):0,p='<tr><td>ปีงบประมาณล่าสุด</td><td class="text-end fw-bold text-secondary">'+dashboardEscapeHtml(n)+'</td></tr><tr><td>วงเงินงบประมาณทั้งหมด</td><td class="text-end fw-bold text-success">'+dashboardFormatMoney(a.totalBudget||0)+'</td></tr><tr><td>รายจ่ายรวม</td><td class="text-end fw-bold text-danger">'+dashboardFormatMoney(a.totalPaid||0)+'</td></tr><tr><td>คงเหลือรวม</td><td class="text-end fw-bold text-primary">'+dashboardFormatMoney(a.totalRemain||0)+'</td></tr><tr><td>ใช้ไปแล้ว</td><td class="text-end fw-bold">'+dashboardEscapeHtml(c)+"%</td></tr>",b=dashboardBudgetWorkflowSummary(a),g=asDashboardObject(b.refund),h=asDashboardObject(b.report),f='<tr><td class="fw-bold">สถานะการคืนเงิน</td><td></td></tr><tr><td class="ps-4">จำนวนทั้งหมด</td><td class="text-end fw-bold text-secondary">'+dashboardEscapeHtml(dashboardNumber(g.total))+'</td></tr><tr><td class="ps-4">จำนวนที่คงค้าง</td><td class="text-end fw-bold text-danger">'+dashboardEscapeHtml(dashboardNumber(g.pending))+'</td></tr><tr class="modern-section-row"><td class="fw-bold">รายงานค่าใช้จ่าย</td><td></td></tr><tr><td class="ps-4">จำนวนทั้งหมด</td><td class="text-end fw-bold text-secondary">'+dashboardEscapeHtml(dashboardNumber(h.total))+'</td></tr><tr><td class="ps-4">จำนวนที่คงค้าง</td><td class="text-end fw-bold text-danger">'+dashboardEscapeHtml(dashboardNumber(h.pending))+"</td></tr>",v=dashboardNumber(a.totalBudget)||dashboardNumber(a.totalPaid)||dashboardNumber(a.totalRemain)||rows.length,S=dashboardNumber(g.total)||dashboardNumber(h.total)||asDashboardArray(b.rows).length;
+renderDashboardHtml("table-budget-summary",p+(v?"":y(2,"ยังไม่มีข้อมูลงบประมาณสำหรับปีที่เลือก")));
+renderDashboardHtml("table-budget-status-summary",f+(S?"":y(2,"ยังไม่มีข้อมูลสถานะการคืนเงินและรายงานค่าใช้จ่าย")));
+setDashboardText("dash-budget-fy-label","ปีงบประมาณ "+String(n||"-"));
+return{fy:n,data:a}
+}
+function C(e,a,s,r,l){
+var o=dashboardById(e);
+if(!o||!o.getContext)return!1;
+var d=o.getContext("2d"),c=o.parentElement||o,u=Math.max(320,c.clientWidth||420),m=Math.max(240,c.clientHeight||280),p=dashboardRoot.devicePixelRatio||1;
+if(o.width=u*p,o.height=m*p,o.style.width=u+"px",o.style.height=m+"px",d.setTransform(p,0,0,p,0,0),d.clearRect(0,0,u,m),s=s||[],!(a=a||[]).length||!s.length||!s.some(function(t){
+return dashboardNumber(t)>0
+}))return d.fillStyle="#94a3b8",d.font="14px sans-serif",d.textAlign="center",d.fillText("ยังไม่มีข้อมูล",u/2,m/2),!0;
+if("pie"===l){
+var b=s.reduce(function(t,e){
+return t+dashboardNumber(e)
+},0)||1,g=["#2563eb","#14b8a6","#f59e0b","#ef4444","#8b5cf6","#f97316","#06b6d4","#22c55e"],y=Math.min(.34*u,148),h=m/2,f=Math.min(94,m/2-18),w=Math.max(42,.52*f),v=-Math.PI/2;
+return s.forEach(function(t,e){
+var a=dashboardNumber(t)/b*Math.PI*2;
+d.beginPath(),d.moveTo(y,h),d.fillStyle=g[e%g.length],d.arc(y,h,f,v,v+a),d.closePath(),d.fill(),v+=a
+}),d.beginPath(),d.fillStyle="#ffffff",d.arc(y,h,w,0,2*Math.PI),d.fill(),d.fillStyle="#0f172a",d.font="700 22px sans-serif",d.textAlign="center",d.fillText(String(b),y,h+6),d.font="12px sans-serif",d.textAlign="left",a.slice(0,6).forEach(function(t,e){
+var a=22+24*e;
+d.fillStyle=g[e%g.length],d.fillRect(.6*u,a,12,12),d.fillStyle="#334155",d.fillText(String(t).slice(0,28)+" ("+s[e]+")",.6*u+18,a+11)
+}),!0
+}
+var S=Math.max.apply(null,s.map(function(t){
+return dashboardNumber(t)
+}))||1,x=116,T=u-x-32,R=m-14-28,A=Math.max(18,Math.min(30,Math.floor(R/a.length)-8));
+return d.font="12px sans-serif",d.textAlign="left",a.forEach(function(t,e){
+var a=14+e*(A+12),n=dashboardNumber(s[e])/S*T,l=d.createLinearGradient(x,0,x+T,0);
+l.addColorStop(0,r||"#2563eb"),l.addColorStop(1,"#38bdf8"),d.fillStyle="#64748b",d.fillText(String(t).slice(0,18),8,a+A-4),d.fillStyle="#e2e8f0",d.fillRect(x,a,T,A),d.fillStyle=l,d.fillRect(x,a,n,A),d.fillStyle="#0f172a",d.fillText(String(s[e]||0),Math.min(x+n+8,u-28),a+A-4)
+}),!0
+}
+function D(t,e){
+t=asDashboardObject(t),e=asDashboardObject(e);
+var a=asDashboardArray(t.byType).slice(0,6),s=asDashboardArray(t.byTopic).slice(0,6);
+return C("typeChart",a.map(function(t){
+return t.label
+}),a.map(function(t){
+return dashboardNumber(t.count)
+}),"#2563eb","pie"),C("topicChart",s.map(function(t){
+return t.label
+}),s.map(function(t){
+return dashboardNumber(t.count)
+}),"#0f766e","bar"),!0
+}
+function P(t,e){
+var a=w(t),s=((summary=(data=a).summaryStats||{
+})&&Object.keys(summary).length||data.rows.length)&&(Object.keys(summary).some(function(key){
+return"number"==typeof summary[key]&&!isNaN(summary[key])
+})||asDashboardArray(summary.byType).length||asDashboardArray(summary.byTopic).length)?"ready":"empty",data,summary;
+function safe(label,fn,fallback){
+try{
+return!__appIsFn(fn)||fn()
+}
+catch(err){
+if(dashboardWarn("dashboard.render."+label,err,{
+owner:"dashboard-observability"
+}),__appIsFn(fallback))try{
+return fallback()
+}
+catch(fallbackErr){
+dashboardWarn("dashboard.render."+label+".fallback",fallbackErr,{
+owner:"dashboard-observability"
+})
+}
+return!1
+}
+}
+safe("kpi",function(){
+return T(a)
+}),safe("typeTopic",function(){
+return R(a)
+}),safe("statusLetter",function(){
+return M(a)
+});
+var n=safe("budget",function(){
+return k(a)
+},function(){
+return{
+fy:"-"
+}
+})||{
+fy:"-"
+};
+return safe("smartHero",function(){
+return x(a,n&&n.fy)
+}),safe("charts",function(){
+return D(a.summaryStats,a.budgetStats)
+}),e&&__appIsFn(e.renderCharts)&&e.renderCharts!==D&&safe("externalCharts",function(){
+return e.renderCharts(a.summaryStats,a.budgetStats)
+}),safe("containment",function(){
+return ensureDashboardLayout()
+}),{
+state:s,data:a
+}
+}
+dashboardRender.renderHtml=renderDashboardHtml,dashboardRender.renderDashboardAll=P,dashboardRender.renderDashboardKpiCards=T,dashboardRender.renderDashboardSummaryTable=R,dashboardRender.renderDashboardStatusTable=M,dashboardRender.renderDashboardMeetingTable=A,dashboardRender.renderDashboardBudgetCards=k,dashboardRender.renderDashboardSkeleton=function(t){
+return renderDashboardHtml("dash-cards",'<div class="col-12"><div class="modern-dash-loading"><span class="modern-dash-loader"></span><span>'+dashboardEscapeHtml(t||"กำลังโหลดข้อมูล Dashboard...")+"</span></div></div>"),renderDashboardHtml("table-case-status",h(2,"กำลังโหลดสถานะเรื่องพิจารณา")),renderDashboardHtml("table-type",h(2,"กำลังโหลดสถิติตามประเภทเรื่อง")),renderDashboardHtml("table-topic",h(2,"กำลังโหลดสถิติตามประเด็นพิจารณา")),renderDashboardHtml("table-letter",h(2,"กำลังโหลดสถิติติดตามหนังสือ")),renderDashboardHtml("table-budget-summary",h(2,"กำลังเตรียมโหลดงบประมาณหลัง Dashboard แสดงผล")),renderDashboardHtml("table-budget-status-summary",h(2,"กำลังเตรียมโหลดสถานะคืนเงิน/รายงาน")),renderDashboardHtml("table-meeting-summary",h(2,"กำลังโหลดสถิติการประชุม")),setDashboardText("dash-last-updated","กำลังโหลดข้อมูล..."),setDashboardText("dash-meeting-updated","กำลังโหลดข้อมูลการประชุม"),setDashboardText("dash-budget-fy-label","ปีงบประมาณ -"),setDashboardText("dash-smart-summary","กำลังโหลดข้อมูลภาพรวมแบบแยกส่วน เพื่อลดเวลาหน้าว่าง"),dashboardApplyViewerMode(),!0
+},dashboardRender.renderDashboardEmptyState=function(t){
+return renderDashboardHtml("table-case-status",y(2,t||"ยังไม่มีข้อมูล")),renderDashboardHtml("table-type",y(2,t||"ยังไม่มีข้อมูล")),renderDashboardHtml("table-topic",y(2,t||"ยังไม่มีข้อมูล")),renderDashboardHtml("table-letter",y(2,t||"ยังไม่มีข้อมูล")),renderDashboardHtml("table-budget-summary",y(2,"ยังไม่มีข้อมูลงบประมาณสำหรับปีที่เลือก")),renderDashboardHtml("table-budget-status-summary",y(2,"ยังไม่มีข้อมูลสถานะการคืนเงินและรายงานค่าใช้จ่าย")),renderDashboardHtml("table-meeting-summary",y(2,t||"ยังไม่มีข้อมูลการประชุม")),setDashboardText("dash-meeting-updated","เชื่อมโยงจากการประชุมคณะกรรมาธิการ"),setDashboardText("dash-budget-fy-label","ปีงบประมาณ -"),dashboardApplyViewerMode(),T({
+summaryStats:{
+}
+}),x({
+summaryStats:{
+},meta:{
+}
+},"-"),D({
+}),!0
+},dashboardRender.renderCharts=D,dashboardRoot.renderDashboardSummary=dashboardRoot.renderDashboardSummary||function(t){
+return P(t,{
+renderCharts:D
+})
+}
+}
+();
+</script>
+
+<script>
+(function (root) {
+    "use strict";
+    root.numberOrZero = root.numberOrZero || function (value) { var n = Number(String(value == null ? "" : value).replace(/[^0-9.\-]/g, "")); return isFinite(n) ? n : 0; }, root.normalizeDashboardMeetingStats = function (payload) { function strictText(v) { var txt = String(v == null ? "" : v).replace(/[\u00A0\u1680\u180E\u2000-\u200F\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]/g, " ").replace(/\s+/g, " ").trim(), compact = txt.replace(/[\s\u00A0\u1680\u180E\u2000-\u200F\u2028\u2029\u202F\u205F\u2060\u3000\uFEFF]/g, ""); return compact && !/^(?:-|—|–|_|\.|…|null|undefined|n\/?a)$/i.test(compact) ? txt : ""; } payload = payload || {}; var meetingNoRows = Array.isArray(payload.meetingNoRows) ? payload.meetingNoRows : [], itemRows = Array.isArray(payload.meetingRows) ? payload.meetingRows : Array.isArray(payload.rows) ? payload.rows : Array.isArray(payload.items) ? payload.items : []; !meetingNoRows.length && Array.isArray(payload.meetingRows) && (meetingNoRows = payload.meetingRows.filter(function (r) { return r && strictText(r.meetingNo); })); var sessions = {}; meetingNoRows.forEach(function (row) { var meetingNo = strictText((row = row || {}).meetingNo || row.meetingNumber || row.no || row.ครั้งที่); (meetingNo = meetingNo.replace(/^\s*(ครั้งที่|ครั้งประชุม)\s*/, "").replace(/\s+/g, " ").trim()) && (sessions["meetingNo:" + meetingNo] = !0); }); var titleCount = 0; itemRows.forEach(function (row) { strictText((row = row || {}).title) && titleCount++; }); var meetingTotal = Object.keys(sessions).length || root.numberOrZero(payload.totalMeetings || payload.meetingCount || payload.total), itemTotal = titleCount || root.numberOrZero(payload.totalItems || payload.itemTotal || payload.totalCasesDiscussed || payload.subjectCount); return { total: meetingTotal, totalMeetings: meetingTotal, meetingCount: meetingTotal, recent: root.numberOrZero(payload.recentMeetings || payload.recent), recentMeetings: root.numberOrZero(payload.recentMeetings || payload.recent), totalItems: itemTotal, itemTotal, totalCasesDiscussed: itemTotal, subjectCount: itemTotal, byResult: [] }; }, root.normalizeDashboardPayload = root.normalizeDashboardPayload || function (input) {
+        var data = input && input.data && typeof input.data == "object" ? input.data : input || {}, dto = data.dashboardDto && typeof data.dashboardDto == "object" ? data.dashboardDto : null;
+        if (dto) {
+            var meetingRows = Array.isArray(data.meetingRows) ? data.meetingRows : Array.isArray(dto.meetingStats && dto.meetingStats.meetingRows) ? dto.meetingStats.meetingRows : [], meetingNoRows = Array.isArray(data.meetingNoRows) ? data.meetingNoRows : Array.isArray(dto.meetingStats && dto.meetingStats.meetingNoRows) ? dto.meetingStats.meetingNoRows : meetingRows, meetingStats = Object.assign({}, dto.meetingStats || {}, { meetingRows, meetingNoRows }), sum = Object.assign({}, dto.summary || {}, { total: root.numberOrZero(dto.caseStats && dto.caseStats.total || dto.totalCases || dto.summary && dto.summary.totalCases), byType: Array.isArray(dto.typeStats) ? dto.typeStats : [], byTopic: Array.isArray(dto.issueStats) ? dto.issueStats : [], statusRows: Array.isArray(dto.caseStats && dto.caseStats.statusRows) ? dto.caseStats.statusRows : [], letters: dto.trackingStats || {}, meetings: meetingStats });
+            return { summaryStats: sum, stats: sum, budgetStats: dto.budgetStats || {}, budget: dto.budgetStats || {}, meetings: meetingStats, meetingRows, meetingNoRows, rows: dto.caseStats && dto.caseStats.rows || [], meta: dto.meta || data.meta || { generatedAt: new Date().toISOString() } };
+        }
+        var summary = Object.assign({}, data.summary || {}, data.quickCounts || {}, data.summaryStats || data.stats || {});
+        Array.isArray(summary.byType) || (summary.byType = Array.isArray(data.byType) ? data.byType : []), Array.isArray(summary.byTopic) || (summary.byTopic = Array.isArray(data.byTopic) ? data.byTopic : []), Array.isArray(summary.statusRows) || (summary.statusRows = Array.isArray(data.statusRows || data.byStatus) ? data.statusRows || data.byStatus : []), summary.letters = summary.letters || data.letters || {};
+        var baseMeetings = Object.assign({}, summary.meetings || data.meetings || data.meetingStats || {}), baseMeetingRows = Array.isArray(data.meetingRows) ? data.meetingRows : Array.isArray(baseMeetings.meetingRows) ? baseMeetings.meetingRows : [], baseMeetingNoRows = Array.isArray(data.meetingNoRows) ? data.meetingNoRows : Array.isArray(baseMeetings.meetingNoRows) ? baseMeetings.meetingNoRows : baseMeetingRows;
+        return baseMeetings.meetingRows = baseMeetingRows, baseMeetings.meetingNoRows = baseMeetingNoRows, summary.meetings = root.normalizeDashboardMeetingStats(baseMeetings, summary), summary.totalMeetings = summary.meetings.total, summary.recentMeetings = summary.meetings.recent, { summaryStats: summary, stats: summary, quickCounts: data.quickCounts || {}, budgetStats: data.budgetStats || data.budget || {}, budget: data.budgetStats || data.budget || {}, meetings: summary.meetings, meetingRows: baseMeetingRows, meetingNoRows: baseMeetingNoRows, rows: data.rows || data.caseRows || [], meta: data.meta || { generatedAt: data.generatedAt || new Date().toISOString() } };
+    };
+})(window);
+</script>
+
+<script>
+(function (root, dashboard) {
+    "use strict";
+    var OWNER = "dashboard-persistent-compact-snapshot-g-r162";
+    dashboard.__version = OWNER, dashboard.__singleLoadPath = !0, dashboard.__r3SingleApiPath = !0, dashboard.__initialBundleOnly = !0, dashboard.__completeDataPath = !0, dashboard.__enableBudgetSecondCall = !1;
+    var cachePrefix = "dashboard_bundle_single_complete_reduced_scan_r159_", legacyCacheKey = "dashboard_bundle_last_good_r93", state = dashboard.__state || { data: null, promise: null, loadToken: 0, rendered: !1, lastError: null, performance: null };
+    dashboard.__state = state;
+    var warn = __Scripts_Page_Dashboard_warn;
+    function __Scripts_Page_Dashboard_warn(label, err, meta) {
+        try {
+            if (root.AppRuntime && __appIsFn(root.AppRuntime.recordWarning))
+                return root.AppRuntime.recordWarning(label, err, meta || {});
+            if (root.AppRuntime && __appIsFn(root.AppRuntime.warn))
+                return root.AppRuntime.warn(label, err, meta || {});
+            root.console && __appIsFn(root.console.warn) && root.console.warn("[DashboardWarn] " + String(label || "dashboard"), err || "", meta || {});
+        }
+        catch (_warnErr) {
+            return typeof __appObserve == "function" && __appObserve(_warnErr, "ec"), !1;
+        }
+        return !1;
+    }
+    var unwrap = function (res) { return res && (res.ok === !0 && Object.prototype.hasOwnProperty.call(res, "data") ? res.data : Object.prototype.hasOwnProperty.call(res, "data") && (res.dashboardDto || res.stats || res.summaryStats || res.budgetStats) || !Object.prototype.hasOwnProperty.call(res, "data") || res.dashboardDto || res.stats || res.summaryStats ? res : res.data); };
+    function normalize(res) {
+        var data = unwrap(res) || {};
+        try {
+            __appIsFn(root.normalizeDashboardPayload) && (data = root.normalizeDashboardPayload(data) || data);
+        }
+        catch (e) {
+            warn("dashboard.normalize", e, { owner: OWNER });
+        }
+        return data || {};
+    }
+    function dashboardErrorCodeFrom(value, fallbackCode) { var v = value || {}, data = v.data || v.dashboardDto || v, meta = data && data.meta || data && data.dashboardDto && data.dashboardDto.meta || {}, msg = String(v.error || v.message || v.msg || data && (data.error || data.message || data.msg) || meta.message || "").toLowerCase(); return v.errorCode || v.dashboardErrorCode ? String(v.errorCode || v.dashboardErrorCode) : data && (data.errorCode || data.dashboardErrorCode) ? String(data.errorCode || data.dashboardErrorCode) : meta && (meta.errorCode || meta.dashboardErrorCode) ? String(meta.errorCode || meta.dashboardErrorCode) : /ไม่พบ\s*token|missing[-\s_]*token|token\s*การใช้งาน/.test(msg) ? "DASHBOARD_AUTH_MISSING" : /session\s*หมดอายุ|session\s*expired|expired[-\s_]*session|หมดอายุ/.test(msg) ? "DASHBOARD_SESSION_EXPIRED" : /สิทธิ์ไม่เพียงพอ|permission|forbidden|unauthori[sz]ed|access\s*denied/.test(msg) ? "DASHBOARD_PERMISSION_DENIED" : /cache/.test(msg) ? "DASHBOARD_CACHE_READ_FAILED" : /sheet|spreadsheet|range|ชีต|แผ่นงาน|อ่านข้อมูล/.test(msg) ? "DASHBOARD_SHEET_READ_FAILED" : fallbackCode || "DASHBOARD_BUNDLE_LOAD_FAILED"; }
+    function dashboardErrorMessageFrom(value, code) { var v = value || {}, data = v.data || v.dashboardDto || v, meta = data && data.meta || data && data.dashboardDto && data.dashboardDto.meta || {}, raw = String(v.error || v.message || v.msg || data && (data.error || data.message || data.msg) || meta.message || "").trim(); return raw || (code === "DASHBOARD_AUTH_MISSING" ? "Dashboard โหลดข้อมูลไม่สำเร็จ: ไม่พบ token การใช้งาน" : code === "DASHBOARD_SESSION_EXPIRED" ? "Dashboard โหลดข้อมูลไม่สำเร็จ: session หมดอายุ กรุณาเข้าสู่ระบบใหม่" : code === "DASHBOARD_PERMISSION_DENIED" ? "Dashboard โหลดข้อมูลไม่สำเร็จ: สิทธิ์ไม่เพียงพอ" : code === "DASHBOARD_SHEET_READ_FAILED" ? "Dashboard อ่านข้อมูลจากชีตไม่สำเร็จ" : code === "DASHBOARD_RENDER_FAILED" ? "Dashboard แสดงผลไม่สำเร็จ" : "Dashboard โหลดข้อมูลไม่สำเร็จ"); }
+    function attachDashboardErrorMeta(data, code, message, extra) { return data = data || {}, data.meta = Object.assign({}, data.meta || {}, { degraded: !!code, dashboardErrorCode: code || "", errorCode: code || "", message: message || "", owner: "DASH-2:dashboard-error-code", generatedAt: new Date().toISOString() }, extra || {}), data.dashboardDto && (data.dashboardDto.meta = Object.assign({}, data.dashboardDto.meta || {}, data.meta || {})), data; }
+    var num = __Scripts_Page_Dashboard_num;
+    function __Scripts_Page_Dashboard_num(v) { var n = Number(String(v == null ? "" : v).replace(/[^0-9.\-]/g, "")); return isFinite(n) ? n : 0; }
+    function dashboardConfig(name, fallback) {
+        try {
+            var cfg = root.APP_CONFIG || {};
+            return cfg[name] == null ? fallback : cfg[name];
+        }
+        catch (_cfg) {
+            return fallback;
+        }
+    }
+    function hasRows(a) { return Array.isArray(a) && a.length > 0; }
+    function hasBudgetData(data) { var b = (data = data || {}).budgetStats || data.budget || {}, seg = b.segments || {}, overview = b.overviewSection || seg.overview || {}, workflow = b.workflowSection || seg.workflow || {}, reportSeg = b.reportSection || seg.report || {}, byPlan = Array.isArray(b.byPlan) ? b.byPlan : Array.isArray(b.rows) ? b.rows : Array.isArray(overview.rows) ? overview.rows : [], status = b.statusSummary || b.workflow || b.budgetWorkflow || b.workflowSummary || workflow.summary || {}, refund = status.refund || status.refundSummary || {}, report = status.report || status.reportSummary || {}; return !!(num(b.totalBudget) || num(b.totalPaid) || num(b.totalExpense) || num(b.totalRemain) || num(b.totalRemaining) || num(overview.totalBudget) || num(overview.totalPaid) || num(overview.totalRemain) || byPlan.length || num(refund.total) || num(report.total) || num(status.refundTotal) || num(status.reportTotal) || Array.isArray(workflow.rows) && workflow.rows.length || Array.isArray(reportSeg.rows) && reportSeg.rows.length); }
+    function hasData(data) { var s = (data = data || {}).summaryStats || data.stats || data.caseStats || data.summary || {}, m = data.meetingStats || data.meetings || data.meetingSummary || {}, b = data.budgetStats || data.budget || {}; return !!(num(s.total) || num(s.totalCases) || num(s.pendingCases) || num(s.completedCases) || num(m.total) || num(m.totalMeetings) || num(m.itemTotal) || hasBudgetData(data) || num(b.totalBudget) || num(b.totalPaid) || num(b.totalExpense) || num(b.totalRemain) || num(b.totalRemaining) || hasRows(data.rows) || hasRows(data.caseRows) || hasRows(data.statusRows) || hasRows(s.statusRows)); }
+    function isSingleCompleteData(data) { data = data || {}; var meta = data.meta || data.dashboardDto && data.dashboardDto.meta || {}; return meta.dashboardSingleCompletePath === !0 && meta.completeData !== !1 && data.pendingHydration !== !0 && meta.deferHydrationRequired !== !0; }
+    function dashboardReleaseStamp() {
+        try {
+            return String(root.APP_DEPLOY_RELEASE && root.APP_DEPLOY_RELEASE.stamp || root.APP_CONFIG && root.APP_CONFIG.releaseStamp || "commission-v1.2-gas-only-performance-persistent-dashboard-snapshot-g-2026-07-24-r162");
+        }
+        catch (_release) {
+            return "commission-v1.2-gas-only-performance-persistent-dashboard-snapshot-g-2026-07-24-r162";
+        }
+    }
+    function dashboardHash(value) {
+        for (var textValue = String(value || ""), hash = 2166136261, i = 0; i < textValue.length; i++)
+            hash ^= textValue.charCodeAt(i), hash = Math.imul(hash, 16777619);
+        return (hash >>> 0).toString(36);
+    }
+    function dashboardCacheKey() {
+        var token = "", user = null;
+        try {
+            token = String(authStoreGet("auth.token", "") || "");
+            user = authStoreGet("auth.user", null);
+        }
+        catch (_authCache) {
+            warn("dashboard.cache.scope", _authCache, { owner: OWNER });
+        }
+        if (!token)
+            return "";
+        var identity = user && (user.id || user.userId || user.username || user.email || user.name) || "";
+        return cachePrefix + dashboardHash(token + "|" + identity);
+    }
+    function pruneDashboardCaches(keepKey) {
+        try {
+            var storage = root.sessionStorage;
+            if (!storage)
+                return;
+            for (var i = storage.length - 1; i >= 0; i--) {
+                var key = storage.key(i);
+                key && (key === legacyCacheKey || key.indexOf("dashboard_bundle_last_good_") === 0 && key !== keepKey) && storage.removeItem(key);
+            }
+        }
+        catch (_prune) {
+            warn("dashboard.cache.prune", _prune, { owner: OWNER });
+        }
+    }
+    function saveCache(data) {
+        var cacheKey = dashboardCacheKey();
+        if (!cacheKey || !isSingleCompleteData(data))
+            return !1;
+        try {
+            pruneDashboardCaches(cacheKey), root.sessionStorage && root.sessionStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), expiresAt: Date.now() + dashboardSessionCacheTtlMs(), releaseStamp: dashboardReleaseStamp(), singleCompletePath: !0, sessionScoped: !0, data: data }));
+        }
+        catch (e) {
+            warn("dashboard.cache.save", e, { owner: OWNER });
+        }
+        return !0;
+    }
+    function loadCache() {
+        var cacheKey = dashboardCacheKey();
+        if (!cacheKey)
+            return null;
+        try {
+            pruneDashboardCaches(cacheKey);
+            var raw = root.sessionStorage && root.sessionStorage.getItem(cacheKey);
+            if (!raw)
+                return null;
+            var box = JSON.parse(raw), release = dashboardReleaseStamp();
+            if (!box || !box.data || box.sessionScoped !== !0 || box.singleCompletePath !== !0 || String(box.releaseStamp || "") !== release || !isSingleCompleteData(box.data)) {
+                try {
+                    root.sessionStorage.removeItem(cacheKey);
+                }
+                catch (_invalidRemove) {
+                    window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _invalidRemove);
+                }
+                return null;
+            }
+            if (Number(box.expiresAt || 0) && Number(box.expiresAt || 0) < Date.now()) {
+                try {
+                    root.sessionStorage.removeItem(cacheKey);
+                }
+                catch (_remove) {
+                    window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _remove);
+                }
+                return null;
+            }
+            return setMeta(box.data, { dashboardSessionCacheHit: !0, singleCompletePath: !0, sessionScoped: !0, cacheAgeMs: Math.max(0, Date.now() - Number(box.savedAt || Date.now())), releaseStamp: release });
+        }
+        catch (e) {
+            return warn("dashboard.cache.load", e, { owner: OWNER }), null;
+        }
+    }
+    function setMeta(data, extra) { return (data = data || {}).meta = Object.assign({}, data.meta || {}, extra || {}, { frontendOwner: OWNER, singleApiPath: !0, singleCompletePath: !0, separateBudgetHydration: !1 }), data; }
+    function render(data, meta) {
+        data = setMeta(normalize(data), meta || {});
+        var usable = isSingleCompleteData(data) || hasData(data);
+        if (!usable && state.data && isSingleCompleteData(state.data))
+            return state.data;
+        state.data = data, state.authScopeKey = dashboardCacheKey(), state.rendered = !0;
+        try {
+            root.DashboardRender && __appIsFn(root.DashboardRender.renderDashboardAll) ? root.DashboardRender.renderDashboardAll(data, { renderCharts: root.DashboardRender.renderCharts }) : __appIsFn(root.renderDashboardSummary) && root.renderDashboardSummary(data);
+        }
+        catch (e) {
+            var code = "DASHBOARD_RENDER_FAILED", message = dashboardErrorMessageFrom(e, code);
+            data = attachDashboardErrorMeta(data, code, message, { source: meta && meta.source || "dashboard-render", errorStage: "render" }), warn("dashboard.render", e, { owner: OWNER, errorCode: code });
+            try {
+                root.DashboardRender && __appIsFn(root.DashboardRender.renderDashboardEmptyState) && root.DashboardRender.renderDashboardEmptyState(message);
+            }
+            catch (renderFallbackErr) {
+                warn("dashboard.render.emptyState", renderFallbackErr, { owner: OWNER, errorCode: code });
+            }
+        }
+        saveCache(data);
+        try {
+            root.dispatchEvent && root.dispatchEvent(new CustomEvent("dashboard:data", { detail: { owner: OWNER, data: data, errorCode: data && data.meta && data.meta.errorCode || "" } }));
+        }
+        catch (eventErr) {
+            warn("dashboard.event.dispatch", eventErr, { owner: OWNER });
+        }
+        return data;
+    }
+    function renderSkeleton() {
+        if (!(state.rendered && state.data && hasData(state.data)))
+            try {
+                root.DashboardRender && __appIsFn(root.DashboardRender.renderDashboardSkeleton) && root.DashboardRender.renderDashboardSkeleton("กำลังโหลดข้อมูล Dashboard...");
+            }
+            catch (e) {
+                warn("dashboard.skeleton", e, { owner: OWNER });
+            }
+    }
+    var apiCall = function (method, payload) { return payload = Object.assign({ requestId: "dash-runtime-final-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) }, payload || {}), root.AppPageKit && __appIsFn(root.AppPageKit.apiRunner) ? root.AppPageKit.apiRunner(method, payload, "Dashboard", dashboardConfig("dashboardApiTimeoutMs", 3e4)) : Promise.reject(new Error("AppPageKit.apiRunner ไม่พร้อมใช้งาน")); };
+    function authText(value) { return String(value == null ? "" : value).trim(); }
+    function authStoreGet(path, fallbackValue) {
+        try {
+            return root.AppStore && __appIsFn(root.AppStore.get) ? root.AppStore.get(path, fallbackValue) : fallbackValue;
+        }
+        catch (e) {
+            return fallbackValue;
+        }
+    }
+    function authPickUserRole(user) { return user && (user.role || user.userRole || user.accessRole || user.positionRole || user.permissionRole) || ""; }
+    function readDashboardAuthSnapshot() {
+        var user = null, token = "", csrf = "", role = "", name = "", status = "", loginOk = !1;
+        try {
+            user = root.AppCoreAuth && __appIsFn(root.AppCoreAuth.getCanonicalAuthUser) && root.AppCoreAuth.getCanonicalAuthUser() || null;
+        }
+        catch (_coreUser) {
+            warn("dashboard.authSnapshot.coreUser", _coreUser, { owner: OWNER });
+        }
+        user = user || authStoreGet("auth.user", null) || root.currentUser || null, token = authText(authStoreGet("auth.token", "") || root.__authToken || root.AppState && root.AppState.token || user && (user.token || user.authToken) || ""), csrf = authText(authStoreGet("auth.csrfToken", "") || authStoreGet("auth.actionToken", "") || root.__csrfToken || root.AppState && (root.AppState.csrfToken || root.AppState.csrf) || user && (user.csrfToken || user.csrf) || "");
+        try {
+            role = root.AppRuntime && __appIsFn(root.AppRuntime.resolveCurrentRole) ? root.AppRuntime.resolveCurrentRole() : "";
+        }
+        catch (_roleRuntime) {
+            warn("dashboard.authSnapshot.roleRuntime", _roleRuntime, { owner: OWNER });
+        }
+        return role = authText(role || authStoreGet("auth.role", "") || authPickUserRole(user) || root.currentUserRole || ""), name = authText(user && (user.name || user.fullName || user.username || user.email) || authStoreGet("auth.name", "") || root.currentUserName || ""), status = authText(authStoreGet("auth.status", "")), loginOk = authStoreGet("auth.loginOk", !1) === !0 || authStoreGet("auth.bootstrapOk", !1) === !0 || status === "authenticated" || !!user || !!token, { owner: "DASH-1:dashboard-auth-snapshot", token, csrfToken: csrf, csrf, user: user || null, role, name, status, authenticated: !!loginOk, ready: !!token, missingToken: !token, createdAt: Date.now() };
+    }
+    function waitDashboardAuthSnapshotReady(options) { var started = Date.now(), maxWait = Math.max(0, Number(options && options.authWaitMs || (options.forceFresh === !0 ? 900 : 1500))), interval = 100; function step() { var snapshot = readDashboardAuthSnapshot(); return state.authSnapshot = snapshot, root.AppDashboardAuthSnapshot = snapshot, snapshot.ready || Date.now() - started >= maxWait ? snapshot : new Promise(function (resolve) { root.setTimeout(function () { resolve(step()); }, interval); }); } return Promise.resolve().then(step); }
+    function applyDashboardAuthSnapshot(payload, snapshot) { return payload = payload || {}, snapshot = snapshot || readDashboardAuthSnapshot(), snapshot.token && (payload.token = payload.token || snapshot.token, payload._token = payload._token || snapshot.token, payload.authToken = payload.authToken || snapshot.token), snapshot.csrfToken && (payload.csrfToken = payload.csrfToken || snapshot.csrfToken, payload.csrf = payload.csrf || snapshot.csrfToken, payload._csrf = payload._csrf || snapshot.csrfToken), snapshot.role && (payload.role = payload.role || snapshot.role), snapshot.name && (payload.userName = payload.userName || snapshot.name), payload.clientContext = Object.assign({}, payload.clientContext || {}, { dashboardAuthSnapshot: !0, authReady: !!snapshot.ready, authenticated: !!snapshot.authenticated, role: snapshot.role || "", missingToken: !!snapshot.missingToken }), payload.__dashboardAuthSnapshotOwner = snapshot.owner || "DASH-1:dashboard-auth-snapshot", payload; }
+    function buildPayload(options) {
+        options = options || {};
+        var includeCases = options.includeCases === !0, includeMeetingRows = options.includeMeetingRows === !0, caseLimit = includeCases ? Math.max(10, Math.min(Number(options.caseLimit || 30) || 30, 120)) : 0, ttl = options.forceFresh === !0 ? 60 : Math.max(60, Math.min(Number(options.cacheTtlSeconds || 240) || 240, 900)), payload = { forceFresh: options.forceFresh === !0, includeBudget: !0, includeCases: includeCases, includeMeetingRows: includeMeetingRows, includeWorkflow: !0, caseLimit: caseLimit, budgetPlanLimit: Math.max(10, Math.min(Number(options.budgetPlanLimit || 50) || 50, 100)), budgetWorkflowLimit: Math.max(20, Math.min(Number(options.budgetWorkflowLimit || 100) || 100, 200)), cacheTtlSeconds: ttl, hotPathMode: "dashboard-persistent-compact-snapshot-g-r162", noCache: options.forceFresh === !0, bypassCache: options.forceFresh === !0, phase1FirstPaint: !1, phase1LazyHydration: !1, dashboardSingleCompletePath: !0, source: options.source || (options.forceFresh === !0 ? "dashboard-single-complete-reduced-scan-refresh-r159" : "dashboard-persistent-compact-snapshot-g-r162") };
+        try {
+            applyDashboardAuthSnapshot(payload, options.__authSnapshot || state.authSnapshot || readDashboardAuthSnapshot());
+        }
+        catch (authErr) {
+            warn("dashboard.payload.authSnapshot", authErr, { owner: OWNER });
+        }
+        return payload;
+    }
+    function releaseDashboardInteractionLocks(reason) {
+        try {
+            root.AppRuntime && __appIsFn(root.AppRuntime.clearUiBlocks) && root.AppRuntime.clearUiBlocks(reason || "dashboard.phase2", { closeLoadingSwal: !0, closeSidebar: !1, clearSectionOverlays: !0 });
+        }
+        catch (_rtClear) {
+            warn("dashboard.phase2.clearRuntime", _rtClear, { owner: OWNER });
+        }
+        try {
+            __appIsFn(root.__APP_CLEAR_STALE_INTERACTIVE_BLOCKERS__) && root.__APP_CLEAR_STALE_INTERACTIVE_BLOCKERS__(reason || "dashboard.phase2");
+        }
+        catch (_clearBlockers) {
+            warn("dashboard.phase2.clearBlockers", _clearBlockers, { owner: OWNER });
+        }
+        try {
+            document.documentElement && document.documentElement.classList.remove("app-route-loading", "app-page-switching", "app-ui-locked");
+        }
+        catch (_classClear) {
+            warn("dashboard.phase2.classClear", _classClear, { owner: OWNER });
+        }
+        return !0;
+    }
+    function emitDashboardEvent(name, detail) {
+        try {
+            document.dispatchEvent(new CustomEvent(name, { detail: Object.assign({ owner: "PHASE2:dashboard-load-integration" }, detail || {}) }));
+        }
+        catch (_emit) {
+            warn("dashboard.phase2.emit", _emit, { owner: OWNER, eventName: name });
+        }
+    }
+    function dashboardNeedsAuthRetry(value) { var code = dashboardErrorCodeFrom(value, ""); return code === "DASHBOARD_AUTH_MISSING" || code === "DASHBOARD_SESSION_EXPIRED" || code === "AUTH_REQUIRED" || code === "SESSION_EXPIRED"; }
+    function scheduleDashboardVisibleDataRetry(reason, delayMs) {
+        if (state.__singleRetryTimer || Number(state.__singleRetryCount || 0) >= 1)
+            return !1;
+        state.__singleRetryCount = Number(state.__singleRetryCount || 0) + 1;
+        try {
+            return state.__singleRetryTimer = root.setTimeout(function () {
+                state.__singleRetryTimer = null;
+                var snapshot = readDashboardAuthSnapshot();
+                if (!snapshot || !snapshot.ready)
+                    return warn("dashboard.singleRetry.authNotReady", null, { owner: OWNER, reason: reason || "single-retry" }), emitDashboardEvent("app:dashboard-load-settled", { current: !0, hasData: !!(state.data && isSingleCompleteData(state.data)), completeData: !!(state.data && isSingleCompleteData(state.data)), retryExhausted: !0, errorCode: "DASHBOARD_AUTH_MISSING" }), void 0;
+                load({ forceFresh: !1, includeBudget: !0, includeCases: !1, cacheTtlSeconds: 240, source: "dashboard-single-complete-retry-r157", authWaitMs: 1200, __singleRetry: !0, __authSnapshot: snapshot }).catch(function (err) { warn("dashboard.singleRetry.load", err, { owner: OWNER, reason: reason || "single-retry" }); });
+            }, Math.max(500, Number(delayMs || 900) || 900)), !0;
+        }
+        catch (e) {
+            return state.__singleRetryTimer = null, warn("dashboard.singleRetry.schedule", e, { owner: OWNER, reason: reason || "single-retry" }), !1;
+        }
+    }
+    function scheduleDashboardAuthRetry(reason, delayMs) { return scheduleDashboardVisibleDataRetry("auth-" + String(reason || "retry"), delayMs || 700); }
+    function emitDashboardFinalSettled(detail) { detail = Object.assign({ current: !0, hasData: !!(state.data && (isSingleCompleteData(state.data) || hasData(state.data))), completeData: !!(state.data && isSingleCompleteData(state.data)), singleCompletePath: !0, apiCallCount: Number(state.performance && state.performance.apiCallCount || 0), errorCode: state.lastError ? dashboardErrorCodeFrom(state.lastError, "DASHBOARD_BUNDLE_LOAD_FAILED") : "" }, detail || {}), emitDashboardEvent("app:dashboard-load-settled", detail); return detail; }
+    function load(options) {
+        options = options || {};
+        var fresh = options.forceFresh === !0, token = ++state.loadToken, performanceStartedAt = Date.now(), currentScope = dashboardCacheKey();
+        state.lastError = null, state.performance = { startedAt: performanceStartedAt, source: options.source || "dashboard", authReadyMs: 0, apiSettledMs: 0, renderedMs: 0, apiCallCount: 0 };
+        if (!fresh) {
+            if (state.data && state.authScopeKey === currentScope && isSingleCompleteData(state.data)) {
+                var memoryRendered = render(state.data, { source: "dashboard-memory-single-complete", memoryHit: !0 });
+                return emitDashboardEvent("app:dashboard-data-rendered", { source: "dashboard-memory-single-complete", hasData: !0, completeData: !0, apiCallCount: 0 }), emitDashboardFinalSettled({ token: token, current: !0, source: "dashboard-memory-single-complete", apiCallCount: 0 }), Promise.resolve(memoryRendered);
+            }
+            var cached = loadCache();
+            if (cached && isSingleCompleteData(cached)) {
+                var cacheRendered = render(cached, { source: "dashboard-session-cache-single-complete", cached: !0 });
+                return emitDashboardEvent("app:dashboard-data-rendered", { source: "dashboard-session-cache-single-complete", hasData: !0, completeData: !0, apiCallCount: 0 }), emitDashboardFinalSettled({ token: token, current: !0, source: "dashboard-session-cache-single-complete", apiCallCount: 0 }), Promise.resolve(cacheRendered);
+            }
+            if (state.promise)
+                return state.promise;
+        }
+        return renderSkeleton(), state.promise = waitDashboardAuthSnapshotReady(options).then(function (snapshot) { return state.performance.authReadyMs = Date.now() - performanceStartedAt, (!snapshot || !snapshot.ready) && warn("dashboard.authSnapshot.notReady", null, { owner: OWNER, authenticated: !!(snapshot && snapshot.authenticated), role: snapshot && snapshot.role || "", source: options.source || "dashboard" }), state.performance.apiCallCount = 1, apiCall("apiGetDashboardBundle", buildPayload(Object.assign({}, options, { __authSnapshot: snapshot }))); }).then(function (res) {
+            state.performance.apiSettledMs = Date.now() - performanceStartedAt;
+            if (token !== state.loadToken && state.data)
+                return state.data;
+            var responseCode = res && res.ok !== !0 ? dashboardErrorCodeFrom(res, "DASHBOARD_BUNDLE_LOAD_FAILED") : "", responseMessage = responseCode ? dashboardErrorMessageFrom(res, responseCode) : "", data = normalize(res);
+            responseCode && (data = attachDashboardErrorMeta(data, responseCode, responseMessage, { source: fresh ? "dashboard-single-complete-refresh-error" : "dashboard-single-complete-error", errorStage: "api-response", completeData: !1 }));
+            var complete = isSingleCompleteData(data);
+            if (!complete && state.data && isSingleCompleteData(state.data) && !fresh)
+                return state.data;
+            var rendered = render(data, { source: fresh ? "dashboard-single-complete-reduced-scan-refresh-r159" : "dashboard-persistent-compact-snapshot-g-r162", errorCode: responseCode || "", completeData: complete, singleCompletePath: !0 });
+            state.performance.renderedMs = Date.now() - performanceStartedAt, data.meta = Object.assign({}, data.meta || {}, { frontendPerformance: Object.assign({}, state.performance, { targetMs: 6500, status: state.performance.renderedMs > 6500 ? "over-target" : "within-target", stamp: "performance-persistent-dashboard-snapshot-g-r162" }) }), data.dashboardDto && (data.dashboardDto.meta = Object.assign({}, data.dashboardDto.meta || {}, data.meta || {}));
+            try {
+                root.AppPerformanceGate && __appIsFn(root.AppPerformanceGate.record) && root.AppPerformanceGate.record("apiGetDashboardBundle", { durationMs: state.performance.renderedMs, ok: !responseCode && complete, source: options.source || "dashboard", cacheHit: !!(data.meta && data.meta.cacheHit), completeData: complete, apiCallCount: 1 });
+            }
+            catch (perfErr) {
+                warn("dashboard.performance.record", perfErr, { owner: OWNER });
+            }
+            return emitDashboardEvent("app:dashboard-data-rendered", { source: fresh ? "dashboard-single-complete-reduced-scan-refresh-r159" : "dashboard-persistent-compact-snapshot-g-r162", errorCode: responseCode || "", hasData: isSingleCompleteData(data) || hasData(data), completeData: complete, apiCallCount: 1 }), complete ? state.__singleRetryCount = 0 : scheduleDashboardVisibleDataRetry(responseCode || "incomplete-bundle", responseCode && dashboardNeedsAuthRetry(res) ? 700 : 1000), dashboard.__enableBudgetSecondCall = !1, state.__budgetRefreshQueued = !1, rendered;
+        }).catch(function (err) {
+            warn("dashboard.bundle", err, { owner: OWNER }), state.lastError = err;
+            var cached2 = state.data && isSingleCompleteData(state.data) ? state.data : loadCache();
+            if (cached2 && isSingleCompleteData(cached2))
+                return render(cached2, { source: "dashboard-last-good-single-complete", error: String(err && err.message || err) });
+            try {
+                root.DashboardRender && __appIsFn(root.DashboardRender.renderDashboardEmptyState) && root.DashboardRender.renderDashboardEmptyState(dashboardErrorMessageFrom(err, dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED")));
+            }
+            catch (emptyErr) {
+                warn("dashboard.emptyState.render", emptyErr, { owner: OWNER });
+            }
+            return scheduleDashboardVisibleDataRetry(dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED"), dashboardNeedsAuthRetry(err) ? 700 : 1000), render({ summaryStats: {}, stats: {}, quickCounts: {}, budgetStats: {}, budget: {}, meetings: {}, rows: [], meta: { degraded: !0, completeData: !1, singleCompletePath: !0, errorCode: dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED"), dashboardErrorCode: dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED"), message: dashboardErrorMessageFrom(err, dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED")), generatedAt: new Date().toISOString(), owner: "DASH-2:dashboard-error-code", errorStage: "api-catch" } }, { source: "dashboard-error-degraded-reduced-scan-r159", errorCode: dashboardErrorCodeFrom(err, "DASHBOARD_BUNDLE_LOAD_FAILED") });
+        }).finally(function () { token === state.loadToken && (state.promise = null), releaseDashboardInteractionLocks("dashboard-load-finally"), emitDashboardEvent("app:dashboard-load-attempt-settled", { token: token, current: token === state.loadToken, completeData: !!(state.data && isSingleCompleteData(state.data)), retryPending: !!state.__singleRetryTimer, apiCallCount: Number(state.performance && state.performance.apiCallCount || 0) }), (!state.__singleRetryTimer || state.data && isSingleCompleteData(state.data)) && emitDashboardFinalSettled({ token: token, current: token === state.loadToken, source: options.source || "dashboard" }); }), state.promise;
+    }
+    function activate(options) { return load(Object.assign({ source: "dashboard.activate.reduced-scan-r159" }, options || {}, { forceFresh: (options && options.forceFresh) === !0 })); }
+    function refresh(options) { return load(Object.assign({ source: "dashboard.refresh.reduced-scan-r159" }, options || {}, { forceFresh: !0 })); }
+    function dispose() {
+        try {
+            state.__singleRetryTimer && root.clearTimeout(state.__singleRetryTimer);
+        }
+        catch (_disposeErr) {
+            window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _disposeErr);
+        }
+        return state.__singleRetryTimer = null, state.promise = null, !0;
+    }
+    function bindRefreshButton(lifecycle) {
+        var handler = function (ev) { var target = ev && ev.target; target && target.closest && target.closest("#dash-refresh-btn") && (ev.preventDefault(), Promise.resolve(refresh({ source: "dash-refresh-button" })).catch(function (err) { return warn("dashboard.refreshButton", err, { owner: OWNER }), !1; })); };
+        if (lifecycle && __appIsFn(lifecycle.on)) return dashboard.__r3RefreshBoundEpoch === lifecycle.epoch || (dashboard.__r3RefreshBoundEpoch = lifecycle.epoch, lifecycle.on(document, "click", handler, !0, "dashboard.refresh-button"));
+        return dashboard.__r3RefreshBound || (dashboard.__r3RefreshBound = !0, document.addEventListener("click", handler, !0)), !0;
+    }
+    function bindDashboardAuthAutoRetry(lifecycle) {
+        if (lifecycle && dashboard.__authAutoRetryEpoch === lifecycle.epoch) return !0;
+        if (!lifecycle && dashboard.__authAutoRetryBound) return !0;
+        lifecycle ? dashboard.__authAutoRetryEpoch = lifecycle.epoch : dashboard.__authAutoRetryBound = !0;
+        try {
+            ["app:user-changed", "app:auth-ready", "app:session-resumed"].forEach(function (eventName) {
+                var handler = function () { var snapshot = readDashboardAuthSnapshot(), authScope = dashboardCacheKey(); state.authScopeKey && authScope && state.authScopeKey !== authScope && (state.data = null, state.rendered = !1, state.authScopeKey = authScope), snapshot && snapshot.ready && (!state.data || !isSingleCompleteData(state.data)) && scheduleDashboardAuthRetry("event-" + eventName, 350); };
+                lifecycle && __appIsFn(lifecycle.on) ? lifecycle.on(document, eventName, handler, !0, "dashboard.auth." + eventName) : document.addEventListener(eventName, handler, !0);
+            });
+        } catch (e) { warn("dashboard.authAutoRetry.bind", e, { owner: OWNER }); }
+        return !0;
+    }
+    if (dashboard.activate = activate, dashboard.refresh = refresh, dashboard.dispose = dispose, dashboard.bootstrapDashboard = activate, root.loadDash = function (options) { return Promise.resolve(activate(Object.assign({ source: "loadDash" }, options || {}))).catch(function (err) { return warn("dashboard.loadDash.recovered", err, { owner: OWNER }), !1; }); }, root.ensureDashboardVisibleData = function (options) { return Promise.resolve(activate(Object.assign({ source: "ensureDashboardVisibleData" }, options || {}))).catch(function (err) { return warn("dashboard.visibleData.recovered", err, { owner: OWNER }), !1; }); }, root.AppPages && __appIsFn(root.AppPages.register))
+        try {
+            root.AppPages.register("dashboard", { mount: function (options) { var lifecycle = options && options.lifecycle; return bindRefreshButton(lifecycle), bindDashboardAuthAutoRetry(lifecycle), activate(options); }, reload: refresh, dispose: function (options) { dashboard.__r3RefreshBoundEpoch = 0, dashboard.__authAutoRetryEpoch = 0; return dispose(options); } });
+        }
+        catch (e) {
+            warn("dashboard.register", e, { owner: OWNER });
+        }
+})(window, window.AppDashboard = window.AppDashboard || {});
+</script>
+
+<script id="dashboard-r61-role-listener">
+!function () {
+    try {
+        document.addEventListener("app:user-changed", function () {
+            try {
+                window.DashboardRender && window.DashboardRender.applyViewerMode && window.DashboardRender.applyViewerMode();
+            }
+            catch (e) {
+                window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", e);
+            }
+        });
+    }
+    catch (e) {
+        window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", e);
+    }
+}();
+</script>
+
+<!-- P1 dashboard-idle runtime: telemetry/prefetch are no longer part of Core -->
+<script id="app-async-runtime-loader">
+(function(root,doc){"use strict";
+  if(!root||root.__APP_ASYNC_RUNTIME_LOADER__)return;
+  root.__APP_ASYNC_RUNTIME_LOADER__=true;
+  var prefetchInFlight=null;
+  var dashboardComplete=false;
+  var prefetchPending=false;
+  var isFn=root.AppRuntimeHelpers&&root.AppRuntimeHelpers.isFn||function(value){return typeof value==="function"};
+  var PREFETCH_AFTER_COMPLETE_IDLE_MS=1500;
+  function store(){return root.AppStore||null}
+  function authenticated(){try{var s=store();return!!(s&&s.get&&s.get("auth.token",""))}catch(_e){return false}}
+  function idle(fn){return(root.requestIdleCallback||function(cb){return setTimeout(cb,PREFETCH_AFTER_COMPLETE_IDLE_MS)})(fn,{timeout:PREFETCH_AFTER_COMPLETE_IDLE_MS+1500})}
+  function ensure(reason){
+    if(root.__APP_CORE_RUNTIME_LOADED__)return Promise.resolve(true);
+    try{if(root.AppCritical&&isFn(root.AppCritical.ensureCoreRuntime))return Promise.resolve(root.AppCritical.ensureCoreRuntime({reason:reason||"authenticated-runtime"}))}catch(error){try{root.__appObserve&&root.__appObserve(error,"index.asyncRuntime.ensure")}catch (_ignore) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _ignore); }}
+    return Promise.resolve(false)
+  }
+  function deferredFiles(){
+    var map=root.__APP_DEFERRED_SCRIPTS__||{},upfront=root.__APP_UPFRONT_INCLUDED_SCRIPTS__||[],seen={},out=[];
+    upfront.forEach(function(name){seen[String(name||"")]=true});
+    Object.keys(map).forEach(function(page){if(page==="ai"||page==="print")return;(Array.isArray(map[page])?map[page]:[]).forEach(function(name){
+      name=String(name||"").trim();
+      var alreadyLoaded=false;
+      try{alreadyLoaded=!!(root.AppAssetLoader&&isFn(root.AppAssetLoader.isLoaded)&&root.AppAssetLoader.isLoaded(name))}catch (_loadedCheck) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _loadedCheck); }
+      var sharedWarmAsset=name==="bundle:runtimeDateTable"||name==="Runtime_04_Thailand_Location"||name==="Runtime_05_Status_Aging";
+      if(sharedWarmAsset&&name&&!seen[name]&&!alreadyLoaded){seen[name]=true;out.push(name)}
+    })});
+    return out
+  }
+  function prefetchPages(reason){
+    if(prefetchInFlight)return prefetchInFlight;
+    if(!dashboardComplete||!authenticated()||!root.AppCritical||!isFn(root.AppCritical.prefetchPartial))return Promise.resolve(false);
+    var queue=deferredFiles(),workers=Math.min(1,queue.length),cursor=0;
+    function worker(){
+      if(cursor>=queue.length)return Promise.resolve(true);
+      var file=queue[cursor++];
+      return Promise.resolve(root.AppCritical.prefetchPartial(file)).catch(function(error){try{root.__appObserve&&root.__appObserve(error,"index.prefetch."+file)}catch (_ignore) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _ignore); }}).then(worker)
+    }
+    prefetchInFlight=Promise.all(Array.from({length:workers},worker)).then(function(){return true},function(){return false}).then(function(result){prefetchInFlight=null;return result});
+    return prefetchInFlight
+  }
+  function schedule(reason){
+    if(!dashboardComplete){prefetchPending=true;return false}
+    prefetchPending=false;
+    idle(function(){if(!authenticated()||!dashboardComplete)return;ensure(reason||"dashboard-complete-idle").then(function(){return prefetchPages(reason||"dashboard-complete-idle")})});
+    return true
+  }
+  function markDashboardComplete(event){
+    var detail=event&&event.detail||{};
+    if(detail.completeData!==true)return false;
+    dashboardComplete=true;
+    root.__APP_DASHBOARD_COMPLETE_DATA_READY__=true;
+    return schedule("dashboard-complete-data")
+  }
+  root.AppAsyncRuntimeLoader={owner:"Index.html:authenticated-runtime-after-dashboard-complete-r159",ensureCoreRuntime:ensure,prefetchPages:prefetchPages,schedule:schedule,status:function(){return{ok:true,dashboardComplete:dashboardComplete,prefetchPending:prefetchPending,prefetchInFlight:!!prefetchInFlight}}};
+  doc&&doc.addEventListener("app:dashboard-load-settled",markDashboardComplete,false);
+  doc&&doc.addEventListener("app:user-changed",function(){try{if(authenticated()){prefetchPending=true}else{dashboardComplete=false;prefetchPending=false;root.__APP_DASHBOARD_COMPLETE_DATA_READY__=false}}catch(error){try{root.__appObserve&&root.__appObserve(error,"index.asyncRuntime.userChanged")}catch (_ignore) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Dashboard.html.ignored", _ignore); }}},false)
+})(typeof window!=="undefined"?window:typeof globalThis!=="undefined"?globalThis:this,typeof document!=="undefined"?document:null);
+</script>

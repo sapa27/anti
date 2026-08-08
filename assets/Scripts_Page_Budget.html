@@ -1,0 +1,3044 @@
+<style id="p0-deferred-style-budget-current">#budget-permanent-save-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(0,30,60,.1);box-shadow:0 -10px 24px rgba(0,0,0,.08)}#budget-permanent-save-bar .btn{min-width:150px}@media (max-width:767.98px){#budget-permanent-save-bar{flex-direction:column;align-items:stretch}#budget-permanent-save-bar .d-flex{width:100%}#budget-permanent-save-bar .btn{width:100%}}.budget-entry-action-bar{position:static;left:auto;right:auto;bottom:auto;display:flex;justify-content:center;align-items:center;gap:1rem;background:transparent;box-shadow:none;border:0;padding:.75rem 0;margin:1rem auto 0}.budget-entry-action-bar .d-flex{justify-content:center;width:100%}:where(#p-budget) #budget-type-summary-body-final td,:where(#p-budget) #budget-summary-body td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}</style>
+<script type="text/x-template"id="tpl-page-budget">
+<div class="page"id="p-budget">
+<div class="visually-hidden"role="status"aria-live="polite"data-app-a11y="live-region"></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1 class="app-page-heading fw-bold text-primary mb-0"><i class="fas fa-money-bill-wave me-2"aria-hidden="true"></i>ระบบบริหารงบประมาณ</h1>
+<div class="d-flex align-items-center gap-2">
+<label class="fw-bold mb-0"for="budget-fy-filter">ปีงบประมาณ:</label>
+<select class="form-select fw-bold text-primary"aria-label="เลือกปีงบประมาณ"data-change="loadBudgetSummary"id="budget-fy-filter"data-default-current-fy="1"style="width: 120px;">
+<option value="">กำลังโหลดปีงบประมาณ...</option>
+</select>
+</div>
+</div>
+<ul class="nav nav-tabs mb-4"id="budgetTab">
+<li class="nav-item">
+<button class="nav-link active fw-bold"role="tab"aria-selected="true"aria-controls="b-summary"data-action="showBudgetTab"data-budget-tab="summary"id="budget-tab-summary-btn">รายงานสรุปค่าใช้จ่าย</button>
+</li>
+<li class="nav-item">
+<button class="nav-link fw-bold"role="tab"aria-selected="false"aria-controls="b-entry"data-action="showBudgetTab"data-budget-tab="entry"id="budget-tab-entry-btn">การนำเข้าข้อมูล</button></li>
+<li class="nav-item">
+<button class="nav-link fw-bold"role="tab"aria-selected="false"aria-controls="b-typesummary"data-action="showBudgetTab"data-budget-tab="typesummary"id="budget-tab-typesummary-btn">สรุปแยกแต่ละประเภท</button>
+</li>
+</ul>
+<div class="b-tab"id="b-summary">
+<div class="card p-3 p-md-4 shadow-sm border-top border-primary border-4 bg-white app-card">
+<div class="d-flex justify-content-between mb-3 no-print">
+<h5 class="fw-bold">รายงานสรุปค่าใช้จ่ายงบประมาณ</h5>
+<div class="ms-auto d-flex gap-2 flex-wrap">
+<button class="btn btn-outline-success btn-sm"aria-label="ส่งออกรายงานงบประมาณเป็น Excel"data-action="exportBudgetReportExcel"id="btn-budget-report-excel"><i class="fas fa-file-excel me-1"aria-hidden="true"></i>ส่งออก Excel</button>
+<button class="btn btn-sm btn-primary"data-action="generateAIExecutiveSummary"id="btn-ai-executive-summary"aria-label="ให้ AI วิเคราะห์และสร้างรายงานสรุปงบประมาณ"title="ให้ Gemini AI วิเคราะห์และสร้างรายงานสรุปงบประมาณ 3 ย่อหน้า">
+<i class="fas fa-robot me-1"></i>สร้างรายงานสรุปด้วย AI
+</button>
+<button class="btn btn-outline-primary btn-sm"aria-label="พิมพ์รายงานสรุปงบประมาณ"data-action="printBudgetSummary"><i class="fas fa-print me-1"aria-hidden="true"></i>พิมพ์รายงาน</button>
+</div>
+</div>
+<div class="card border-0 bg-light mb-3 no-print app-card"id="budget-ai-risk-card">
+<div class="card-body py-3">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div>
+<div class="fw-bold text-primary"><i class="fas fa-triangle-exclamation me-2"></i>AI Budget Risk Dashboard</div>
+<div class="small text-muted">วิเคราะห์ความเสี่ยงงบประมาณและรายการผิดปกติจากข้อมูลปีงบประมาณที่เลือก</div>
+</div>
+<button class="btn btn-outline-primary btn-sm"data-action="loadBudgetRiskDashboard"id="btn-budget-ai-risk">โหลดความเสี่ยง AI</button>
+</div>
+<div class="small text-muted mt-2 d-none"role="status"aria-live="polite"id="budget-ai-risk-loading"><i class="fas fa-spinner fa-spin me-1"></i>กำลังวิเคราะห์ข้อมูล...</div>
+<div class="small mt-2 d-none"role="region"aria-label="สรุปความเสี่ยงจาก AI"id="budget-ai-risk-summary"></div>
+</div>
+</div>
+<div class="app-table-scroll budget-summary-desktop-visible-shell">
+<table data-page-size="20" data-app-pager="off" data-app-local-dom-paging="off" data-app-pager-disabled="budget-summary-r74-desktop-visible" class="table table-bordered table-hover align-middle small app-table-standard no-app-pager no-print-pager budget-summary-desktop-visible-owner app-mobile-priority-table app-mobile-budget-table">
+<thead class="table-light text-center">
+<tr>
+<th width="55%">รายการ</th>
+<th width="15%">งบประมาณ</th>
+<th width="20%">รายจ่าย</th>
+<th width="15%">คงเหลือ</th>
+</tr>
+</thead>
+<tbody id="budget-summary-body">
+<tr>
+<td class="text-center p-4"colspan="4">
+<i class="fas fa-spinner fa-spin me-2"></i>กำลังโหลดข้อมูล...</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="b-tab d-none"id="b-entry">
+<div class="card p-4 shadow-sm border-0 bg-white app-card">
+<h5 class="fw-bold text-navy mb-3 border-bottom pb-2"><i class="fas fa-edit me-2"></i>บันทึกข้อมูลงบประมาณ
+</h5>
+<form class="b-form mt-3"id="budget-entry-form">
+<input id="budget-edit-id"type="hidden"/>
+<div class="row g-2 mb-2">
+<div class="col-md-6">
+<label class="fw-bold text-primary">ประเภทรายการงบประมาณ</label>
+<select class="form-select border-primary"data-change="toggleBudgetForms"id="budget-entry-type">
+<option value="">--เลือกประเภทรายการ--</option>
+<option value="การประชุมคณะกรรมาธิการ">การประชุมคณะกรรมาธิการ</option>
+<option value="การประชุมคณะอนุกรรมาธิการ">การประชุมคณะอนุกรรมาธิการ</option>
+<option value="การศึกษาดูงานในประเทศ">การศึกษาดูงานในประเทศ</option>
+<option value="การศึกษาดูงานในประเทศและการจัดสัมมนา">การศึกษาดูงานในประเทศและการจัดสัมมนา</option>
+<option value="การจัดสัมมนา">การจัดสัมมนา</option>
+<option value="การศึกษาดูงานต่างประเทศ">การศึกษาดูงานต่างประเทศ</option>
+<option value="การรับรองแขกต่างประเทศ">การรับรองแขกต่างประเทศ</option>
+<option value="ส่งเสริมและสนับสนุนการดำเนินงาน">ส่งเสริมและสนับสนุนการดำเนินงาน</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="fw-bold text-danger">เจ้าหน้าที่รับผิดชอบ(หลัก)</label>
+<select class="form-select border-danger"data-focus="fillBudgetDropdowns"id="budget-common-staff-resp">
+<option value="">--เลือกเจ้าหน้าที่รับผิดชอบ--</option>
+</select>
+</div>
+</div>
+<div class="border p-3 rounded mb-2 mt-3 bg-light"id="dynamic-form-area"data-budget-amount-contract="amount-first-support-only">
+<div class="text-center text-muted">กรุณาเลือกประเภทรายการเพื่อกรอกข้อมูล</div>
+</div>
+<div class="row g-2 mt-3 p-3 bg-white rounded border shadow-sm">
+<div class="col-md-3">
+<label class="fw-bold">สถานะคืนเงิน</label>
+<select class="form-select"id="budget-common-refund-status">
+<option value="ยังไม่คืนเงิน">ยังไม่คืนเงิน</option>
+<option value="คืนเงินแล้ว">คืนเงินแล้ว</option>
+<option value="ไม่มีการยืมเงิน">ไม่มีการยืมเงิน</option>
+</select>
+</div>
+<div class="col-md-3">
+<label class="fw-bold">วันคืนเงิน</label>
+<input type="text"class="form-control app-thai-date-input"data-thai-date="1"id="budget-common-refund-date"inputmode="numeric"placeholder="วว/ดด/ปปปป">
+</div>
+<div class="col-md-3">
+<label class="fw-bold">สถานะรายงานค่าใช้จ่าย</label>
+<select class="form-select"id="budget-common-report-status">
+<option value="ยังไม่รายงาน">ยังไม่รายงาน</option>
+<option value="รายงานแล้ว">รายงานแล้ว</option>
+</select>
+</div>
+<div class="col-md-3">
+<label class="fw-bold">วันรายงาน</label>
+<input type="text"class="form-control app-thai-date-input"data-thai-date="1"id="budget-common-report-date"inputmode="numeric"placeholder="วว/ดด/ปปปป">
+</div>
+</div>
+<div class="budget-entry-action-bar mt-3"id="budget-permanent-save-bar"data-visible="true">
+<div class="text-muted small d-none d-md-block mb-2">
+<i class="fas fa-info-circle me-1"></i>
+<span id="budget-entry-type-label">เลือกประเภทรายการเพื่อบันทึก</span>
+</div>
+<div class="d-flex gap-2 flex-wrap justify-content-center budget-inline-save-wrap">
+<button class="btn btn-outline-secondary px-4"data-action="resetBudgetEntryForm"id="budget-entry-inline-reset-btn"type="button">
+<i class="fas fa-eraser me-2"></i>ล้างข้อมูล
+</button>
+<button class="btn btn-success btn-lg fw-bold px-5 shadow-sm"data-action="budgetSaveActiveEntry"id="budget-entry-inline-save-btn"type="button">
+<i class="fas fa-save me-2"></i>บันทึกข้อมูล
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+<div class="b-tab d-none"id="b-typesummary">
+<div class="card p-4 shadow-sm border-0 bg-white app-card">
+<h5 class="fw-bold text-navy mb-3"><i class="fas fa-list-alt me-2"></i>สรุปแยกแต่ละประเภท</h5>
+<div class="row g-2 mb-3 bg-light p-3 rounded border align-items-end">
+<div class="col-md-3 d-none"aria-hidden="true"data-budget-type-fy-hidden="1">
+<label class="small fw-bold text-muted">ปีงบประมาณ</label>
+<select class="form-select"id="budget-type-fy-current"data-default-current-fy="1"tabindex="-1"></select>
+</div>
+<div class="col-md-4">
+<select class="form-select border-primary fw-bold text-primary"data-change="renderTypeSummary"data-render-arg="true"id="budget-type-filter-current"aria-label="เลือกประเภทรายการงบประมาณ">
+<option value="ทั้งหมด">--ทุกประเภทรายการ--</option>
+<option value="การประชุมคณะกรรมาธิการ">การประชุมคณะกรรมาธิการ</option>
+<option value="การประชุมคณะอนุกรรมาธิการ">การประชุมคณะอนุกรรมาธิการ</option>
+<option value="การศึกษาดูงานในประเทศ">การศึกษาดูงานในประเทศ</option>
+<option value="การศึกษาดูงานในประเทศและการจัดสัมมนา">การศึกษาดูงานในประเทศและการจัดสัมมนา</option>
+<option value="การจัดสัมมนา">การจัดสัมมนา</option>
+<option value="การศึกษาดูงานต่างประเทศ">การศึกษาดูงานต่างประเทศ</option>
+<option value="การรับรองแขกต่างประเทศ">การรับรองแขกต่างประเทศ</option>
+<option value="ส่งเสริมและสนับสนุนการดำเนินงาน">ส่งเสริมและสนับสนุนการดำเนินงาน</option>
+</select>
+</div>
+<div class="col-md-5 d-flex gap-2">
+<button class="btn btn-primary w-50 fw-bold"data-action="loadBudgetTypeSummary">
+<i class="fas fa-search me-1"></i>โหลดข้อมูล
+</button>
+<button class="btn btn-success w-50 fw-bold"data-action="printTypeSummary">
+<i class="fas fa-print me-1"></i>พิมพ์รายงาน
+</button>
+</div>
+</div>
+<div class="app-table-scroll">
+<table data-page-size="20"data-app-pager="off"class="table table-bordered table-sm align-middle text-sm app-table-standard no-app-pager app-mobile-priority-table app-mobile-budget-table">
+<thead class="table-light text-center"id="type-summary-thead">
+<tr>
+<th>กรุณากดปุ่มโหลดข้อมูล</th>
+</tr>
+</thead>
+<tbody id="budget-type-summary-body-final">
+<tr>
+<td class="text-center p-3 text-muted"colspan="10">เลือกปีงบประมาณและประเภท แล้วกดปุ่ม"โหลดข้อมูล"
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-3 no-print app-table-footer"id="budget-pagination-container"></div>
+</div>
+</div>
+
+</div>
+</script>
+<script id="budget-status-aging-adapter-r200">
+(function(root){
+"use strict";
+if(!root||root.__BUDGET_STATUS_AGING_ADAPTER_R200__)return;
+root.__BUDGET_STATUS_AGING_ADAPTER_R200__=!0;
+function text(value){return value==null?"":String(value)}
+function esc(value){return text(value).replace(/[&<>"']/g,function(ch){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]||ch})}
+root.BudgetAgingRender=root.BudgetAgingRender||{};
+root.BudgetAgingRender.owner="Scripts_Core_Runtime:AppStatusAging/BudgetAdapter:r200";
+root.BudgetAgingRender.statusAgingHtml=function(row,type){
+row=row||{};
+type=String(type||"refund");
+var api=root.AppStatusAging,status=text(row[type==="report"?"reportStatus":"refundStatus"]||"");
+if(!status)return'<span class="badge bg-secondary">-</span>';
+if(!api||typeof api.resolve!=="function"||typeof api.businessDaysSince!=="function")return'<span class="badge bg-secondary">'+esc(status)+'</span>';
+var extra=row.extra||{},start=row.entryType==="การประชุมคณะกรรมาธิการ"||row.entryType==="การประชุมคณะอนุกรรมาธิการ"?row.activityDate||row.startDate:row.endDate||row.activityDate||row.startDate,
+completed=status.indexOf("แล้ว")!==-1&&status.indexOf("ยังไม่")===-1||type==="refund"&&status.indexOf("ไม่มีการยืมเงิน")!==-1,
+completedDate=type==="report"?row.reportDate||extra.reportDate||"":row.refundDate||extra.refundDate||"",
+frozenDays=type==="report"?(extra.reportStatusFrozenDays!=null?extra.reportStatusFrozenDays:row.reportAgingDays):(extra.refundStatusFrozenDays!=null?extra.refundStatusFrozenDays:row.refundAgingDays),
+days=completedDate&&api.parseDate(completedDate)?api.businessDaysSince(start,completedDate):frozenDays!=null&&frozenDays!==""?Number(frozenDays)||0:api.businessDaysSince(start,completed&&(extra[type+"StatusFrozenAt"]||row.updatedAt)||new Date()),
+info=api.resolve(row,type,{status:status,startDate:start,completedDate:completedDate,days:days,completed:completed,thresholdDays:type==="report"?15:1});
+return'<div><span class="badge '+esc(info.badgeClass)+'">'+esc(status)+'</span><div class="'+esc(info.textClass)+' small mt-1">'+Number(info.days||0)+' วันทำการ</div></div>';
+};
+})(window);
+</script>
+
+<script>
+!function(){
+"use strict";
+var budgetRoot=window;
+if(!budgetRoot.__budgetModuleInitialized){
+budgetRoot.__budgetModuleInitialized=!0;
+var budgetKit=budgetRoot.AppRuntimeModules.requirePageKit("Budget.Page",{
+timeoutMs:25e3,
+required:["byId","text","apiRunner","createEl","clearNode","appendChildren","storeGet","storeSet","esc","setHtml"]
+}),
+budgetDom=budgetRoot.AppDom||{},
+budgetById=budgetKit.byId,
+budgetCreateElement=budgetKit.createEl,
+budgetClearElement=budgetKit.clearNode||budgetDom.clearNode,
+budgetAppendChildren=budgetKit.appendChildren,
+budgetStore=budgetRoot.AppStore,
+budgetStoreGet=budgetKit.storeGet,
+budgetSelectors=budgetRoot.AppSelectors||{},
+budgetStoreSet=budgetKit.storeSet,
+budgetConstants=budgetKit.Constants&&budgetKit.Constants.budget||{},
+budgetState=(budgetRoot.AppState=budgetRoot.AppState||{},budgetRoot.BudgetState=budgetRoot.BudgetState||{
+summaryRows:[],importRows:[],summaryPage:1,summaryLimit:20,typeFilter:budgetConstants.typeFilterAll||"ทั้งหมด"
+});
+budgetState.typeSummaryPageCache=budgetState.typeSummaryPageCache||Object.create(null),budgetState.typeSummaryPagePrefetch=budgetState.typeSummaryPagePrefetch||Object.create(null),budgetState.typeSummaryPageCacheBaseKey=String(budgetState.typeSummaryPageCacheBaseKey||""),budgetState.typeSummaryRequestSeq=Math.max(0,Number(budgetState.typeSummaryRequestSeq||0)||0),budgetState.typeSummaryActiveRequestKey=String(budgetState.typeSummaryActiveRequestKey||"");
+budgetRoot.__budgetPageInitialized=!!budgetRoot.__budgetPageInitialized,budgetRoot.__budgetStaticBound=!!budgetRoot.__budgetStaticBound;
+try{
+budgetRoot.AppPageController&&__appIsFn(budgetRoot.AppPageController.registerModule)&&budgetRoot.AppPageController.registerModule("Budget",{
+owner:"Scripts_Page_Budget.html",phase:"Phase2",apiOwner:"AppPageKit.apiRunner",eventOwner:"budgetStaticBound/current",saveOwner:"budgetSaveActiveEntry",typeSummaryOwner:"loadBudgetTypeSummary"
+})
+}
+catch(_budgetPhase2RegisterErr){
+"function"==typeof __appObserve&&__appObserve(_budgetPhase2RegisterErr,"Budget.phase2.register")
+}
+var budgetEscapeHtml=budgetKit.esc||budgetKit.escapeHtml||function(t){
+return budgetById(t).replace(/[&<>"']/g, function(t) {
+return{
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}
+[t]
+})
+},budgetShowElement=budgetKit.show||function(t){
+var e=budgetById(t);
+e&&(e.classList.remove("d-none"),e.style.display="")
+},budgetHideElement=budgetKit.hide||function(t){
+var e=budgetById(t);
+e&&(e.classList.add("d-none"),e.style.display="none")
+},budgetFieldValue=__appIsFn(budgetKit.val)?budgetKit.val:function(t){
+var e="string"==typeof t?document.getElementById(t):t;
+return e?String(null==e.value?"":e.value):""
+},budgetSetHtml=(__appIsFn(budgetKit.setVal)&&budgetKit.setVal,budgetKit.setHtml||function(e,n,a){
+var o=budgetById(e);
+if(!o)return null;
+var i=String(null==n?"":n);
+return budgetRoot.AppDom&&__appIsFn(budgetRoot.AppDom.renderHtml)?budgetRoot.AppDom.renderHtml(o,i,a||{
+moduleName:"Budget.safeHtml"
+}):budgetRoot.safeSetInnerHTML?budgetRoot.safeSetInnerHTML(o,i,a||{
+moduleName:"Budget.safeHtml"
+}):(o.textContent=i,o)
+}),budgetSetOptions=budgetKit.setOptions||null,budgetToNumber=budgetKit.num||function(t){
+return Number(String(null==t?"":t).replace(/[^0-9.\-]/g,""))||0
+},budgetFormatAmount=function(t){
+var e=budgetToNumber(t);
+isFinite(e)||(e=0);
+try{
+return Number(e).toLocaleString("th-TH",{
+minimumFractionDigits:2,maximumFractionDigits:2
+})
+}
+catch(t){
+return String(Number(e||0).toFixed(2))
+}
+},callBudgetApi=function(n,r,a,o){
+var i;
+try{
+i=budgetRoot.AppPageKit&&__appIsFn(budgetRoot.AppPageKit.apiRunner)?budgetRoot.AppPageKit.apiRunner(n,r||{
+},"Scripts_Page_Budget",25e3):Promise.reject(budgetKit.apiUnavailableError?budgetKit.apiUnavailableError():new Error("AppPageKit.apiRunner ไม่พร้อมใช้งาน"))
+}
+catch(t){
+i=Promise.reject(t)
+}
+return Promise.resolve(i).then(function(t){
+return"function"==typeof a&&a(t),t
+}).catch(function(t){
+if("function"==typeof o)return o(t),null;
+throw t
+})
+};
+var budgetDelay=budgetRoot.budgetDelay||function(label,handler,delayMs){
+if("function"==typeof label){delayMs=handler,handler=label,label="page:budget.delay"}
+label=String(label||"page:budget.delay");
+handler="function"==typeof handler?handler:function(){};
+var id=budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.delay)?budgetRoot.AppRuntime.delay(label,handler,Math.max(0,Number(delayMs||0)||0)):budgetRoot.setTimeout(handler,Math.max(0,Number(delayMs||0)||0));
+return{id:id,owner:label,runtime:!!(budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.delay))}
+};
+budgetRoot.budgetDelay=budgetRoot.budgetDelay||budgetDelay;
+function budgetWarn(label,err,meta){
+try{
+if(budgetKit&&__appIsFn(budgetKit.warn))return budgetKit.warn(label,err,meta);
+if(budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.recordWarning))return budgetRoot.AppRuntime.recordWarning(label,err,meta);
+budgetRoot.console&&__appIsFn(budgetRoot.console.warn)&&budgetRoot.console.warn("[BudgetWarn] "+String(label||"budget"),err||"",meta||"")
+}
+catch(_budgetWarnErr){
+"function"==typeof __appObserve&&__appObserve(_budgetWarnErr,"ec")
+}
+return!1
+}
+function budgetBindDocOnce(eventName,handler,options,key){
+try{
+if(budgetRoot.AppEvents&&__appIsFn(budgetRoot.AppEvents.on))return budgetRoot.AppEvents.on(document,eventName,handler,options,key||"budget."+eventName);
+if(budgetKit&&__appIsFn(budgetKit.bindOnce))return budgetKit.bindOnce(document,eventName,handler,options,key||"budget."+eventName);
+var flag=String(key||"budget_"+eventName).replace(/[^a-zA-Z0-9_]/g,"_"),mark=document.documentElement;
+if(mark&&mark.dataset){
+if("1"===mark.dataset[flag])return!1;
+mark.dataset[flag]="1"
+}
+return document.addEventListener(eventName,handler,options),!0
+}
+catch(err){
+return budgetWarn("budget.bindDocOnce",err,{
+eventName:eventName,key:key
+}),!1
+}
+}
+function budgetCURRENTBMarkViewsDirty(reason,fy){
+try{
+var dirty=budgetState.__budgetCURRENTBDirty=budgetState.__budgetCURRENTBDirty||{
+};
+dirty.summary=!0,dirty.typesummary=!0,budgetState.__budgetCURRENTBDirtyReason=String(reason||"mutation"),budgetState.__budgetCURRENTBDirtyFy=String(fy||M()||""),budgetState._summaryCacheKey="",budgetState._summaryPromiseKey="",budgetState._typeSummaryCacheKey="",budgetState._typeSummaryPromiseKey="",budgetState.typeSummaryPageCache=Object.create(null),budgetState.typeSummaryPagePrefetch=Object.create(null),budgetState.typeSummaryPageCacheBaseKey="",budgetState.typeSummaryActiveRequestKey="",budgetStoreSet("budget.current.dirty",{
+summary:!0,typesummary:!0,reason:budgetState.__budgetCURRENTBDirtyReason,fy:budgetState.__budgetCURRENTBDirtyFy,at:Date.now()
+})
+}
+catch(err){
+budgetWarn("budget.currentb.markDirty",err)
+}
+return!0
+}
+function budgetCURRENTBIsDirty(kind){
+var dirty=budgetState.__budgetCURRENTBDirty||{
+};
+return!(!dirty||!dirty[kind])
+}
+function budgetCURRENTBClearDirty(kind){
+try{
+var dirty=budgetState.__budgetCURRENTBDirty=budgetState.__budgetCURRENTBDirty||{
+};
+dirty[kind]=!1,dirty.summary||dirty.typesummary||budgetStoreSet("budget.current.dirty",{
+summary:!1,typesummary:!1,at:Date.now()
+})
+}
+catch(err){
+budgetWarn("budget.currentb.clearDirty",err)
+}
+}
+function budgetCURRENTBRefreshVisible(reason,delayMs){
+try{
+var active=j();
+return budgetDelay("page:budget.currentb-visible-refresh",function(){
+try{
+var visible=j();
+if("typesummary"===visible&&__appIsFn(budgetRoot.loadBudgetTypeSummary))return budgetRoot.loadBudgetTypeSummary({
+forceRefresh:!0,refreshReason:reason||"mutation"
+});
+if("summary"===visible&&__appIsFn(budgetRoot.loadBudgetSummary))return budgetRoot.loadBudgetSummary(1,{
+forceRefresh:!0,refreshReason:reason||"mutation"
+})
+}
+catch(err){
+budgetWarn("budget.currentb.visibleRefresh",err,{
+reason:reason,active:active
+})
+}
+return!0
+},null==delayMs?120:delayMs)
+}
+catch(err){
+budgetWarn("budget.currentb.scheduleVisibleRefresh",err,{
+reason:reason
+})
+}
+return!1
+}
+if(budgetRoot.invokeBudgetReset=budgetRoot.invokeBudgetReset||function(){
+var e=budgetById("budget-entry-form");
+if(e&&__appIsFn(e.reset)&&e.reset(),__appIsFn(budgetRoot.toggleBudgetForms)&&budgetRoot.toggleBudgetForms(),__appIsFn(budgetRoot.calcBudgetTotalNow))try{
+budgetRoot.calcBudgetTotalNow()
+}
+catch(t){
+budgetWarn("budget.reset.calcBudgetTotal",t)
+}
+return!0
+},budgetRoot.loadBudgetSubcommittees=function(){
+return callBudgetApi("apiBudgetGetSubcommitteeOptions",{
+},function(e){
+var n=H(e);
+budgetRoot.__budgetSubcommitteeNames=Array.isArray(n.names)?n.names:[]
+})
+},budgetRoot.fillBudgetDropdowns=function(e){
+function n(t){
+var e=[];
+return(Array.isArray(t)?t:[]).forEach(function(t){
+t=t||{
+};
+var n=String(t.name||t.fullName||t.displayName||t.full_name||t["ชื่อ-สกุล"]||t["ชื่อ - สกุล"]||t.personName||t.officerName||t.committeeName||t.titleName||"").trim();
+n||!t.firstName&&!t.lastName||(n=String((t.firstName||"")+" "+(t.lastName||"")).trim()),n&&!/^(เลือก|เลือกเจ้าหน้าที่รับผิดชอบ|--\s*เลือก.*--|ไม่มี)$/i.test(n)&&-1===e.indexOf(n)&&e.push(n)
+}),e.sort(function(t,e){
+return t.localeCompare(e,"th")
+})
+}
+function a(t,e,n){
+!function(t,e,n){
+var a=budgetById(t);
+if(a){
+var o=a.value,i=[{
+value:"",label:n||"-- เลือก --"
+}
+].concat((e||[]).map(function(t){
+return{
+value:t,label:t
+}
+}));
+if(budgetSetOptions)budgetSetOptions(a,i,null,o);
+else{
+for(;
+a.options.length;
+)a.remove(0);
+i.forEach(function(t){
+a.appendChild(new Option(t.label,t.value,!1,!1))
+}),o&&(e||[]).indexOf(o)>=0&&(a.value=o)
+}
+}
+}
+(t,["ไม่มี"].concat(e.filter(function(t){
+return t&&"ไม่มี"!==t
+})),n)
+}
+function refreshBudgetResponsibleSelectors(){
+var t=[].concat(budgetSelectors.getPersonnel&&budgetSelectors.getPersonnel("ops")||[],budgetStoreGet("personnel.ops",[])||[]),e=[].concat(budgetSelectors.getPersonnel&&budgetSelectors.getPersonnel("comms")||[],budgetStoreGet("personnel.comms",[])||[]),r=n(t),o=n(e),el;
+return a("budget-common-staff-resp",r,"-- เลือกเจ้าหน้าที่รับผิดชอบ --"),void((el=r&&document.getElementById?document.getElementById("budget-common-staff-resp"):null)&&Array.prototype.slice.call(el.options||[]).forEach(function(opt){
+var tx;
+if("เลือก"===String(opt.textContent||opt.label||"").trim())try{
+opt.remove()
+}
+catch(_e){
+budgetWarn("budget.dropdown.removeDuplicateOption",_e)
+}
+})),a("budget-committee-responsible",o,"-- เลือกกรรมาธิการรับผิดชอบ --"),{
+ops:r.length,comms:o.length
+}
+}
+var i=refreshBudgetResponsibleSelectors();
+return!e&&i.ops&&i.comms?Promise.resolve(!0):callBudgetApi("apiGetPeoplePageBundle",{
+source:"budget-current-dropdowns",lite:!0
+}).then(function(t){
+var e=H(t)||{
+};
+return Array.isArray(e.ops)&&budgetStoreSet("personnel.ops",e.ops),Array.isArray(e.staffs)&&budgetStoreSet("personnel.staffs",e.staffs),Array.isArray(e.comms)&&budgetStoreSet("personnel.comms",e.comms),refreshBudgetResponsibleSelectors(),!0
+}).catch(function(){
+return __appIsFn(budgetRoot.loadPersonnelData)?Promise.resolve(budgetRoot.loadPersonnelData(!0)).then(function(){
+return refreshBudgetResponsibleSelectors(),!0
+}).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),refreshBudgetResponsibleSelectors(),!1
+}):(refreshBudgetResponsibleSelectors(),!1)
+})
+},budgetRoot.setBudgetEntryButtonsVisible=setBudgetEntryControlsVisible,budgetRoot.ensureBudgetActionBarHidden=function(){
+return setBudgetEntryControlsVisible(!1),!0
+},budgetRoot.bindBudgetLocationAutoSelects=function(n){
+var r=n&&n.querySelectorAll?n:document,a=r.querySelectorAll(".budget-province-select"),o=r.querySelectorAll(".budget-district-select"),i=r.querySelectorAll(".budget-subdistrict-select");
+Array.prototype.forEach.call(a,function(n,r){
+var l=/\bbudget-seminar-province\b/.test(String(n.className||"")),s=n.closest&&n.closest(".budget-seminar-row"),c="";
+try{
+s&&(c="-row-"+(Array.prototype.indexOf.call(document.querySelectorAll("#budget-seminar-rows .budget-seminar-row"),s)+1||r+1))
+}
+catch(t){
+c="-row-"+(r+1)
+}
+n.id||(n.id=l&&s?"budget-seminar-province"+c:0===r?"budget-visit-province":"budget-seminar-province");
+var a=o[r]||null,u=i[r]||null;
+a&&!a.id&&(a.id=l&&s?"budget-seminar-district"+c:0===r?"budget-visit-district":"budget-seminar-district"),u&&!u.id&&(u.id=l&&s?"budget-seminar-subdistrict"+c:0===r?"budget-visit-subdistrict":"budget-seminar-subdistrict");
+var d={
+province:String(n.getAttribute("data-selected")||n.value||"").trim(),district:String(a&&(a.getAttribute("data-selected")||a.value)||"").trim(),subDistrict:String(u&&(u.getAttribute("data-selected")||u.value)||"").trim()
+};
+if(__appIsFn(budgetRoot.populateThaiAddressSelectors))return budgetRoot.populateThaiAddressSelectors({
+province:n,district:a,subDistrict:u,initial:d,loadingDistrictLabel:"กำลังโหลดอำเภอ/เขต...",loadingSubDistrictLabel:"กำลังโหลดตำบล/แขวง...",onChange:function(){
+try{
+budgetRoot.calcBudgetTotalNow()
+}
+catch(t){
+budgetWarn("budget.location.calcTotal",t)
+}
+}
+}),void(d.province&&__appIsFn(budgetRoot.ensureThailandLocationsLoaded)&&budgetRoot.ensureThailandLocationsLoaded(!0,d.province).then(function(){
+budgetRoot.populateThaiAddressSelectors({
+province:n,district:a,subDistrict:u,initial:d
+})
+}).catch(function(err){
+return budgetWarn("budget.location.ensureInitial",err),!1
+}));
+budgetSetOptions&&(budgetSetOptions(n,[{
+value:"",label:"-- เลือกจังหวัด --"
+}
+].concat(budgetKit.getThailandProvinceOptions?budgetKit.getThailandProvinceOptions():[]),"",d.province),a&&budgetSetOptions(a,[{
+value:"",label:"-- เลือกอำเภอ/เขต --"
+}
+].concat(budgetKit.getThailandDistrictOptions?budgetKit.getThailandDistrictOptions(d.province):[]),"",d.district),u&&budgetSetOptions(u,[{
+value:"",label:"-- เลือกตำบล/แขวง --"
+}
+].concat(budgetKit.getThailandSubDistrictOptions?budgetKit.getThailandSubDistrictOptions(d.province,d.district):[]),"",d.subDistrict))
+})
+},budgetRoot.__budgetSummaryReportRowsFromDto=function budgetSummaryReportRowsFromDto(dto){
+  dto=dto||{};
+  var candidates=[
+    dto.rows,dto.data,dto.items,dto.records,dto.summaryRows,dto.reportRows,dto.budgetReportRows,dto.importRows,
+    dto.reportSection&&dto.reportSection.rows,
+    dto.segments&&dto.segments.report&&dto.segments.report.rows,
+    dto.overviewSection&&dto.overviewSection.rows,
+    dto.segments&&dto.segments.overview&&dto.segments.overview.rows
+  ];
+  for(var i=0;i<candidates.length;i++){
+    if(Array.isArray(candidates[i])&&candidates[i].length)return candidates[i].slice();
+  }
+  return [];
+},budgetRoot.__budgetEnsureSummaryDesktopTableVisible=function budgetEnsureSummaryDesktopTableVisible(){
+  try{
+    var body=budgetById("budget-summary-body"),table=body&&body.closest?body.closest("table"):null,wrap=table&&table.closest?table.closest(".app-table-scroll,.table-responsive,.app-table-shell,.app-mobile-scroll-owner"):null;
+    if(!body||!table)return !1;
+    table.setAttribute("data-app-pager","off");
+    table.setAttribute("data-app-local-dom-paging","off");
+    table.setAttribute("data-app-pager-disabled","budget-summary-r74-desktop-visible");
+    table.classList&&table.classList.add("no-app-pager","no-print-pager","budget-summary-desktop-visible-owner");
+    if(table.style){table.style.display="table";table.style.visibility="visible";table.style.opacity="1";table.style.width="100%";}
+    if(body.style){body.style.display="table-row-group";body.style.visibility="visible";body.style.opacity="1";}
+    Array.prototype.slice.call(body.querySelectorAll("tr")).forEach(function(tr){
+      if(!tr)return;
+      tr.hidden=false;
+      tr.removeAttribute&&tr.removeAttribute("hidden");
+      tr.removeAttribute&&tr.removeAttribute("aria-hidden");
+      tr.removeAttribute&&tr.removeAttribute("data-app-row-hidden");
+      tr.classList&&tr.classList.remove("app-row-paged-hidden","d-none","visually-hidden");
+      if(tr.style){tr.style.display="";tr.style.visibility="visible";tr.style.opacity="1";}
+    });
+    if(wrap&&wrap.style){wrap.style.display="block";wrap.style.width="100%";wrap.style.maxWidth="100%";wrap.style.overflowX="auto";wrap.style.overflowY="visible";}
+    try{document.dispatchEvent(new CustomEvent("app:data:rendered",{detail:{page:"budget",table:"budget-summary",owner:"budget-summary-desktop-visible-owner-r74"}}));}catch (_evtErr) { window.AppErrorPolicy && window.AppErrorPolicy.ignore("Scripts_Page_Budget.html.ignored", _evtErr); }
+    return !0;
+  }catch(err){budgetWarn("budget.summary.desktopVisible",err);return !1;}
+},budgetRoot.__budgetEnsureFiscalYears=function(options){
+options=options||{};
+if(budgetState.__fyRemoteResolvedBySummary)return Promise.resolve({years:(budgetState.fiscalYears||[]).slice(),source:"summary-embedded"});
+if(budgetState._fiscalYearsPromise)return budgetState._fiscalYearsPromise;
+function loadRemote(){
+if(budgetState.__fyRemoteResolvedBySummary)return {years:(budgetState.fiscalYears||[]).slice(),source:"summary-embedded"};
+budgetState._fiscalYearsPromise=callBudgetApi("apiBudgetGetFiscalYears",{preferCache:!0,cacheTtlSeconds:600,source:"budget-fiscal-years-fallback-r164"}).then(function(resp){
+var data=H(resp),years=data.fiscalYears||data.years||[];
+q(years,data.defaultFy||data.currentFy||Y(new Date));
+budgetState.__fyRemoteResolvedBySummary=!0;
+return data;
+}).catch(function(err){
+budgetWarn("budget.fiscalYears.fallback",err);
+return {years:(budgetState.fiscalYears||[]).slice(),fallback:!0};
+}).finally(function(){budgetState._fiscalYearsPromise=null;});
+return budgetState._fiscalYearsPromise;
+}
+if(options.deferUntilSummary&&budgetState._summaryPromise)return Promise.resolve(budgetState._summaryPromise).catch(function(){return null;}).then(function(){return budgetState.__fyRemoteResolvedBySummary?{years:(budgetState.fiscalYears||[]).slice(),source:"summary-embedded"}:loadRemote();});
+return Promise.resolve(loadRemote());
+},budgetRoot.loadBudgetSummary=function(page,opts){
+opts=opts||{};
+page&&(budgetState.summaryPage=Math.max(1,budgetToNumber(page)));
+ensureFiscalYearControls();
+try{budgetRoot.renderBudgetStandardFooter&&budgetRoot.renderBudgetStandardFooter("budget-summary",0,1,1,"");}catch(_budgetSummaryFooterStartErr){budgetWarn("budget.summaryFooter.start",_budgetSummaryFooterStartErr);}
+var force=!!(opts.forceRefresh||opts.forceFresh||opts.noCache||opts.bypassCache||opts.reload||budgetCURRENTBIsDirty("summary")),fy=M(),pageNo=1,limit=Math.max(20,Math.min(100,Number(opts.limit||100)||100)),requestKey=[fy,pageNo,limit].join("|");
+if(!force&&budgetState._summaryPromise&&budgetState._summaryPromiseKey===requestKey)return budgetState._summaryPromise;
+if(!force&&budgetState._summaryLoaded&&budgetState._summaryCacheKey===requestKey)return Promise.resolve(Object.assign({},budgetState._summaryData||{},{rows:(budgetState.summaryRows||[]).slice(),cacheHit:!0,frontendCache:!0,authoritativeEmpty:!!budgetState._summaryAuthoritativeEmpty}));
+budgetSetHtml("budget-summary-body",'<tr><td colspan="4" class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>กำลังโหลดข้อมูล...</td></tr>');
+budgetState._summaryPromiseKey=requestKey;
+budgetState._summaryPromise=callBudgetApi("apiBudgetGetSummary",{
+fy:fy,page:pageNo,limit:limit,pageSize:limit,fast:!0,noWait:!0,includeSpent:!0,includePersonnelCompensation:!0,includeFiscalYearMeta:!0,preferCache:!force,forceFresh:force,forceRefresh:force,noCache:force,bypassCache:force,cacheTtlSeconds:force?0:600,snapshotTtlSeconds:force?0:1800,source:"budget-summary-cache-first-performance-i-r164"
+}).then(function(resp){
+if(O(resp)){
+var data=H(resp),rows=budgetRoot.__budgetSummaryReportRowsFromDto(data),years=data.fiscalYears||data.years||data.meta&&data.meta.fiscalYears||[];
+data.rows=rows;
+data.reportRows=Array.isArray(data.reportRows)&&data.reportRows.length?data.reportRows:rows;
+if(Array.isArray(years)&&years.length){q(years,data.defaultFy||data.currentFy||data.meta&&data.meta.defaultFy||fy);budgetState.__fyRemoteResolvedBySummary=!0;}
+budgetState._summaryNoWaitTried=!0;
+budgetState._summaryCacheKey=requestKey;
+budgetState._summaryLoaded=!0;
+budgetState._summaryAuthoritativeEmpty=rows.length===0;
+budgetState._summaryData=data;
+tt(data);
+budgetRoot.__budgetEnsureSummaryDesktopTableVisible();
+setTimeout(budgetRoot.__budgetEnsureSummaryDesktopTableVisible,60);
+setTimeout(budgetRoot.__budgetEnsureSummaryDesktopTableVisible,180);
+budgetCURRENTBClearDirty("summary");
+return data;
+}
+budgetSetHtml("budget-summary-body",'<tr><td colspan="4" class="text-center text-danger p-4">'+budgetEscapeHtml(resp&&resp.msg||"โหลดข้อมูลไม่สำเร็จ")+"</td></tr>");
+return resp;
+}).catch(function(err){
+"function"==typeof __appObserve&&__appObserve(err,"budget.summary.load.failed");
+budgetSetHtml("budget-summary-body",'<tr><td colspan="4" class="text-center text-danger p-4">'+budgetEscapeHtml(err&&err.message||"โหลดข้อมูลไม่สำเร็จ")+"</td></tr>");
+return budgetRoot.__budgetEnsureFiscalYears({deferUntilSummary:!1}).then(function(){return [];});
+}).finally(function(){budgetState._summaryPromise=null;});
+return budgetState._summaryPromise;
+},window.budgetChangePage=function(e){
+budgetRoot.loadBudgetSummary(e)
+},window.statusAgingHtml=function(e,n){
+return budgetRoot.BudgetAgingRender&&__appIsFn(budgetRoot.BudgetAgingRender.statusAgingHtml)?budgetRoot.BudgetAgingRender.statusAgingHtml(e,n):'<span class="badge bg-secondary">-</span>'
+},budgetRoot.collectBudgetSeminarItems=budgetRoot.collectBudgetSeminarItems||ft,window.addBudgetSeminarRow=function(n){
+var a=budgetById("budget-seminar-rows");
+if(!a)return!1;
+n=n||{
+};
+var o=document.createElement("div");
+function u(t,e,n,r,a,o){
+var i=document.createElement("div");
+i.className=t;
+var u=document.createElement("label");
+u.className="small fw-bold",u.textContent=e;
+var d=document.createElement("input");
+return d.type="date"===r?"text":r,d.className="form-control "+n+("date"===r?" app-thai-date-input":""),"date"===r&&(d.setAttribute("placeholder","วว/ดด/ปปปป"),d.setAttribute("inputmode","numeric"),d.setAttribute("data-thai-date","1")),d.value="date"===r?"-"===D(a)?"":D(a):null==a?"":String(a),-1!==(n||"").indexOf("app-money-input")&&(d.value=d.value?budgetFormatAmount(d.value):""),o&&Object.keys(o).forEach(function(t){
+d.setAttribute(t,String(o[t]))
+}),i.appendChild(u),i.appendChild(d),i
+}
+function d(t,e,n,r){
+var a=document.createElement("div");
+a.className=t;
+var o=document.createElement("label");
+o.className="small fw-bold",o.textContent=e;
+var i=document.createElement("select");
+return i.className="form-select "+n,i.setAttribute("data-selected",r||""),a.appendChild(o),a.appendChild(i),a
+}
+o.className="border rounded p-2 mb-2 budget-seminar-row position-relative";
+var l=document.createElement("div");
+l.className="row g-2",budgetAppendChildren(l,u("col-md-4","วันที่","budget-seminar-date","date",n.date||""),u("col-md-4","ชื่อโครงการสัมมนา","budget-seminar-title","text",n.title||""),u("col-md-4","สถานที่","budget-seminar-place","text",n.place||""));
+var s=document.createElement("div");
+s.className="row g-2 mt-1",budgetAppendChildren(s,d("col-md-3","จังหวัด","budget-province-select budget-seminar-province",n.province||""),d("col-md-3","อำเภอ/เขต","budget-district-select budget-seminar-district",n.district||""),d("col-md-3","ตำบล/แขวง","budget-subdistrict-select budget-seminar-subdistrict",n.subDistrict||n.subdistrict||""),u("col-md-3","ค่าใช้จ่าย","budget-seminar-cost app-money-input text-end","text",n.cost?budgetFormatAmount(n.cost):"",{
+inputmode:"decimal","data-budget-money":"1"
+})),o.appendChild(l),o.appendChild(s);
+var c=document.createElement("div");
+c.className="text-end mt-2";
+var m=document.createElement("button");
+m.type="button",m.className="btn btn-outline-danger btn-sm",m.setAttribute("data-action","removeBudgetSeminarRow");
+var p=document.createElement("i");
+return p.className="fas fa-trash me-1",m.appendChild(p),m.appendChild(document.createTextNode("ลบรายการ")),c.appendChild(m),o.appendChild(c),a.appendChild(o),budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(o),Promise.resolve(B()).then(function(e){
+return __appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(o),e
+},function(e){
+throw __appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(o),e
+}),gt(),!0
+},budgetRoot.renderBudgetStandardFooter=function(kind,total,pageSize,page,action){
+var host=budgetById("budget-pagination-container"),footerKind=String(kind||"");
+function clearSummaryFooter(){
+try{
+var summary=budgetById("b-summary"),body=budgetById("budget-summary-body"),table=body&&body.closest?body.closest("table"):null;
+table&&(table.setAttribute("data-app-pager","off"),table.setAttribute("data-app-local-dom-paging","off"),table.setAttribute("data-app-pager-disabled","budget-summary-no-footer"),table.classList&&table.classList.add("no-app-pager","no-print-pager"));
+Array.prototype.slice.call((summary||document).querySelectorAll(".app-table-pager,.app-table-footer,.pagination,[data-app-table-pager-owner]")).forEach(function(el){
+if(el&&el.id!=="budget-pagination-container"&&el.parentNode)el.parentNode.removeChild(el)
+});
+if(host){
+host.textContent="";
+host.className="";
+host.style.display="none";
+host.style.visibility="hidden";
+host.setAttribute&&host.setAttribute("aria-hidden","true");
+host.setAttribute&&host.setAttribute("data-app-budget-summary-footer","removed-final");
+host.setAttribute&&host.setAttribute("data-app-pager-disabled","budget-summary-no-footer")
+}
+}
+catch(_budgetSummaryFooterClearErr){
+budgetWarn("budget.summaryFooter.clear",_budgetSummaryFooterClearErr)
+}
+return null;
+}
+if("budget-summary"===footerKind)return clearSummaryFooter();
+if(!host)return null;
+try{
+host.style.display="";
+host.style.visibility="";
+host.removeAttribute&&host.removeAttribute("aria-hidden");
+host.removeAttribute&&host.removeAttribute("data-app-pager-disabled")
+}
+catch(_budgetFooterShowErr){
+budgetWarn("budget.footer.show",_budgetFooterShowErr)
+}
+total=Math.max(0,Number(total||0)||0),pageSize=Math.max(1,Number(pageSize||Math.max(total,1))||1),page=Math.max(1,Number(page||1)||1),host.classList&&host.classList.add("app-table-footer","no-print");
+var optsPayload={
+total:total,pageSize:pageSize,page:page,action:action||"budgetFooterPage",kind:kind||"budget",sizeClass:"app-standard-page-size",dataName:"data-budget-footer",serverPaged:"budget-type-summary"===footerKind,localDomPaging:!1
+};
+try{
+var body=budgetById("budget-type-summary"===footerKind?"budget-type-summary-body-final":"budget-summary-body"),table=body&&body.closest?body.closest("table"):null,shell=table&&table.closest?table.closest(".app-table-scroll,.table-responsive,.app-table-shell,.app-table-responsive"):null,target=shell&&shell.parentNode?shell.parentNode:table&&table.parentNode?table.parentNode:host.parentNode;
+target&&host.parentNode!==target&&target.appendChild(host),host.classList&&host.classList.toggle("app-budget-type-summary-footer","budget-type-summary"===footerKind),host.style.width="100%",host.style.maxWidth="100%",host.style.minWidth="",shell&&(shell.style.width="100%",shell.style.maxWidth="100%")
+}
+catch(_budgetFooterLayoutErr){
+budgetWarn("budget.standardFooter.layout",_budgetFooterLayoutErr,optsPayload)
+}
+try{
+if(budgetRoot.AppTable&&__appIsFn(budgetRoot.AppTable.footer))return budgetRoot.AppTable.footer(host,optsPayload);
+if(budgetRoot.AppTablePager&&__appIsFn(budgetRoot.AppTablePager.renderStandardFooter))return budgetRoot.AppTablePager.renderStandardFooter(host,optsPayload);
+return budgetWarn("budget.tablePager.notReady",new Error("AppTablePager.renderStandardFooter ไม่พร้อมใช้งาน"),optsPayload),null
+}
+catch(_budgetStdFooterErr){
+return budgetWarn("budget.renderStandardFooter",_budgetStdFooterErr,optsPayload),null
+}
+},budgetRoot.isBudgetPersonnelCompRow=function(row){
+if(!0===(row=row||{
+}).isPersonnelCompensation)return!0;
+var txt=String([row.planGroup,row.category,row.item,row.label,row.name,row.entryType,row.type,row.topic,row.description].join(" ")).replace(/[\u00A0\u200B-\u200D\uFEFF]/g," ").replace(/\s+/g,"").trim();
+return txt.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||txt.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1
+},budgetRoot.renderTypeSummary=function(){
+function isPersonnelTypeRow(row){
+row=row||{
+};
+if(row.isPersonnelCompensation===true)return true;
+var txt=String([row.planGroup,row.plan,row.category,row.entryType,row.type,row.item,row.topic,row.label,row.name,row.description].join(" ")).replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g,"");
+return txt.indexOf("แผนงานบุคลากรภาครัฐ")>-1||txt.indexOf("บุคลากรภาครัฐ")>-1||txt.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||txt.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1
+}
+var rows=Array.isArray(budgetState.typeSummaryRows)&&budgetState.typeSummaryRows.length?budgetState.typeSummaryRows:Array.isArray(budgetState.importRows)?budgetState.importRows:[],e=et(budgetFieldValue("budget-type-filter-current")||budgetConstants.typeFilterAll||"ทั้งหมด");
+rows=rows.filter(function(row){
+return!isPersonnelTypeRow(row)
+}),budgetState.typeFilter=e;
+var serverPaged,filtered=(serverPaged=!(!budgetState.typeSummaryMeta||!budgetState.typeSummaryMeta.serverPaged))?rows:rows.filter(function(row){
+var typ=nt(row);
+return!e||e===(budgetConstants.typeFilterAll||"ทั้งหมด")||typ===e||et(row&&row.entryType)===e||et(row&&row.category)===e||et(row&&row.type)===e
+}),cols=ct("ทั้งหมด"===e?"":e);
+if(budgetSetHtml("type-summary-thead","<tr>"+cols.map(function(col){
+return'<th data-col-key="'+budgetEscapeHtml(col.key||"")+'" class="text-center budget-col-'+budgetEscapeHtml(String(col.key||"").replace(/[^a-zA-Z0-9_-]/g,""))+" "+(col.noPrint?"no-print":"")+'">'+budgetEscapeHtml(col.label)+"</th>"
+}).join("")+"</tr>"),filtered.length){
+try{
+budgetState.__typeSummaryDisplayRows=filtered,budgetRoot.__budgetTypeSummaryRows=filtered,budgetRoot.__budgetTypeSummaryRowRegistry={
+},filtered.forEach(function(row,idx){
+var key=mt(row,idx);
+try{
+budgetRoot.__budgetTypeSummaryRowRegistry[String(key)]=row,budgetRoot.__budgetTypeSummaryRowRegistry["row-"+idx]=row,row.__appRowId=key,row.__appRowIndex=idx
+}
+catch(_registryErr){
+budgetWarn("budget.typeSummary.registryRow",_registryErr)
+}
+})
+}
+catch(_registryOuterErr){
+budgetWarn("budget.typeSummary.registry",_registryOuterErr)
+}
+var pagerState=budgetState.__budgetFooterState=budgetState.__budgetFooterState||{
+},stType=pagerState["budget-type-summary"]||(pagerState["budget-type-summary"]={
+page:1,size:20
+}),meta=budgetState.typeSummaryMeta||{
+},serverPaged=meta&&!0===meta.serverPaged,lastFilterKey=String(syncFiscalYearControls&&M?M():"")+"|"+e;
+serverPaged||budgetState.__budgetTypeSummaryLastFilterKey===lastFilterKey||(stType.page=1,budgetState.__budgetTypeSummaryLastFilterKey=lastFilterKey),stType.size=Math.max(10,Math.min(100,Number(stType.size||meta.pageSize||meta.limit||20)||20));
+var totalForFooter=serverPaged?Math.max(0,Number(meta.totalRecords||meta.total||filtered.length)||0):filtered.length,typePages=Math.max(1,Math.ceil(totalForFooter/stType.size)||1);
+stType.page=serverPaged?Math.max(1,Math.min(typePages,Number(meta.page||stType.page||1)||1)):Math.max(1,Math.min(typePages,Number(stType.page||1)||1));
+var displayRows=serverPaged?filtered:filtered.slice((stType.page-1)*stType.size,(stType.page-1)*stType.size+stType.size);
+!filtered.length||displayRows.length||serverPaged||(stType.page=1,displayRows=filtered.slice(0,stType.size)),budgetSetHtml("budget-type-summary-body-final",displayRows.map(function(row,pageIdx){
+var idx=(stType.page-1)*stType.size+pageIdx,rowKey=mt(row,idx),rowJson="";
+try{
+rowJson=budgetEscapeHtml(JSON.stringify(row||{
+}))
+}
+catch(_jsonErr){
+rowJson=""
+}
+return'<tr data-budget-row-index="'+budgetEscapeHtml(idx)+'" data-id="'+budgetEscapeHtml(rowKey)+'" data-record-id="'+budgetEscapeHtml(rowKey)+'" data-record-json="'+rowJson+'">'+cols.map(function(col){
+var val=col.html?col.html(row,idx):function(row,col,idx){
+if("_idx"===col.key)return String(idx+1);
+var raw=st(row,col.key);
+return"money"===col.fmt?budgetFormatAmount(raw||0):"date"===col.fmt?D(raw||"")||"-":budgetEscapeHtml(raw||"-")
+}
+(row,col,idx);
+return'<td class="'+(col.cls||"")+("money"===col.fmt?" text-end":"")+" "+(col.noPrint?"no-print":"")+'">'+val+"</td>"
+}).join("")+"</tr>"
+}).join(""))
+}
+else budgetSetHtml("budget-type-summary-body-final",'<tr><td colspan="'+cols.length+'" class="text-center text-muted p-3">ไม่มีข้อมูล</td></tr>');
+return budgetRoot.renderBudgetStandardFooter("budget-type-summary",budgetState.typeSummaryMeta&&!0===budgetState.typeSummaryMeta.serverPaged?Math.max(0,Number(budgetState.typeSummaryMeta.totalRecords||budgetState.typeSummaryMeta.total||filtered.length)||0):filtered.length,budgetState.__budgetFooterState&&budgetState.__budgetFooterState["budget-type-summary"]&&budgetState.__budgetFooterState["budget-type-summary"].size||20,budgetState.__budgetFooterState&&budgetState.__budgetFooterState["budget-type-summary"]&&budgetState.__budgetFooterState["budget-type-summary"].page||1,"budgetFooterPage"),filtered
+},budgetRoot.loadBudgetTypeSummary=function(opts){
+opts=opts||{
+};
+var force=!!(opts.hardReload||opts.forceFreshHard||!0===opts.forceRefresh||!0===opts.forceFresh||!0===opts.noCache||budgetCURRENTBIsDirty("typesummary"));
+ensureFiscalYearControls();
+budgetState._typeSummaryNoWaitTried=!0;
+var selectedFy=String(budgetFieldValue("budget-type-fy-current")||budgetFieldValue("budget-fy-filter")||M()||Y(new Date)).replace(/[^0-9]/g,"");
+selectedFy||(selectedFy=Y(new Date));
+syncFiscalYearControls(selectedFy);
+var selectedType=et(budgetFieldValue("budget-type-filter-current")||budgetConstants.typeFilterAll||"ทั้งหมด"),cols=ct("ทั้งหมด"===selectedType?"":selectedType);
+budgetSetHtml("type-summary-thead","<tr>"+cols.map(function(col){
+return'<th data-col-key="'+budgetEscapeHtml(col.key||"")+'" class="text-center budget-col-'+budgetEscapeHtml(String(col.key||"").replace(/[^a-zA-Z0-9_-]/g,""))+" "+(col.noPrint?"no-print":"")+'">'+budgetEscapeHtml(col.label)+"</th>"
+}).join("")+"</tr>");
+var footerState=budgetState.__budgetFooterState=budgetState.__budgetFooterState||{
+},stType=footerState["budget-type-summary"]||(footerState["budget-type-summary"]={
+page:1,size:20
+});
+stType.size=Math.max(10,Math.min(100,Number(opts.limit||opts.pageSize||stType.size||20)||20));
+stType.page=Math.max(1,Number(opts.page||stType.page||1)||1);
+var requestType=selectedType===(budgetConstants.typeFilterAll||"ทั้งหมด")?"":selectedType,cacheBaseKey=[selectedFy,requestType||"all-types",stType.size,"budget-type-summary-page-cache-v1"].join("|"),requestKey=cacheBaseKey+"|page="+stType.page,cacheTtlMs=18e4;
+if(budgetState.typeSummaryPageCacheBaseKey!==cacheBaseKey)budgetState.typeSummaryPageCacheBaseKey=cacheBaseKey,budgetState.typeSummaryPageCache=Object.create(null),budgetState.typeSummaryPagePrefetch=Object.create(null);
+if(force)budgetState.typeSummaryPageCache=Object.create(null),budgetState.typeSummaryPagePrefetch=Object.create(null);
+budgetState.typeSummaryPageCache=budgetState.typeSummaryPageCache||Object.create(null),budgetState.typeSummaryPagePrefetch=budgetState.typeSummaryPagePrefetch||Object.create(null);
+function setBusy(busy){
+try{
+var body=budgetById("budget-type-summary-body-final"),table=body&&body.closest?body.closest("table"):null;
+body&&body.setAttribute&&body.setAttribute("aria-busy",busy?"true":"false"),table&&table.classList&&table.classList.toggle("app-table-page-loading",!!busy)
+}
+catch(_busyErr){
+budgetWarn("budget.typeSummary.busy",_busyErr)
+}
+}
+function unlock(requestSeq,pageRequestKey){
+if(budgetState.typeSummaryRequestSeq!==requestSeq||budgetState.typeSummaryActiveRequestKey!==pageRequestKey)return!1;
+budgetState._typeSummaryPromise=null,setBusy(!1);
+try{
+budgetRoot.AppRuntime&&budgetRoot.AppRuntime.clearUiBlocks&&budgetRoot.AppRuntime.clearUiBlocks("budget.typeSummary.finally",{
+clearSectionOverlays:!0,closeLoadingSwal:!0,closeSidebar:!1
+})
+}
+catch(_unlockErr){
+"function"==typeof __appObserve&&__appObserve(_unlockErr,"ec")
+}
+try{
+budgetRoot.AppRuntime&&budgetRoot.AppRuntime.closeLoading&&budgetRoot.AppRuntime.closeLoading({
+owner:"Budget.TypeSummary"
+})
+}
+catch(_closeRuntimeErr){
+"function"==typeof __appObserve&&__appObserve(_closeRuntimeErr,"ec")
+}
+try{
+budgetRoot.Swal&&budgetRoot.Swal.isVisible&&budgetRoot.Swal.isVisible()&&/กำลังโหลดข้อมูลสรุปแยกแต่ละประเภท|กำลังโหลดข้อมูล/i.test(String((budgetRoot.Swal.getTitle&&budgetRoot.Swal.getTitle()||{
+}).textContent||""))&&budgetRoot.Swal.close()
+}
+catch(_swalCloseErr){
+"function"==typeof __appObserve&&__appObserve(_swalCloseErr,"ec")
+}
+}
+function applyRows(rows,meta,pageRequestKey){
+rows=Array.isArray(rows)?rows:[];
+rows=rows.filter(function(row){
+row=row||{
+};
+var txt=String([row.planGroup,row.plan,row.category,row.entryType,row.type,row.item,row.topic,row.label,row.name,row.description].join(" ")).replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g,"");
+return!(row.isPersonnelCompensation===true||txt.indexOf("แผนงานบุคลากรภาครัฐ")>-1||txt.indexOf("บุคลากรภาครัฐ")>-1||txt.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||txt.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1)
+});
+meta=meta||{
+};
+var metaPage=Math.max(1,Number(meta.page||stType.page||1)||1),metaSize=Math.max(10,Math.min(100,Number(meta.pageSize||meta.limit||stType.size||20)||20));
+stType.page=metaPage,stType.size=metaSize;
+budgetState.typeSummaryMeta=Object.assign({
+fy:selectedFy,strictFy:!0,serverPaged:!0,page:metaPage,pageSize:metaSize,limit:metaSize
+},meta,{
+page:metaPage,pageSize:metaSize,limit:metaSize,totalRecords:Math.max(0,Number(null!=meta.totalRecords?meta.totalRecords:null!=meta.total?meta.total:rows.length)||0),frontendFastCache:!0,pageCacheContract:"budget-type-summary-page-cache-v1"
+});
+budgetState.typeSummaryRows=rows,budgetState.importRows=rows,budgetState._typeSummaryCacheKey=pageRequestKey||requestKey,budgetCURRENTBClearDirty("typesummary");
+try{
+budgetStoreSet("budget.typeSummaryRows",rows)
+}
+catch(_storeErr){
+"function"==typeof __appObserve&&__appObserve(_storeErr,"ec")
+}
+if(!rows.length){
+var emptyCols=ct("ทั้งหมด"===selectedType?"":selectedType);
+budgetSetHtml("budget-type-summary-body-final",'<tr><td colspan="'+emptyCols.length+'" class="text-center text-muted p-3">ไม่พบข้อมูลในปีงบประมาณ '+budgetEscapeHtml(selectedFy)+'<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary" data-action="loadBudgetTypeSummary">โหลดใหม่</button></div></td></tr>'),budgetRoot.renderBudgetStandardFooter("budget-type-summary",Number(budgetState.typeSummaryMeta.totalRecords||0)||0,stType.size,stType.page,"budgetFooterPage");
+return[]
+}
+return budgetRoot.renderTypeSummary(),rows
+}
+function payloadFor(pageNo,prefetch){
+return{
+fy:selectedFy,fiscalYear:selectedFy,year:selectedFy,type:requestType,typeFilter:requestType,limit:stType.size,pageSize:stType.size,page:pageNo,lite:!0,fast:!0,strictFy:!0,noWait:!0,productionSingleOwner:!0,sourceOfTruth:"BudgetImports",materializedFirst:!1,readThroughMaterialized:!1,disableReadThroughRefresh:!0,disableDefaultDefaultValue:!0,allowLiveDefaultValue:!1,allowHeavyDefaultValue:!1,allowEmergencyDirect:!1,materializedOnly:!1,preferCache:!force,forceFresh:force,noCache:force,bypassCache:force,cacheTtlSeconds:force?0:600,maxRows:800,totalTarget:800,deadlineMs:5000,source:prefetch?"budget-type-summary-page-prefetch-v1":"budget-type-summary-page-cache-v1"
+}
+}
+function normalizeEntry(resp,pageNo){
+var pack=budgetTypeSummaryRows_(resp),rows=pack.rows||[],meta=Object.assign({
+serverPaged:!0,page:pageNo,pageSize:stType.size,limit:stType.size
+},pack.meta||{
+}),total=Math.max(0,Number(null!=meta.totalRecords?meta.totalRecords:null!=meta.total?meta.total:rows.length)||0),size=Math.max(10,Math.min(100,Number(meta.pageSize||meta.limit||stType.size)||stType.size)),totalPages=Math.max(1,Number(meta.totalPages||Math.ceil(total/size))||1),normalizedPage=Math.max(1,Math.min(totalPages,Number(meta.page||pageNo||1)||1));
+return{
+rows:Array.isArray(rows)?rows:[],meta:Object.assign({
+},meta,{
+serverPaged:!0,page:normalizedPage,pageSize:size,limit:size,totalRecords:total,total:total,totalPages:totalPages
+}),page:normalizedPage,expiresAt:(Date.now?Date.now():+new Date)+cacheTtlMs,contract:"budget-type-summary-page-cache-v1"
+}
+}
+function fetchPage(pageNo,prefetch){
+var key=String(pageNo),fetchBaseKey=cacheBaseKey;
+return Promise.resolve(yt(payloadFor(pageNo,prefetch))).then(function(resp){
+var entry=normalizeEntry(resp,pageNo);
+return budgetState.typeSummaryPageCacheBaseKey===fetchBaseKey&&(budgetState.typeSummaryPageCache[String(entry.page)]=entry),entry
+}).finally(function(){
+prefetch&&budgetState.typeSummaryPageCacheBaseKey===fetchBaseKey&&delete budgetState.typeSummaryPagePrefetch[key]
+})
+}
+function schedulePrefetch(entry){
+if(force||!entry||!entry.meta)return;
+var totalPages=Math.max(1,Number(entry.meta.totalPages||1)||1),targets=[],currentPage=Math.max(1,Number(entry.page||stType.page||1)||1);
+totalPages<=5?function(){
+for(var pageNo=1;
+pageNo<=totalPages;
+pageNo++)pageNo!==currentPage&&targets.push(pageNo)
+}():(currentPage>1&&targets.push(currentPage-1),currentPage<totalPages&&targets.push(currentPage+1));
+targets.forEach(function(pageNo){
+var key=String(pageNo),cached=budgetState.typeSummaryPageCache[key],now=Date.now?Date.now():+new Date;
+if(cached&&cached.expiresAt>now||budgetState.typeSummaryPagePrefetch[key])return;
+budgetState.typeSummaryPagePrefetch[key]=fetchPage(pageNo,!0).catch(function(err){
+budgetWarn("budget.typeSummary.prefetch",err,{
+fy:selectedFy,type:requestType,page:pageNo,size:stType.size
+});
+return null
+})
+})
+}
+function commitEntry(entry,requestSeq,pageRequestKey){
+if(budgetState.typeSummaryRequestSeq!==requestSeq||budgetState.typeSummaryActiveRequestKey!==pageRequestKey)return{
+stale:!0,rows:budgetState.typeSummaryRows||[]
+};
+var rows=applyRows(entry.rows,entry.meta,pageRequestKey);
+return schedulePrefetch(entry),{
+stale:!1,cached:!0,rows:rows
+}
+}
+var now=Date.now?Date.now():+new Date,cachedEntry=budgetState.typeSummaryPageCache[String(stType.page)],requestSeq=Math.max(0,Number(budgetState.typeSummaryRequestSeq||0)||0)+1;
+budgetState.typeSummaryRequestSeq=requestSeq,budgetState.typeSummaryActiveRequestKey=requestKey,budgetState._typeSummaryPromiseKey=requestKey;
+if(!force&&cachedEntry&&cachedEntry.contract==="budget-type-summary-page-cache-v1"&&cachedEntry.expiresAt>now){
+budgetState._typeSummaryPromise=null,setBusy(!1);
+return Promise.resolve(commitEntry(cachedEntry,requestSeq,requestKey).rows)
+}
+var prefetched=!force&&budgetState.typeSummaryPagePrefetch[String(stType.page)];
+if(!Array.isArray(budgetState.typeSummaryRows)||!budgetState.typeSummaryRows.length)budgetSetHtml("budget-type-summary-body-final",'<tr><td colspan="'+(cols.length||9)+'" class="text-center p-3"><i class="fas fa-spinner fa-spin me-1"></i>กำลังโหลดข้อมูลสรุปแยกแต่ละประเภท...</td></tr>');
+else setBusy(!0);
+budgetState._typeSummaryPromise=Promise.resolve(prefetched||fetchPage(stType.page,!1)).then(function(entry){
+if(!entry)return[];
+var result=commitEntry(entry,requestSeq,requestKey);
+return result.rows||[]
+}).catch(function(err){
+if(budgetState.typeSummaryRequestSeq!==requestSeq||budgetState.typeSummaryActiveRequestKey!==requestKey)return budgetState.typeSummaryRows||[];
+"function"==typeof __appObserve&&__appObserve(err,"budget.typeSummary.load.failed"),bt(budgetKit.toErrorText?budgetKit.toErrorText(err,"โหลดข้อมูลสรุปแยกแต่ละประเภทไม่สำเร็จ"):err&&err.message?err.message:String(err||"โหลดข้อมูลไม่สำเร็จ"),cols.length||9);
+return[]
+}).then(function(rows){
+unlock(requestSeq,requestKey);
+return rows
+},function(err){
+unlock(requestSeq,requestKey);
+throw err
+});
+return budgetState._typeSummaryPromise
+},budgetRoot.printBudgetSummary=function(){
+function getSummaryTable(){
+return document.querySelector("#b-summary table")||document.querySelector("#budget-summary-body")&&document.querySelector("#budget-summary-body").closest("table")||null
+}
+function isStatusRow(tr){
+var text=String(tr&&tr.textContent||"").replace(/\s+/g," ").trim();
+return!text||/กำลังโหลด|ไม่มีข้อมูล|โหลดข้อมูลไม่สำเร็จ/.test(text)
+}
+function revealPrintRow(tr){
+tr&&(tr.classList&&tr.classList.remove("app-row-paged-hidden","d-none","visually-hidden"),tr.removeAttribute&&(tr.removeAttribute("hidden"),tr.removeAttribute("aria-hidden"),tr.removeAttribute("data-app-row-hidden")),tr.style&&(tr.style.display="",tr.style.visibility="",tr.style.opacity=""))
+}
+function cloneRenderedSummaryTable(){
+var table=getSummaryTable();
+if(!table)return"";
+var clone=table.cloneNode(!0);
+Array.prototype.forEach.call(clone.querySelectorAll(".no-print,button,.btn,input,select,textarea,.app-table-pager,.app-table-footer,.pagination,script,style"),function(x){
+x&&x.parentNode&&x.parentNode.removeChild(x)
+});
+var rows=Array.prototype.slice.call(clone.querySelectorAll("tbody tr")),dataRows=[];
+return rows.forEach(function(tr){
+revealPrintRow(tr);
+var cells=tr.querySelectorAll?tr.querySelectorAll("td,th"):[];
+cells&&cells.length&&!isStatusRow(tr)&&dataRows.push(tr)
+}),dataRows.length?(clone.classList.add("app-standard-print-table","budget-summary-print-table"),clone.removeAttribute&&(clone.removeAttribute("data-page-size"),clone.removeAttribute("data-app-pager"),clone.removeAttribute("data-app-pager-bound"),clone.removeAttribute("data-app-pager-id")),clone.outerHTML||""):""
+}
+var doPrint=function(){
+var wrap=document.createElement("div"),tableHtml=cloneRenderedSummaryTable();
+if(!tableHtml)return!!budgetRoot.appSwalFire&&budgetRoot.appSwalFire("ไม่พบข้อมูล","ไม่พบข้อมูลในตารางรายงานสรุปค่าใช้จ่ายงบประมาณสำหรับพิมพ์","warning");
+var body='<div class="budget-summary-print-official"><div class="app-table-scroll">'+tableHtml+"</div></div>";
+(budgetDom.setHtml||budgetRoot.safeSetInnerHTML||budgetKit.setHtml)(wrap,body,{
+moduleName:"Budget.printSummary.tableRowsOnly.current"
+});
+return budgetRoot.AppPrint&&__appIsFn(budgetRoot.AppPrint.printWithProfile)?budgetRoot.AppPrint.printWithProfile("budget-summary",{
+bodyHtml:body,meta:{
+title:"รายงานสรุปค่าใช้จ่ายงบประมาณ",classification:"ระบบบริหารงบประมาณ / ปีงบประมาณ "+M()
+}
+}):!!budgetRoot.appSwalFire&&budgetRoot.appSwalFire("พิมพ์ไม่สำเร็จ","ไม่พบ AppPrint.printWithProfile","error")
+},table=getSummaryTable(),hasRows;
+return!(!table||!Array.prototype.slice.call(table.querySelectorAll("tbody tr")).some(function(tr){
+return!isStatusRow(tr)
+}))?doPrint():Promise.resolve(budgetRoot.loadBudgetSummary?budgetRoot.loadBudgetSummary(1):callBudgetApi("apiBudgetGetSummary",{
+fy:M(),page:1,limit:500,fast:!0,noWait:!0,includeSpent:!0,preferCache:!0,cacheTtlSeconds:300,source:"budget-summary-print-fast-cache-r6"
+}).then(function(resp){
+var data=O(resp)?H(resp):{
+},rows=Array.isArray(data.rows)?data.rows:Array.isArray(data.data)?data.data:[];
+return data.rows=rows,tt(data)
+})).then(function(){
+return doPrint()
+})
+},budgetRoot.printTypeSummary=function(){
+function ensureBudgetTypeSummaryPrintRows(){
+var local=Array.isArray(budgetState.typeSummaryRows)&&budgetState.typeSummaryRows.length?budgetState.typeSummaryRows.slice():Array.isArray(budgetState.importRows)?budgetState.importRows.slice():[],meta=budgetState.typeSummaryMeta||{},total=Math.max(local.length,Number(meta.totalRecords||meta.total||0)||0);
+if(!meta.serverPaged||local.length>=total)return Promise.resolve(local);
+var selectedFy=String(budgetFieldValue("budget-type-fy-current")||budgetFieldValue("budget-fy-filter")||M()||Y(new Date)).replace(/[^0-9]/g,""),selectedType=et(budgetFieldValue("budget-type-filter-current")||budgetConstants.typeFilterAll||"ทั้งหมด"),requestType=selectedType===et(budgetConstants.typeFilterAll||"ทั้งหมด")?"":selectedType,limit=Math.max(100,Math.min(5000,total||5000));
+return yt({fy:selectedFy,fiscalYear:selectedFy,year:selectedFy,type:requestType,typeFilter:requestType,page:1,limit:limit,pageSize:limit,maxRows:limit,totalTarget:limit,noPage:!0,fullList:!0,serverPaged:!1,forceFresh:!1,noCache:!1,bypassCache:!1,cacheTtlSeconds:0,source:"budget-type-summary-print-all-pages"}).then(function(resp){
+var pack=budgetTypeSummaryRows_(resp),rows=Array.isArray(pack.rows)?pack.rows:[];
+return rows.length?rows:local
+}).catch(function(err){
+budgetWarn("budget.printTypeSummary.allRows",err,{total:total,loaded:local.length});
+return local
+})
+}
+return ensureBudgetTypeSummaryPrintRows().then(function(rows){
+var selectedType=et(budgetFieldValue("budget-type-filter-current")||budgetConstants.typeFilterAll||"ทั้งหมด");
+rows=(Array.isArray(rows)?rows:[]).filter(function(row){
+row=row||{};
+var txt=String([row.planGroup,row.plan,row.category,row.entryType,row.type,row.item,row.topic,row.label,row.name,row.description].join(" ")).replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g,"");
+if(row.isPersonnelCompensation===true||txt.indexOf("แผนงานบุคลากรภาครัฐ")>-1||txt.indexOf("บุคลากรภาครัฐ")>-1||txt.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||txt.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1)return!1;
+var typ=nt(row);
+return!selectedType||selectedType===(budgetConstants.typeFilterAll||"ทั้งหมด")||typ===selectedType||et(row.entryType)===selectedType||et(row.category)===selectedType||et(row.type)===selectedType
+});
+if(!rows.length)return!!budgetRoot.appSwalFire&&budgetRoot.appSwalFire("ไม่พบข้อมูล","ไม่พบข้อมูลสรุปแยกแต่ละประเภทสำหรับพิมพ์","warning");
+var cols=ct("ทั้งหมด"===selectedType?"":selectedType).filter(function(col){return!col.noPrint}),thead="<tr>"+cols.map(function(col){return'<th class="text-center">'+budgetEscapeHtml(col.label)+"</th>"}).join("")+"</tr>",tbody=rows.map(function(row,idx){return"<tr>"+cols.map(function(col){var val;if(col.html)val=col.html(row,idx);else if("_idx"===col.key)val=String(idx+1);else{var raw=st(row,col.key);val="money"===col.fmt?budgetFormatAmount(raw||0):"date"===col.fmt?D(raw||"")||"-":budgetEscapeHtml(raw||"-")}return'<td class="'+(col.cls||"")+("money"===col.fmt?" text-end":"")+'">'+val+"</td>"}).join("")+"</tr>"}).join(""),body='<div class="report-shell app-standard-print-font"><table class="table table-bordered table-sm app-table-standard app-standard-print-table"><thead>'+thead+"</thead><tbody>"+tbody+"</tbody></table></div>";
+return budgetRoot.AppPrint&&__appIsFn(budgetRoot.AppPrint.printWithProfile)?budgetRoot.AppPrint.printWithProfile("budget-summary",{bodyHtml:body,meta:{title:"รายงานสรุปแยกแต่ละประเภท",classification:"ระบบบริหารงบประมาณ"}}):!!budgetRoot.appSwalFire&&budgetRoot.appSwalFire("พิมพ์ไม่สำเร็จ","ไม่พบ AppPrint.printWithProfile","error")
+})
+},window.printBudgetImportRecord=function(r){
+var a=(budgetState.importRows||[]).filter(function(t){
+return String(t&&t.id||"")===String(r||"")
+})[0]||null;
+if(!a&&__appIsFn(budgetRoot.loadBudgetTypeSummary)&&!window.printBudgetImportRecord.__reloading)return window.printBudgetImportRecord.__reloading=!0,Promise.resolve(budgetRoot.loadBudgetTypeSummary()).then(function(){
+return window.printBudgetImportRecord.__reloading=!1,window.printBudgetImportRecord(r)
+}).catch(function(err){
+return budgetWarn("budget.printImport.reload",err),window.printBudgetImportRecord.__reloading=!1,!1
+});
+if(!a)return!1;
+var o=document.createElement("div");
+(budgetRoot.safeSetInnerHTML||budgetKit.setHtml)(o,wt(a));
+return budgetRoot.AppPrint&&__appIsFn(budgetRoot.AppPrint.printWithProfile)?budgetRoot.AppPrint.printWithProfile("budget-summary",{
+bodyHtml:budgetDom.toHtml?budgetDom.toHtml(o):"",meta:{
+title:"รายละเอียดรายการงบประมาณ",classification:"ตารางข้อมูลรายงานสรุปค่าใช้จ่ายงบประมาณ",referenceNo:String(a.id||"")
+}
+}):!!budgetRoot.appSwalFire&&budgetRoot.appSwalFire("พิมพ์ไม่สำเร็จ","ไม่พบ AppPrint.printWithProfile","error")
+},window.viewBudgetImportRecord=function(e){
+var id=e;
+try{
+var node=e&&e.getAttribute?e:(e&&e.target&&e.target.closest?e.target.closest('[data-id],[data-record-id],[data-row-id]'):null);
+if(node)id=String(node.getAttribute('data-id')||node.getAttribute('data-record-id')||node.getAttribute('data-row-id')||'').trim();
+}
+catch(_nodeErr){
+typeof __appObserve==="function"&&__appObserve(_nodeErr,"c6.SPB:785")
+}
+var n=pt(id);
+if(!n&&typeof budgetRoot.loadBudgetTypeSummary==='function'&&!window.viewBudgetImportRecord.__reloading){
+window.viewBudgetImportRecord.__reloading=true;
+return Promise.resolve(budgetRoot.loadBudgetTypeSummary()).then(function(){
+window.viewBudgetImportRecord.__reloading=false;
+return window.viewBudgetImportRecord(id);
+}).catch(function(err){
+window.viewBudgetImportRecord.__reloading=false;
+if(typeof budgetWarn==='function')budgetWarn('budget.view.reload',err);
+return false;
+});
+}
+if(!n)return false;
+var a=mt(n,n.__appRowIndex||0),o='<div class="text-start small budget-record-detail">'+wt(n)+'</div><div class="text-end mt-3 no-print"><button type="button" class="btn btn-outline-secondary" id="budget-detail-print-btn" data-id="'+budgetEscapeHtml(a)+'"><i class="fas fa-print me-1"></i>พิมพ์ข้อมูล</button></div>';
+return budgetRoot.Swal&&appSwalFire({
+title:'รายละเอียดรายการงบประมาณ',html:o,width:900,confirmButtonText:'ปิด',didOpen:function(){
+var n=budgetById('budget-detail-print-btn');
+n&&n.addEventListener('click',function(){
+budgetRoot.printBudgetImportRecord(a)
+})
+}
+}),true;
+},window.editBudgetImportRecord=function(e){
+function idFrom(t){
+return t&&t.getAttribute?String(t.getAttribute("data-id")||t.getAttribute("data-record-id")||t.getAttribute("data-row-id")||"").trim():String(t||"").trim()
+}
+function rowFromNode(t){
+try{
+var node=t&&t.getAttribute?t:null;
+if(!node&&t&&t.target&&t.target.closest&&(node=t.target.closest("[data-record-json],[data-id],[data-record-id]")),!node)return null;
+var raw=node.getAttribute("data-record-json")||"";
+if(raw){
+var row=JSON.parse(raw);
+return row&&"object"==typeof row?row:null
+}
+}
+catch(_json){
+budgetWarn("budget.edit.recordJson",_json)
+}
+return null
+}
+function showLoading(){
+return budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.showLoading)?budgetRoot.AppRuntime.showLoading("กำลังโหลดข้อมูล",{
+title:"กรุณารอสักครู่",owner:"Budget.Page"
+}):!1
+}
+function closeLoading(){
+try{
+return budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.closeLoading)?budgetRoot.AppRuntime.closeLoading({
+owner:"Budget.Page"
+}):!1
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+}
+var n=idFrom(e),a=rowFromNode(e)||pt(n);
+if(!n&&a&&(n=String(a.id||a.importId||a.recordId||a.__appRowId||"").trim()),!n&&!a&&__appIsFn(budgetRoot.loadBudgetTypeSummary))return showLoading(),Promise.resolve(budgetRoot.loadBudgetTypeSummary()).then(function(){
+var r=pt(idFrom(e));
+return r?(Q(r),closeLoading(),!0):(closeLoading(),budgetRoot.Swal&&budgetRoot.appSwalFire("ไม่พบข้อมูล","ไม่พบรายการที่เลือกสำหรับแก้ไข","warning"),!1)
+}).catch(function(e){
+return budgetWarn("budget.edit.reloadBeforeOpen",e),closeLoading(),budgetRoot.Swal&&budgetRoot.appSwalFire("ผิดพลาด",String(e&&e.message?e.message:e),"error"),!1
+});
+if(showLoading(),a)try{
+Q(a)
+}
+catch(e){
+budgetWarn("budget.edit.localPrefill",e)
+}
+if(!n)return closeLoading(),!!a;
+var o={
+id:n,fy:M(),baseRecord:a||null,row:a||null,token:budgetStoreGet("auth.token",""),csrfToken:budgetStoreGet("auth.csrfToken",""),csrf:budgetStoreGet("auth.csrfToken",""),_csrf:budgetStoreGet("auth.csrfToken",""),actionMethod:"apiBudgetGetImportForEdit",forceFresh:!0,noCache:!0,source:"budget-main-owner-current_1"
+};
+return callBudgetApi("apiBudgetGetImportForEdit",o).then(function(e){
+var r=H(e)||e||{
+},o=r.row||r.record||r.import||r.item||r.data||r;
+return o&&"object"==typeof o||(o=a||null),o&&a&&(o=Object.assign({
+},a,o)),o?(Q(o),closeLoading()):(closeLoading(),budgetRoot.Swal&&budgetRoot.appSwalFire("ไม่พบข้อมูล","ไม่พบรายการที่เลือกสำหรับแก้ไข","warning")),!!o
+}).catch(function(e){
+return closeLoading(),!!a||(budgetRoot.Swal&&budgetRoot.appSwalFire("ผิดพลาด",String(e&&e.message?e.message:e),"error"),!1)
+})
+},window.deleteBudgetImportRecord=function(e){
+function idFromAny(value){
+try{
+if(value&&value.target&&value.target.closest){
+var node=value.target.closest('[data-id],[data-record-id],[data-row-id]');
+if(node)return String(node.getAttribute('data-id')||node.getAttribute('data-record-id')||node.getAttribute('data-row-id')||'').trim()
+}
+if(value&&value.getAttribute)return String(value.getAttribute('data-id')||value.getAttribute('data-record-id')||value.getAttribute('data-row-id')||'').trim();
+if(value&&"object"==typeof value)return String(value.id||value.importId||value.recordId||value.uuid||value.__appRowId||'').trim();
+}
+catch(_idErr){
+budgetWarn('budget.delete.idFromAny',_idErr)
+}
+return String(value||'').trim()
+}
+function actualId(row,fallback){
+row=row||{};
+var ids=[row.id,row.ID,row.importId,row.recordId,row.uuid,row._id,row['เลขที่'],row.__appRowId,fallback];
+for(var i=0;i<ids.length;i++){
+var id=String(ids[i]||'').trim();
+if(id&&!/^row-\d+$/.test(id))return id
+}
+return''
+}
+var rawId=idFromAny(e),row=pt(rawId)||(e&&"object"==typeof e?e:null),id=actualId(row,rawId);
+if(!id&&rawId&&/^row-\d+$/.test(rawId)){
+row=pt(rawId);
+id=actualId(row,rawId)
+}
+if(row&&(row.synthetic===!0||row.readOnly===!0||row.canDelete===!1||row.deletable===!1||row.isPersonnelCompensation===!0))return budgetRoot.Swal&&appSwalFire("ไม่สามารถลบได้","รายการนี้เป็นข้อมูลคำนวณจากระบบ ไม่ใช่รายการ BudgetImports","warning"),!1;
+if(!id)return budgetRoot.Swal&&appSwalFire("ไม่พบข้อมูล","ไม่พบรหัสรายการจริงจาก BudgetImports สำหรับลบข้อมูล","warning"),!1;
+var runDelete=function(){
+return callBudgetApi("apiBudgetDeleteImport",{
+id:id,importId:id,recordId:id,fy:M(),baseRecord:row||null,token:budgetStoreGet("auth.token",""),csrfToken:budgetStoreGet("auth.csrfToken",""),csrf:budgetStoreGet("auth.csrfToken",""),_csrf:budgetStoreGet("auth.csrfToken",""),actionMethod:"apiBudgetDeleteImport",forceFresh:!0,noCache:!0,refreshReadModelNow:!1,syncReadModelRefresh:!1,skipReadModelRefresh:!0,uiFastDelete:!0,source:"budget-type-summary-delete-fast-confirm-current"
+},function(resp){
+if(O(resp)){
+try{
+[budgetState.importRows,budgetState.typeSummaryRows,budgetState.__typeSummaryDisplayRows].forEach(function(list){
+if(!Array.isArray(list))return;
+for(var i=list.length-1;i>=0;i--){
+var r0=list[i]||{},rid=actualId(r0,r0.__appRowId||'');
+if(rid===id)list.splice(i,1)
+}
+})
+}
+catch(_localErr){
+budgetWarn("budget.delete.localRemove",_localErr,{id:id})
+}
+budgetCURRENTBMarkViewsDirty("delete",M());
+budgetCURRENTBRefreshVisible("delete",80);
+budgetRoot.Swal&&appSwalFire("สำเร็จ","ลบรายการเรียบร้อยแล้ว","success")
+}
+else budgetRoot.Swal&&appSwalFire("ผิดพลาด",budgetEscapeHtml(resp&&(resp.msg||resp.message||resp.error)||"ลบไม่สำเร็จ"),"error")
+},function(err){
+budgetRoot.Swal&&appSwalFire("ผิดพลาด",budgetEscapeHtml(err&&err.message||err||"ลบไม่สำเร็จ"),"error")
+})
+};
+return budgetRoot.Swal?appSwalFire({
+title:"ยืนยันการลบ",text:"ต้องการลบรายการนี้ใช่หรือไม่",icon:"warning",showCancelButton:!0,confirmButtonText:"ลบ",cancelButtonText:"ยกเลิก"
+}).then(function(res){
+return res&&res.isConfirmed?runDelete():!1
+}):confirm("ต้องการลบรายการนี้ใช่หรือไม่")?runDelete():!1
+},budgetRoot.calcBudgetTotalNow=function(){
+var t=budgetById("dynamic-form-area")||budgetById("budget-entry-form")||budgetById("p-budget")||document,e=0,n={
+};
+Array.prototype.forEach.call(t.querySelectorAll?t.querySelectorAll("input,select,textarea"):[],function(t){
+var r=t.id||"";
+r&&!n[r]&&"budget-total-amount"!==r&&"budget-support-cost"!==r&&("hidden"===t.type||t.disabled||t.readOnly||/year|fy|postcode|zip|round|date/i.test(r)||/(cost|amount|allowance|expense|price|budget)/i.test(r)&&(n[r]=!0,e+=budgetToNumber(String(t.value||"").replace(/,/g,""))))
+});
+var a=budgetToNumber(String((budgetById("budget-seminar-total-cost")||{
+}).textContent||"").replace(/,/g,""));
+a&&(e+=a);
+var o=budgetById("budget-total-amount");
+o&&(o.value=e?budgetFormatAmount(e):"");
+var i=budgetById("budget-support-cost");
+return i&&function(t){
+var e=String(t||"").replace(/\s+/g,"");
+return e.indexOf("ส่งเสริม")>-1&&e.indexOf("สนับสนุน")>-1
+}
+(budgetFieldValue("budget-entry-type"))&&(i.value=e?budgetFormatAmount(e):""),e
+},window.toggleBudgetForms=function(){
+Promise.resolve(budgetRoot.fillBudgetDropdowns(!1)).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+});
+try{
+budgetRoot.loadBudgetSubcommittees()
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+var e=budgetFieldValue("budget-entry-type");
+if(renderBudgetEntryForm(e),E(!1),"ส่งเสริมและสนับสนุนการดำเนินงาน"===e&&budgetFieldValue("budget-support-type")){
+var n=budgetFieldValue("budget-support-type");
+renderBudgetEntryForm(n),ht(n),-1!==["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(n)&&budgetById("budget-seminar-rows")&&!budgetById("budget-seminar-rows").children.length&&__appIsFn(window.addBudgetSeminarRow)&&window.addBudgetSeminarRow()
+}
+-1!==["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(e||"")&&budgetById("budget-seminar-rows")&&!budgetById("budget-seminar-rows").children.length&&__appIsFn(window.addBudgetSeminarRow)?window.addBudgetSeminarRow():budgetById("budget-seminar-rows")&&-1===["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(e||"")&&(budgetClearElement("budget-seminar-rows"),gt()),budgetRoot.calcBudgetTotalNow(),Promise.resolve(budgetRoot.fillBudgetDropdowns(!1)).catch(function(e){
+budgetRoot.AppRuntime&&budgetRoot.AppRuntime.recordWarning&&budgetRoot.AppRuntime.recordWarning("budget.finalDropdownRefresh",e)
+})
+},window.budgetSaveActiveEntry=function(event){
+var saveOwner=window.budgetSaveActiveEntry;
+var sourceEvent=event&&event.event?event.event:event;
+var startedAt=Date.now?Date.now():0;
+var button=null;
+var payload=null;
+function value(id){
+try{
+return String(budgetFieldValue(id)==null?"":budgetFieldValue(id)).trim();
+}catch(_valueErr){
+var el=budgetById(id);
+return el?String(el.value==null?"":el.value).trim():"";
+}
+}
+function money(id){
+return budgetToNumber(String(value(id)||"").replace(/,/g,""));
+}
+function showPopup(optionsOrTitle,message,icon){
+try{
+if(__appIsFn(budgetRoot.appSwalFire)){
+return budgetRoot.appSwalFire(optionsOrTitle,message,icon);
+}
+if(budgetRoot.Swal&&__appIsFn(budgetRoot.Swal.fire)){
+return budgetRoot.Swal.fire("object"===typeof optionsOrTitle?optionsOrTitle:{
+title:String(optionsOrTitle||""),
+text:String(message||""),
+icon:String(icon||"info")
+});
+}
+}catch(_popupErr){
+budgetWarn("budget.save.popup",_popupErr);
+}
+if(message&&"undefined"!==typeof alert)alert(String(message));
+return Promise.resolve({isConfirmed:true});
+}
+function setButtonBusy(on){
+try{
+if(!button)return;
+if(!button.dataset.defaultBudgetSaveHtml){
+button.dataset.defaultBudgetSaveHtml=button.innerHTML||button.textContent||"บันทึกข้อมูล";
+}
+button.disabled=!!on;
+button.setAttribute("aria-busy",on?"true":"false");
+if(on){
+button.innerHTML='<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
+}else{
+button.innerHTML=button.dataset.defaultBudgetSaveHtml||'<i class="fas fa-save me-2"></i>บันทึกข้อมูล';
+}
+}catch(_buttonErr){
+budgetWarn("budget.save.button",_buttonErr);
+}
+}
+function readAllFields(){
+var out={};
+var form=budgetById("budget-entry-form")||budgetById("budget-form")||budgetById("p-budget")||document;
+try{
+Array.prototype.forEach.call(form.querySelectorAll?form.querySelectorAll("input,select,textarea"):[],function(el){
+if(!el||el.disabled)return;
+var rawKey=String(el.id||el.name||"").trim();
+if(!rawKey)return;
+var cleanKey=rawKey.replace(/^budget-/,"").replace(/-([a-zA-Z0-9])/g,function(_,chr){
+return String(chr||"").toUpperCase();
+});
+var fieldValue="checkbox"===el.type?!!el.checked:String(el.value==null?"":el.value).trim();
+out[rawKey]=fieldValue;
+out[cleanKey]=fieldValue;
+});
+}catch(err){
+budgetWarn("budget.save.readAllFields",err);
+}
+return out;
+}
+function parseBaseRecord(){
+var editEl=budgetById("budget-edit-id");
+var raw=editEl&&editEl.getAttribute?editEl.getAttribute("data-budget-base-record"):"";
+if(!raw)return{};
+try{
+var parsed=JSON.parse(raw);
+return parsed&&"object"===typeof parsed?parsed:{};
+}catch(err){
+budgetWarn("budget.save.baseRecord",err);
+return{};
+}
+}
+function collectSeminarItems(){
+try{
+return __appIsFn(ft)?ft():[];
+}catch(err){
+budgetWarn("budget.save.seminarItems",err);
+return[];
+}
+}
+function calculatePreviewAmount(){
+try{
+return __appIsFn(budgetRoot.calcBudgetTotalNow)?Number(budgetRoot.calcBudgetTotalNow()||0):money("budget-total-amount");
+}catch(err){
+budgetWarn("budget.save.previewAmount",err);
+return money("budget-total-amount");
+}
+}
+function buildPayload(){
+var allFields=readAllFields();
+var baseRecord=parseBaseRecord();
+var seminarItems=collectSeminarItems();
+var visitLocations=[
+value("budget-visit-place"),
+value("budget-visit-province"),
+value("budget-visit-district"),
+value("budget-visit-subdistrict")
+].filter(Boolean);
+var seminarLocations=[
+value("budget-seminar-place"),
+value("budget-seminar-province"),
+value("budget-seminar-district"),
+value("budget-seminar-subdistrict"),
+value("budget-seminar-locations-text")
+].filter(Boolean);
+var selectedFy="";
+try{
+selectedFy=Y(value("budget-activity-date")||value("budget-start-date")||value("budget-seminar-date")||value("budget-end-date"))||M();
+}catch(_fyErr){
+selectedFy=M();
+}
+if(!selectedFy){
+var d=new Date();
+selectedFy=String(d.getFullYear()+543+(d.getMonth()>=9?1:0));
+}
+var extra=Object.assign({},allFields,{
+semDate:value("budget-seminar-date"),
+roundNo:value("budget-round-no"),
+visitLocations:visitLocations,
+seminarLocations:seminarLocations,
+seminarItems:seminarItems,
+countriesText:value("budget-countries-text"),
+meetingAllowance:money("budget-meeting-allowance"),
+snackCost:money("budget-snack-cost"),
+lunchCost:money("budget-lunch-cost"),
+travelCost:money("budget-travel-cost"),
+receptionCost:money("budget-reception-cost"),
+seminarCost:Math.max(money("budget-seminar-cost"),(function(){
+try{return Number(gt()||0);}
+catch(_gtErr){return 0;}
+})()),
+foreignTripCost:money("budget-foreign-trip-cost"),
+foreignGuestCost:money("budget-foreign-guest-cost"),
+supportCost:money("budget-support-cost"),
+supportType:value("budget-support-type")
+});
+var record={
+id:value("budget-edit-id"),
+fy:String(selectedFy),
+entryType:value("budget-entry-type"),
+committeeType:value("budget-committee-type"),
+startDate:value("budget-start-date"),
+endDate:value("budget-end-date"),
+activityDate:value("budget-activity-date"),
+committeeName:value("budget-committee-name")||value("budget-subcommittee-name"),
+subcommitteeName:value("budget-subcommittee-name"),
+topic:value("budget-topic")||value("budget-seminar-title"),
+seminarTitle:value("budget-seminar-title"),
+roundNo:value("budget-round-no"),
+seminarDate:value("budget-seminar-date"),
+amount:money("budget-total-amount"),
+committeeResponsible:value("budget-committee-responsible"),
+staffResponsible:value("budget-common-staff-resp"),
+note:value("budget-note"),
+refundStatus:value("budget-common-refund-status")||budgetConstants.refundPending||"ยังไม่คืนเงิน",
+refundDate:value("budget-common-refund-date"),
+reportStatus:value("budget-common-report-status")||budgetConstants.reportPending||"ยังไม่รายงาน",
+reportDate:value("budget-common-report-date"),
+visitPlace:value("budget-visit-place"),
+visitProvince:value("budget-visit-province"),
+visitDistrict:value("budget-visit-district"),
+visitSubDistrict:value("budget-visit-subdistrict"),
+seminarPlace:value("budget-seminar-place"),
+seminarProvince:value("budget-seminar-province"),
+seminarDistrict:value("budget-seminar-district"),
+seminarSubDistrict:value("budget-seminar-subdistrict"),
+countriesText:value("budget-countries-text"),
+meetingAllowance:extra.meetingAllowance,
+snackCost:extra.snackCost,
+lunchCost:extra.lunchCost,
+travelCost:extra.travelCost,
+receptionCost:extra.receptionCost,
+seminarCost:extra.seminarCost,
+foreignTripCost:extra.foreignTripCost,
+foreignGuestCost:extra.foreignGuestCost,
+supportCost:extra.supportCost,
+supportType:extra.supportType||"",
+seminarItems:seminarItems,
+visitLocations:visitLocations,
+seminarLocations:seminarLocations,
+extra:extra
+};
+Object.keys(allFields).forEach(function(key){
+if(record[key]==null||record[key]==="")record[key]=allFields[key];
+});
+record.visitSubdistrict=record.visitSubDistrict;
+record.visitLocationsText=visitLocations.join(", ");
+record.visitLocationsJson=JSON.stringify(visitLocations);
+record.visitLocationsJSON=record.visitLocationsJson;
+record.seminarSubdistrict=record.seminarSubDistrict;
+record.seminarLocationsText=seminarLocations.join(", ");
+record.seminarLocationsJson=JSON.stringify(seminarLocations);
+record.seminarLocationsJSON=record.seminarLocationsJson;
+record.seminarItemsJson=JSON.stringify(seminarItems);
+record.extraJson=JSON.stringify(extra);
+record.extraJSON=record.extraJson;
+record.payloadJson=record.extraJson;
+record.payloadJSON=record.extraJson;
+record.clientPreviewAmount=calculatePreviewAmount();
+record.amount=record.amount||record.clientPreviewAmount||0;
+record.totalAmount=record.amount;
+record.category=record.entryType;
+record.item=record.supportType||record.entryType;
+if(baseRecord&&Object.keys(baseRecord).length){
+record.baseRecord=baseRecord;
+record.originalRecord=baseRecord;
+record.originalId=baseRecord.id||baseRecord.importId||baseRecord.recordId||baseRecord.__appRowId||record.id||"";
+if((!record.id||/^row-/.test(String(record.id)))&&(baseRecord.id||baseRecord.importId||baseRecord.recordId)){
+record.id=baseRecord.id||baseRecord.importId||baseRecord.recordId;
+}
+}
+record.actionMethod="apiBudgetSaveImport";
+record.sourceOfTruth="BudgetImports";
+record.__authTransportOwner="AppApiMiddlewarePipeline";
+record.__budgetWriteRequiresSheetCommit=true;
+record.ensureSchema=true;
+record.ensureHeaders=true;
+record.verifyWrite=true;
+record.strictWriteVerify=true;
+record.skipReadModelRefresh=true;
+record.uiFastSave=true;
+record.syncReadModelRefresh=false;
+record.forceReadModelRefresh=false;
+record.refreshReadModelNow=false;
+return record;
+}
+function unwrapResponse(response){
+var current=response;
+for(var i=0;i<8;i+=1){
+if(!current||"object"!==typeof current)break;
+if(current.ok===false||current.success===false)return current;
+if(current.data&&"object"===typeof current.data&&!Array.isArray(current.data)){
+current=current.data;
+continue;
+}
+if(current.result&&"object"===typeof current.result&&!Array.isArray(current.result)){
+current=current.result;
+continue;
+}
+break;
+}
+return current||response||{};
+}
+function errorText(source,fallback){
+var generic={
+"บันทึกข้อมูลไม่สำเร็จ":true,
+"บันทึกไม่สำเร็จ":true,
+"ดำเนินการไม่สำเร็จ":true,
+"คำขอไม่สำเร็จ":true
+};
+var seen=[];
+var candidates=[];
+function visit(value,depth){
+if(value==null||depth>8)return;
+if("string"===typeof value||"number"===typeof value){
+var text=String(value).trim();
+if(text)candidates.push(text);
+return;
+}
+if("object"!==typeof value||seen.indexOf(value)>-1)return;
+seen.push(value);
+["message","msg","error","errorMessage","detail","reason","code"].forEach(function(key){
+if(Object.prototype.hasOwnProperty.call(value,key))visit(value[key],depth+1);
+});
+["data","response","result","cause","details","verify","meta"].forEach(function(key){
+if(Object.prototype.hasOwnProperty.call(value,key))visit(value[key],depth+1);
+});
+}
+visit(source,0);
+for(var i=0;i<candidates.length;i+=1){
+if(!generic[candidates[i]])return candidates[i];
+}
+return candidates[0]||String(fallback||"บันทึกข้อมูลไม่สำเร็จ");
+}
+function callSave(record){
+var payload=Object.assign({
+actionMethod:"apiBudgetSaveImport",write:true,skipReadModelRefresh:true,uiFastSave:true,syncReadModelRefresh:false,refreshReadModelNow:false
+},record||{
+});
+/*
+*Save must return after the sheet write is committed.Heavy Budget summary/type-summary
+*refresh is intentionally deferred,otherwise GAS may save successfully but the browser
+*times out and shows a false failure popup.
+*/
+return budgetRoot.AppPageKit&&__appIsFn(budgetRoot.AppPageKit.apiRunner)?budgetRoot.AppPageKit.apiRunner("apiBudgetSaveImport",payload,"Scripts_Page_Budget",9e4):Promise.reject(new Error("AppPageKit.apiRunner ไม่พร้อมใช้งาน"));
+}
+function finish(result){
+saveOwner.__busy=false;
+saveOwner.__promise=null;
+window.__budgetSaveActiveEntryStartedAt=0;
+setButtonBusy(false);
+return result;
+}
+try{
+if(sourceEvent&&sourceEvent.__budgetSaveHandled===true){
+return saveOwner.__promise||Promise.resolve(false);
+}
+if(sourceEvent)sourceEvent.__budgetSaveHandled=true;
+if(sourceEvent&&sourceEvent.preventDefault)sourceEvent.preventDefault();
+button=sourceEvent&&sourceEvent.target&&sourceEvent.target.closest?
+sourceEvent.target.closest('#budget-entry-inline-save-btn,#budget-main-save-btn,[data-action="budgetSaveActiveEntry"]'):
+budgetById("budget-entry-inline-save-btn")||budgetById("budget-main-save-btn");
+var lastStart=Number(window.__budgetSaveActiveEntryStartedAt||0);
+if(saveOwner.__busy&&lastStart&&startedAt-lastStart<45000){
+return saveOwner.__promise||Promise.resolve(false);
+}
+saveOwner.__busy=true;
+window.__budgetSaveActiveEntryStartedAt=startedAt;
+setButtonBusy(true);
+payload=buildPayload();
+if(!payload.entryType)throw new Error("กรุณาเลือกประเภทรายการงบประมาณ");
+if(!payload.staffResponsible)throw new Error("กรุณาเลือกเจ้าหน้าที่รับผิดชอบ (หลัก)");
+if("การประชุมคณะอนุกรรมาธิการ"===payload.entryType&&!payload.subcommitteeName){
+throw new Error("กรุณาเลือกคณะอนุกรรมาธิการ");
+}
+try{syncFiscalYearControls(payload.fy);}
+catch(_budgetYearErr){budgetWarn("budget.save.ensureYear",_budgetYearErr);}
+showPopup({
+title:"กำลังบันทึกข้อมูล",
+text:"กรุณารอสักครู่",
+allowOutsideClick:false,
+allowEscapeKey:false,
+showConfirmButton:false,
+didOpen:function(){
+try{
+if(budgetRoot.Swal&&__appIsFn(budgetRoot.Swal.showLoading))budgetRoot.Swal.showLoading();
+}catch(_loadingErr){
+budgetWarn("budget.save.showLoading",_loadingErr);
+}
+}
+});
+saveOwner.__promise=Promise.resolve(callSave(payload)).then(function(response){
+var result=unwrapResponse(response);
+var failed=response&&response.ok===false||result&&result.ok===false||result&&result.writeVerified===false||result&&result.authRequired===true;
+if(failed){
+var failure=errorText(result,"")||errorText(response,"บันทึกข้อมูลไม่สำเร็จ");
+throw new Error(failure);
+}
+try{
+if(__appIsFn(budgetRoot.resetBudgetEntryForm))budgetRoot.resetBudgetEntryForm();
+}catch(_resetErr){
+budgetWarn("budget.save.resetAfterSuccess",_resetErr);
+}
+try{
+budgetStoreSet("budget.activeTab","entry");
+}catch(_storeErr){
+budgetWarn("budget.save.storeActiveTab",_storeErr);
+}
+try{
+budgetCURRENTBMarkViewsDirty("save",payload.fy||M());
+budgetCURRENTBRefreshVisible("save",120);
+}catch(_refreshErr){
+budgetWarn("budget.save.refresh",_refreshErr);
+}
+showPopup("สำเร็จ","บันทึกข้อมูลเรียบร้อยแล้ว","success");
+return finish(true);
+}).catch(function(err){
+var message=errorText(err,"บันทึกข้อมูลไม่สำเร็จ");
+budgetWarn("budget.save.failed",err,{
+entryType:payload&&payload.entryType||"",
+api:"apiBudgetSaveImport"
+});
+showPopup("บันทึกไม่สำเร็จ",message,"error");
+return finish(false);
+});
+return saveOwner.__promise;
+}catch(err){
+var syncMessage=errorText(err,"บันทึกข้อมูลไม่สำเร็จ");
+budgetWarn("budget.save.syncFailed",err,{
+entryType:payload&&payload.entryType||""
+});
+showPopup("บันทึกไม่สำเร็จ",syncMessage,"error");
+return Promise.resolve(finish(false));
+}
+},window.resetBudgetEntryForm=function(e){
+e&&e.preventDefault&&e.preventDefault();
+try{
+var form=budgetById("budget-entry-form");
+form&&__appIsFn(form.reset)&&form.reset();
+var editId=budgetById("budget-edit-id");
+editId&&(editId.value="",editId.removeAttribute("data-budget-base-record"));
+try{
+budgetStoreSet("budget.activeTab","entry")
+}
+catch(_storeErr){
+budgetWarn("budget.reset.storeActiveTab",_storeErr)
+}
+try{
+budgetClearElement("budget-seminar-rows")
+}
+catch(_rowsErr){
+budgetWarn("budget.reset.rows",_rowsErr)
+}
+try{
+renderBudgetEntryForm("")
+}
+catch(_dynamicErr){
+budgetWarn("budget.reset.dynamicForm",_dynamicErr)
+}
+try{
+E(!1)
+}
+catch(_statusErr){
+budgetWarn("budget.reset.statusDates",_statusErr)
+}
+try{
+_()
+}
+catch(_bindErr){
+budgetWarn("budget.reset.rebindStatus",_bindErr)
+}
+try{
+syncBudgetEntryControlsVisibility()
+}
+catch(_controlsErr){
+budgetWarn("budget.reset.controls",_controlsErr)
+}
+try{
+Promise.resolve(budgetRoot.fillBudgetDropdowns&&budgetRoot.fillBudgetDropdowns(!1)).catch(function(_dropErr){
+budgetWarn("budget.reset.dropdowns",_dropErr)
+})
+}
+catch(_dropOuterErr){
+budgetWarn("budget.reset.dropdowns.outer",_dropOuterErr)
+}
+return!0
+}
+catch(err){
+return budgetWarn("budget.resetBudgetEntryForm",err),showBudgetValidationWarning("ล้างข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง")
+}
+},window.exportBudgetReportExcel=function(){
+var n=budgetState.summaryRows||[];
+return n.length?(__appIsFn(budgetRoot.ensureXlsxAssets)?Promise.resolve(budgetRoot.ensureXlsxAssets()):Promise.resolve(!0)).then(function(){
+if(!window.XLSX)throw new Error("โหลดโมดูลส่งออก Excel ไม่สำเร็จ");
+var t=n.map(function(t){
+return{
+"รายการ":t.item||"","งบประมาณ":budgetToNumber(t.budget),"รายจ่าย":budgetToNumber(t.spent),"ร้อยละรายจ่าย":Number(t.budget||0)>0?(budgetToNumber(t.spent)/budgetToNumber(t.budget)*100).toFixed(2)+"%":"0.00%","คงเหลือ":budgetToNumber(t.remain)
+}
+}),e=XLSX.utils.json_to_sheet(t),r=XLSX.utils.book_new();
+return XLSX.utils.book_append_sheet(r,e,"BudgetSummary"),XLSX.writeFile(r,"budget-summary-"+M()+".xlsx"),!0
+}).catch(function(n){
+return budgetRoot.Swal&&appSwalFire("ผิดพลาด",budgetKit.toErrorText?budgetKit.toErrorText(n,"ส่งออก Excel ไม่สำเร็จ"):String(n&&n.message?n.message:n),"error"),!1
+}):(budgetRoot.Swal&&appSwalFire("แจ้งเตือน","ยังไม่มีข้อมูลสำหรับส่งออก","info"),Promise.resolve(!1))
+},budgetRoot.showBudgetTab=function(e,n){
+e&&e.target&&e.target.getAttribute?(n=e.target,e=n.getAttribute("data-budget-tab")||n.getAttribute("data-tab")||"summary"):e&&e.getAttribute&&(n=e,e=e.getAttribute("data-budget-tab")||e.getAttribute("data-tab")||"summary"),n&&!n.classList&&(n=null),e=String(e||"summary");
+try{
+budgetStoreSet("budget.activeTab",e)
+}
+catch(t){
+budgetWarn("budget.tab.storeActiveTab",t)
+}
+if(function(t,e){
+var n=document.querySelectorAll("#budgetTab .nav-link");
+Array.prototype.forEach.call(n,function(t){
+t.classList.remove("active")
+});
+var r=e||null;
+r||Array.prototype.forEach.call(n,function(e){
+r||String(e.getAttribute("data-budget-tab")||"")===String(t||"")&&(r=e)
+}),r&&r.classList&&r.classList.add("active")
+}
+(e,n),["summary","entry","typesummary"].forEach(function(t){
+var n=budgetById("b-"+t);
+n&&(t===e?budgetShowElement(n):budgetHideElement(n))
+}),ensureFiscalYearControls(),setBudgetEntryControlsVisible("entry"===e),"summary"===e)budgetRoot.loadBudgetSummary(budgetState.summaryPage||1);
+else if("entry"===e){
+var a=resolveBudgetEntryType();
+Promise.resolve(budgetRoot.fillBudgetDropdowns(!1)).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+});
+try{
+budgetRoot.loadBudgetSubcommittees()
+}
+catch(t){
+budgetWarn("budget.tab.loadSubcommittees",t)
+}
+renderBudgetEntryForm(a),E(!1),_(),syncBudgetEntryControlsVisibility(),budgetDelay("page:budget.defaults",function(){
+E(!1),syncBudgetEntryControlsVisibility()
+},80),-1!==["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(a)&&budgetById("budget-seminar-rows")&&!budgetById("budget-seminar-rows").children.length&&__appIsFn(window.addBudgetSeminarRow)?window.addBudgetSeminarRow():budgetById("budget-seminar-rows")&&-1===["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(a)&&(budgetClearElement("budget-seminar-rows"),gt())
+}
+else"typesummary"===e&&budgetRoot.loadBudgetTypeSummary()
+},budgetBindDocOnce("click",function(e){
+var node=e&&e.target&&e.target.closest?e.target.closest("[data-action]"):null;
+if(!node)return;
+var action=node.getAttribute("data-action")||"";
+if(action==="showBudgetTab"&&__appIsFn(budgetRoot.showBudgetTab)){
+e.preventDefault();
+return budgetRoot.showBudgetTab(node.getAttribute("data-budget-tab")||"summary",node);
+}
+},false,"budget.actions.current"),budgetBindDocOnce("click",function(ev){
+var saveButton=ev&&ev.target&&ev.target.closest?ev.target.closest('#budget-entry-inline-save-btn,#budget-main-save-btn,[data-action="budgetSaveActiveEntry"]'):null;
+if(!saveButton)return;
+if(budgetRoot.AppActionHub&&__appIsFn(budgetRoot.AppActionHub.dispatch))return;
+var fn=__appIsFn(budgetRoot.budgetSaveActiveEntry)?budgetRoot.budgetSaveActiveEntry:__appIsFn(window.budgetSave)?window.budgetSave:null;
+if(fn){
+ev.preventDefault();
+return fn.call(budgetRoot,ev);
+}
+},!0,"budget.save.button.capture.current"),budgetBindDocOnce("submit",function(ev){
+var form=ev&&ev.target;
+if(form&&"budget-entry-form"===form.id){
+var fn=__appIsFn(budgetRoot.budgetSaveActiveEntry)?budgetRoot.budgetSaveActiveEntry:__appIsFn(window.budgetSave)?window.budgetSave:null;
+if(fn)return ev.preventDefault(),fn.call(budgetRoot,ev)
+}
+},!0,"budget.save.form.submit.current"),budgetBindDocOnce("change",function(e){
+var n=e&&e.target;
+if(n&&"budget-fy-filter"===n.id)return n.dataset.userSelected="1",budgetById("budget-type-fy-current")&&(budgetById("budget-type-fy-current").value=n.value||""),void(__appIsFn(budgetRoot.loadBudgetSummary)&&budgetRoot.loadBudgetSummary(1));
+if(n&&"budget-type-fy-current"===n.id)return n.dataset.userSelected="1",budgetById("budget-fy-filter")&&(budgetById("budget-fy-filter").value=n.value||""),void("typesummary"===j()&&__appIsFn(budgetRoot.loadBudgetTypeSummary)&&budgetRoot.loadBudgetTypeSummary());
+if(n&&"budget-type-filter-current"===n.id)__appIsFn(budgetRoot.renderTypeSummary)&&budgetRoot.renderTypeSummary();
+else if(n&&"budget-entry-type"===n.id){
+var entryType=String(n.value||"").trim();
+try{
+entryType?renderBudgetEntryForm(entryType):renderBudgetEntryForm("");
+"ส่งเสริมและสนับสนุนการดำเนินงาน"===entryType&&ht("");
+syncBudgetEntryControlsVisibility&&syncBudgetEntryControlsVisibility();
+budgetRoot.calcBudgetTotalNow&&budgetRoot.calcBudgetTotalNow();
+__appIsFn(budgetRoot.fillBudgetDropdowns)&&budgetRoot.fillBudgetDropdowns(!1);
+budgetDelay("budget.entry.form.render.verify",function(){
+var area=budgetById("dynamic-form-area"),htmlText=area?String(area.textContent||""):"",hasForm=!!(area&&area.querySelector&&area.querySelector("input,select,textarea,.alert")),hasLeakedCode=/function\s*\(|=>|return\s+['"]?<|budgetSupportOptionsHtml|AppPageSlim|helpers/i.test(htmlText);
+if(entryType&&(!hasForm||hasLeakedCode)){
+renderBudgetEntryForm(entryType);
+"ส่งเสริมและสนับสนุนการดำเนินงาน"===entryType&&ht("");
+syncBudgetEntryControlsVisibility&&syncBudgetEntryControlsVisibility();
+}
+},40)
+}
+catch(entryFormErr){
+budgetWarn("budget.entryType.render",entryFormErr,{entryType:entryType});
+renderBudgetEntryForm(entryType||"")
+}
+}
+else if(n&&"budget-support-type"===n.id){
+var a=String(n.value||"").trim(),o=budgetById("budget-entry-type");
+o&&(o.value="ส่งเสริมและสนับสนุนการดำเนินงาน"),a?(renderBudgetEntryForm(a),ht(a),budgetDelay("budget.support.form.sticky",function(){if(a&&budgetById("dynamic-form-area")&&!budgetById("budget-support-type")){renderBudgetEntryForm(a);ht(a);}},60),-1!==["การจัดสัมมนา","การศึกษาดูงานในประเทศและการจัดสัมมนา"].indexOf(a)&&budgetById("budget-seminar-rows")&&!budgetById("budget-seminar-rows").children.length&&__appIsFn(window.addBudgetSeminarRow)&&window.addBudgetSeminarRow()):(renderBudgetEntryForm("ส่งเสริมและสนับสนุนการดำเนินงาน"),ht("")),syncBudgetEntryControlsVisibility&&syncBudgetEntryControlsVisibility(),budgetRoot.calcBudgetTotalNow(),__appIsFn(budgetRoot.fillBudgetDropdowns)&&budgetRoot.fillBudgetDropdowns(!1)
+}
+},!1,"budget.inputs.current"),budgetBindDocOnce("focusin",function(t){
+var e,n=t&&t.target;
+n&&n.getAttribute&&"1"===n.getAttribute("data-budget-money")&&(e=n)&&T(e.id||"")&&(e.value=String(null==e.value?"":e.value).replace(/,/g,""))
+},!0,"budget.money.focusin.current"),budgetBindDocOnce("focusout",function(e){
+var n=e&&e.target;
+n&&n.getAttribute&&"1"===n.getAttribute("data-budget-money")&&(x(n),budgetRoot.calcBudgetTotalNow())
+},!0,"budget.money.focusout.current"),budgetBindDocOnce("input",function(e){
+var n=e&&e.target;
+n&&n.classList&&n.classList.contains("budget-seminar-cost")&&(gt(),budgetRoot.calcBudgetTotalNow()),n&&("calcBudgetTotalNow"===n.getAttribute("data-input")||/^budget-.*(cost|allowance|amount)$/i.test(n.id||""))&&budgetRoot.calcBudgetTotalNow()
+},!1,"budget.calc.input.current"),window.initBudgetPage=function(){
+return!(!budgetRoot.isAuthenticated||!budgetRoot.isAuthenticated())&&!(!(n=budgetById&&budgetById("p-budget"))||n.classList.contains("d-none"))&&function(n){
+if(n=n||{
+},!budgetRoot.isAuthenticated||!budgetRoot.isAuthenticated())return!1;
+var a;
+ensureFiscalYearControls(),(a=Y(new Date),q(G(a),budgetState.currentFiscalYear||a),budgetState.__fyRemoteRefreshQueued||(budgetState.__fyRemoteRefreshQueued=!0,budgetDelay("page:budget.fiscal-years-refresh",function(){
+return budgetRoot.__budgetEnsureFiscalYears({deferUntilSummary:"summary"===j(),fallbackOnly:!0});
+},800)),Promise.resolve(budgetState.fiscalYears||[])).then(function(){
+ensureFiscalYearControls()
+}).catch(function(_cleanupPromiseErr){
+"function"==typeof __appObserve?__appObserve(_cleanupPromiseErr,"observed.promise.catch"):void _cleanupPromiseErr
+}),function(){
+if(budgetRoot.__budgetStaticBound)return!0;
+budgetRoot.__budgetStaticBound=!0
+}
+(),syncBudgetEntryControlsVisibility();
+try{
+budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(budgetById("p-budget")||document)
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+return budgetRoot.__budgetPageInitialized||(budgetRoot.__budgetPageInitialized=!0),"typesummary"===j()?(setBudgetEntryControlsVisible(!1),!n.forceRefresh&&!budgetCURRENTBIsDirty("typesummary")&&budgetState.typeSummaryRows&&budgetState.typeSummaryRows.length||budgetRoot.loadBudgetTypeSummary()):"entry"===j()?(setBudgetEntryControlsVisible(!0),Promise.resolve(budgetRoot.fillBudgetDropdowns(!1)).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+}),renderBudgetEntryForm(resolveBudgetEntryType()),E(!1),_(),syncBudgetEntryControlsVisibility(),budgetDelay("page:budget.defaults",function(){
+E(!1),syncBudgetEntryControlsVisibility()
+},80)):(setBudgetEntryControlsVisible(!1),!n.forceRefresh&&!budgetCURRENTBIsDirty("summary")&&budgetState.summaryRows&&budgetState.summaryRows.length||budgetRoot.loadBudgetSummary(budgetState.summaryPage||1)),!0
+}
+({
+forceRefresh:!1,initialActivation:!budgetRoot.__budgetPageInitialized
+});
+var n
+},budgetRoot.budgetFooterPage=window.budgetFooterPage=function(page,btn){
+var pager=btn&&btn.closest?btn.closest(".app-table-pager,[data-budget-footer],[data-pager-kind],#budget-pagination-container"):null,kind=btn&&btn.getAttribute&&(btn.getAttribute("data-budget-footer")||btn.getAttribute("data-kind")||btn.getAttribute("data-pager-kind"))||pager&&pager.getAttribute&&(pager.getAttribute("data-budget-footer")||pager.getAttribute("data-kind")||pager.getAttribute("data-pager-kind"))||(pager&&"budget-pagination-container"===pager.id?"budget-type-summary":"")||"budget-type-summary",st=(budgetState.__budgetFooterState=budgetState.__budgetFooterState||{
+})[kind]||(budgetState.__budgetFooterState[kind]={
+page:1,size:20
+});
+try{
+var sel=btn&&btn.matches&&btn.matches("select")?btn:pager&&pager.querySelector?pager.querySelector(".app-table-page-size"):null;
+if(sel)st.size=Math.max(1,Number(sel.value||st.size||20)||20)
+}
+catch(_budgetFooterSizeErr){
+"function"==typeof __appObserve&&__appObserve(_budgetFooterSizeErr,"budget.footer.size")
+}
+return st.page=Math.max(1,Number(page||1)||1),"budget-type-summary"===kind?budgetRoot.loadBudgetTypeSummary?budgetRoot.loadBudgetTypeSummary({
+page:st.page,limit:st.size
+}):budgetRoot.renderTypeSummary():"budget-summary"!==kind||!!budgetRoot.loadBudgetSummary&&budgetRoot.loadBudgetSummary(st.page)
+},budgetBindDocOnce("click",function(ev){
+var btn=ev&&ev.target&&ev.target.closest?ev.target.closest('#budget-pagination-container button[data-page], .app-table-pager button[data-action="budgetFooterPage"][data-page]'):null,pager;
+btn&&((btn.closest?btn.closest("#budget-pagination-container,.app-table-pager"):null)&&(ev.preventDefault(),ev.stopPropagation(),budgetRoot.budgetFooterPage(btn.getAttribute("data-page")||1,btn)))
+},!0,"budget.footer.click.current"),budgetBindDocOnce("change",function(ev){
+var el=ev&&ev.target;
+if(el&&el.classList&&(el.classList.contains("app-standard-page-size")||el.classList.contains("app-table-page-size"))){
+var pager=el.closest?el.closest(".app-table-pager,[data-budget-footer],[data-pager-kind]"):null,kind=el.getAttribute("data-budget-footer")||el.getAttribute("data-pager-kind")||pager&&pager.getAttribute&&(pager.getAttribute("data-budget-footer")||pager.getAttribute("data-pager-kind"))||"";
+if("budget-type-summary"===kind||"budget-summary"===kind){
+var st=(budgetState.__budgetFooterState=budgetState.__budgetFooterState||{
+})[kind]||(budgetState.__budgetFooterState[kind]={
+page:1,size:20
+});
+st.size=Math.max(10,Math.min(100,Number(el.value||20)||20)),st.page=1,"budget-type-summary"===kind&&budgetRoot.loadBudgetTypeSummary?budgetRoot.loadBudgetTypeSummary({
+page:1,limit:st.size
+}):"budget-summary"===kind&&budgetRoot.loadBudgetSummary&&budgetRoot.loadBudgetSummary(1)
+}
+}
+},!0,"budget.footer.change.current"),budgetRoot.__BUDGET_TABLE_PAGER_BOUND__||(budgetRoot.__BUDGET_TABLE_PAGER_BOUND__=!0,document.addEventListener("app:table-page-size-changed",function(e){
+var n=e&&e.detail||{
+},r=n.table;
+if(r&&r.querySelector&&r.querySelector("#budget-summary-body")){
+var a=Math.max(10,Math.min(90,Number(n.pageSize||20)||20));
+budgetState.summaryLimit=a,budgetState.summaryPage=1,__appIsFn(budgetRoot.loadBudgetSummary)&&budgetRoot.loadBudgetSummary(1)
+}
+})),budgetRoot.AppPages&&__appIsFn(budgetRoot.AppPages.register)&&budgetRoot.AppPages.register("budget",{
+mount:function(e){
+var n=e&&(e.tab||e.preferredTab)||(budgetRoot.AppStore&&budgetRoot.AppStore.get?budgetRoot.AppStore.get("budget.activeTab","summary"):"summary")||"summary";
+return!budgetRoot.showBudgetTab||budgetRoot.showBudgetTab(n)
+},reload:function(){
+var e=(budgetRoot.AppStore&&budgetRoot.AppStore.get?budgetRoot.AppStore.get("budget.activeTab","summary"):"summary")||"summary";
+return"typesummary"===e&&budgetRoot.loadBudgetTypeSummary?budgetRoot.loadBudgetTypeSummary():"summary"===e&&budgetRoot.loadBudgetSummary?budgetRoot.loadBudgetSummary(1):!budgetRoot.showBudgetTab||budgetRoot.showBudgetTab(e)
+},dispose:function(){
+return!0
+}
+}),function(){
+var rt=budgetRoot.AppRuntime,m={
+renderTypeSummary:budgetRoot.renderTypeSummary,loadBudgetTypeSummary:budgetRoot.loadBudgetTypeSummary,printTypeSummary:budgetRoot.printTypeSummary,budgetSaveActiveEntry:budgetRoot.budgetSaveActiveEntry,budgetSave:budgetRoot.budgetSaveActiveEntry,resetBudgetEntryForm:budgetRoot.resetBudgetEntryForm
+};
+Object.keys(m).forEach(function(k){
+rt&&__appIsFn(rt.exportGlobal)?rt.exportGlobal(k,m[k],"BudgetPage"):budgetRoot[k]=m[k]
+})
+}
+(),budgetRoot.__budgetImmediateControlsCURRENT||(budgetRoot.__budgetImmediateControlsCURRENT=!0,document.addEventListener("app:page-activated",function(e){
+try{
+var n=e&&e.detail&&(e.detail.page||e.detail.pageId||e.detail.to);
+if("budget"!==String(n||"").replace(/^\//,""))return;
+var a=(budgetRoot.AppStore&&budgetRoot.AppStore.get?budgetRoot.AppStore.get("budget.activeTab","summary"):"summary")||"summary";
+budgetRoot.showBudgetTab&&budgetRoot.showBudgetTab(a);
+var o=budgetById("b-entry");
+o&&!o.classList.contains("d-none")&&(syncBudgetEntryControlsVisibility(),budgetRoot.fillBudgetDropdowns(!1))
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+})),budgetRoot.AppPages&&__appIsFn(budgetRoot.AppPages.registerActions)){
+function At(t){
+var e=t&&t.target;
+return e&&e.getAttribute?e.getAttribute("data-id")||"":String(t||"")
+}
+budgetRoot.AppPages.registerActions("budget",{
+showBudgetTab:function(e){
+var n=e&&e.target,tab=n&&n.getAttribute&&(n.getAttribute("data-budget-tab")||n.getAttribute("data-tab"))||"summary";
+return budgetRoot.showBudgetTab(tab,n||null)
+},toggleBudgetForms:function(e){
+return __appIsFn(budgetRoot.toggleBudgetForms)&&budgetRoot.toggleBudgetForms(e&&e.target?e.target:e)
+},calcBudgetTotalNow:function(){
+return __appIsFn(budgetRoot.calcBudgetTotalNow)&&budgetRoot.calcBudgetTotalNow()
+},loadBudgetTypeSummary:function(){
+return __appIsFn(budgetRoot.loadBudgetTypeSummary)&&budgetRoot.loadBudgetTypeSummary({
+source:"registered-action"
+})
+},renderTypeSummary:function(){
+return __appIsFn(budgetRoot.renderTypeSummary)&&budgetRoot.renderTypeSummary()
+},viewBudgetImportRecord:function(e){
+return __appIsFn(budgetRoot.viewBudgetImportRecord)&&budgetRoot.viewBudgetImportRecord(At(e))
+},editBudgetImportRecord:function(e){
+var node=e&&e.target&&e.target.closest?e.target.closest("[data-record-json],[data-id],[data-record-id]"):null;
+return __appIsFn(budgetRoot.editBudgetImportRecord)&&budgetRoot.editBudgetImportRecord(node||At(e))
+},deleteBudgetImportRecord:function(e){
+return __appIsFn(budgetRoot.deleteBudgetImportRecord)&&budgetRoot.deleteBudgetImportRecord(At(e))
+},exportBudgetReportExcel:function(){
+return __appIsFn(budgetRoot.exportBudgetReportExcel)&&budgetRoot.exportBudgetReportExcel()
+},printBudgetSummary:function(){
+return __appIsFn(budgetRoot.printBudgetSummary)&&budgetRoot.printBudgetSummary()
+},printTypeSummary:function(){
+return __appIsFn(budgetRoot.printTypeSummary)&&budgetRoot.printTypeSummary()
+},budgetSaveActiveEntry:function(e){
+return __appIsFn(budgetRoot.budgetSaveActiveEntry)&&budgetRoot.budgetSaveActiveEntry(e&&e.event?e.event:e)
+},resetBudgetEntryForm:function(e){
+return __appIsFn(budgetRoot.resetBudgetEntryForm)&&budgetRoot.resetBudgetEntryForm(e&&e.event?e.event:e)
+},budgetFooterPage:function(e){
+var b=e&&e.target&&e.target.closest?e.target.closest("[data-page]"):null;
+return budgetRoot.budgetFooterPage&&budgetRoot.budgetFooterPage(b&&b.getAttribute("data-page")||1,b)
+}
+})
+}
+}
+function B(){
+return __appIsFn(budgetRoot.ensureThailandLocationsLoaded)?(!budgetKit.getThailandProvinceNames||budgetKit.getThailandProvinceNames().length,budgetRoot.ensureThailandLocationsLoaded(!0).catch(function(){
+return budgetRoot.ensureThailandLocationsLoaded(!1).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+})
+})):__appIsFn(budgetRoot.ensureThailandAssets)?Promise.resolve(budgetRoot.ensureThailandAssets()).then(function(){
+return __appIsFn(budgetRoot.ensureThailandLocationsLoaded)?budgetRoot.ensureThailandLocationsLoaded().catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+}):!!budgetRoot.THAILAND_LOCATION_TREE
+}).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+}):Promise.resolve(!!budgetRoot.THAILAND_LOCATION_TREE)
+}
+function T(t){
+return/^budget-.*(cost|allowance|amount|expense|price|budget)$/i.test(String(t||""))
+}
+function x(t,e){
+if(!t||!T(t.id||""))return t;
+var n=String(null==t.value?"":t.value).trim();
+if(!n&&!1!==e)return t;
+var r=budgetToNumber(n.replace(/,/g,""));
+return t.value=n||r?budgetFormatAmount(r):"",t
+}
+function C(e){
+if(budgetRoot.AppCoreFormat&&__appIsFn(budgetRoot.AppCoreFormat.parseDate))return budgetRoot.AppCoreFormat.parseDate(e);
+if(!e&&0!==e)return null;
+var n=e instanceof Date?e:new Date(e);
+return isNaN(n.getTime())?null:n.getFullYear()>2400?new Date(n.getFullYear()-543,n.getMonth(),n.getDate()):n
+}
+function D(e){
+if(budgetRoot.AppCoreFormat&&__appIsFn(budgetRoot.AppCoreFormat.toThaiDate)){
+var n=budgetRoot.AppCoreFormat.toThaiDate(e);
+return"-"===n&&e?String(e):n
+}
+var r=C(e);
+return r?String(r.getDate()).padStart(2,"0")+"/"+String(r.getMonth()+1).padStart(2,"0")+"/"+String(r.getFullYear()+543):e?String(e):"-"
+}
+function k(){
+return D(new Date)
+}
+function N(t){
+if(function(t){
+var e=String(null==t?"":t).replace(/\u00a0/g," ").trim();
+if(!e)return!0;
+var n=e.replace(/[\s\-–—_/\.]/g,"").toLowerCase();
+return"-"===e||"—"===e||"–"===e||""===n||"null"===n||"undefined"===n||"nan"===n||"na"===n||"ไม่มี"===n||"ไม่ระบุ"===n
+}
+(t))return k();
+var e=C(t);
+if(!e)return k();
+var n=D(e);
+return n&&"-"!==n?n:k()
+}
+function P(n,a,o){
+var i=budgetById?budgetById(n):null;
+if(!i)return"";
+var u=o?N(a||""):"-"===D(a||"")?"":D(a||"");
+i.value=u||"";
+try{
+i.setAttribute("type","text")
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+try{
+i.setAttribute("data-thai-date-value",u||"")
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+try{
+i.setAttribute("placeholder","วว/ดด/ปปปป")
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+try{
+budgetRoot.AppDatePicker&&__appIsFn(budgetRoot.AppDatePicker.set)?budgetRoot.AppDatePicker.set(i,u||"",!0):budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(i.parentNode||document)
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+return u||""
+}
+function R(t){
+var e=String(budgetFieldValue("report"===t?"budget-common-report-status":"budget-common-refund-status")||"").trim();
+return"report"===t?-1!==e.indexOf("รายงานแล้ว"):-1!==e.indexOf("คืนเงินแล้ว")||-1!==e.indexOf("ไม่มีการยืมเงิน")
+}
+function L(t,e){
+var n="report"===t?"budget-common-report-date":"budget-common-refund-date",a=budgetById?budgetById(n):null;
+if(!a)return"";
+if(!R(t))return P(n,"",!1);
+var o=String(a.value||"").trim();
+return!e&&o&&C(o)?o:P(n,"",!0)
+}
+function E(t){
+L("refund",!!t),L("report",!!t)
+}
+function _(){
+[["budget-common-refund-status","refund"],["budget-common-report-status","report"]].forEach(function(t){
+var e=budgetById?budgetById(t[0]):null;
+e&&"1"!==e.dataset.boundBudgetStatusDate&&(e.dataset.boundBudgetStatusDate="1",e.addEventListener("change",function(){
+L(t[1],R(t[1]))
+}))
+})
+}
+function I(n){
+var r=n&&n.querySelectorAll?n:document;
+budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(r);
+var a=budgetRoot.AppDatePicker||budgetRoot.AppThaiDatePicker,o=r.querySelectorAll?r.querySelectorAll('.app-thai-date-input,input[data-thai-date="1"]'):[];
+Array.prototype.forEach.call(o,function(t){
+if(t&&a&&__appIsFn(a.set)){
+var e=t.value||t.dataset&&t.dataset.isoValue||"";
+e&&a.set(t,e,!0)
+}
+})
+}
+function F(t){
+if(!t)return[];
+var e=Array.isArray(t)?t:[t];
+if(1===e.length&&"string"==typeof e[0]){
+var n=String(e[0]||"").trim();
+if(!n)return[];
+if("["===n.charAt(0)||"{"===n.charAt(0))try{
+return F(JSON.parse(n))
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+var r=n.split(/[\/|,>]+/).map(function(t){
+return String(t||"").trim()
+}).filter(Boolean);
+if(r.length>=3){
+var a=K();
+return a.indexOf(r[1]),-1!==a.indexOf(r[2])?[r[0],r[2],r[1]]:[r[0],r[1],r[2]]
+}
+return r
+}
+if(e.length&&"object"==typeof e[0]){
+var o=e[0]||{
+};
+return[o.place||o.location||o.venue||o.name||o.title||o["สถานที่"]||"",o.province||o["จังหวัด"]||"",o.district||o.amphoe||o.amphur||o["อำเภอ"]||o["อำเภอ/เขต"]||o["เขต"]||"",o.subDistrict||o.subdistrict||o.tambon||o["ตำบล"]||o["ตำบล/แขวง"]||o["แขวง"]||""].map(function(t){
+return String(t||"").trim()
+})
+}
+return e.map(function(t){
+return String(null==t?"":t).trim()
+}).filter(Boolean)
+}
+function O(t){
+return!(!t||"object"!=typeof t||(Object.prototype.hasOwnProperty.call(t,"ok")?!1===t.ok:Object.prototype.hasOwnProperty.call(t,"error")))
+}
+function H(t){
+if(Array.isArray(t))return{
+rows:t
+};
+for(var e=t||{
+},n=0;
+n<4;
+n++){
+if(Array.isArray(e))return{
+rows:e
+};
+if(!e||"object"!=typeof e)return{
+};
+if(Array.isArray(e.rows))return e;
+if(e.reportSection&&Array.isArray(e.reportSection.rows))return Object.assign({},e,{rows:e.reportSection.rows});
+if(e.segments&&e.segments.report&&Array.isArray(e.segments.report.rows))return Object.assign({},e,{rows:e.segments.report.rows});
+if(e.data&&Array.isArray(e.data))return{
+rows:e.data
+};
+if(!e.data||"object"!=typeof e.data)return e;
+e=e.data
+}
+return e&&"object"==typeof e?e:{
+}
+}
+function j(){
+return budgetById("b-typesummary")&&!budgetById("b-typesummary").classList.contains("d-none")?"typesummary":budgetById("b-entry")&&!budgetById("b-entry").classList.contains("d-none")?"entry":"summary"
+}
+function M(){
+return"typesummary"===j()?budgetFieldValue("budget-type-fy-current")||budgetFieldValue("budget-fy-filter")||Y(new Date):budgetFieldValue("budget-fy-filter")||budgetFieldValue("budget-type-fy-current")||Y(new Date)
+}
+function Y(e){
+if(budgetRoot.AppCoreFormat&&budgetRoot.AppCoreFormat.deriveBudgetFyFromDate)return budgetRoot.AppCoreFormat.deriveBudgetFyFromDate(e||new Date);
+var n=C(e||new Date)||new Date;
+return String(n.getMonth()>=9?n.getFullYear()+544:n.getFullYear()+543)
+}
+function G(e){
+e=String(e||Y(new Date)).replace(/[^0-9]/g,"");
+var n=budgetRoot.AppCoreFormat&&budgetRoot.AppCoreFormat.fixedFiscalYears?budgetRoot.AppCoreFormat.fixedFiscalYears().filter(function(t){
+return Number(t)>=2569
+}):["2569","2570","2571","2572","2573","2574","2575","2576"];
+return-1===n.indexOf(e)&&e?[e].concat(n).filter(function(t,e,n){
+return n.indexOf(t)===e
+}):n.slice()
+}
+function q(t,e){
+t=(Array.isArray(t)?t:[]).map(function(t){
+return String(t||"").replace(/[^0-9]/g,"")
+}).filter(Boolean),t=G(e),e=String(e||Y(new Date)).replace(/[^0-9]/g,""),t.length||(t=G(e)),e&&-1===t.indexOf(e)&&t.unshift(e),t=t.filter(function(e,n){
+return e&&t.indexOf(e)===n
+}),budgetState.fiscalYears=t,budgetState.currentFiscalYear=e||t[0]||"",["budget-fy-filter","budget-type-fy-current"].forEach(function(e){
+var n=budgetById(e);
+if(n){
+for(var a=String(n.value||"");
+n.options.length;
+)n.remove(0);
+t.forEach(function(t){
+n.appendChild(new Option(String(t),String(t),!1,!1))
+}),a&&-1!==t.indexOf(a)?n.value=a:n.value=budgetState.currentFiscalYear||t[0]||""
+}
+})
+}
+function syncFiscalYearControls(t){
+["budget-fy-filter","budget-type-fy-current"].forEach(function(e){
+var n=budgetById(e);
+n&&(n.value=t)
+})
+}
+function ensureFiscalYearControls(){
+var t=budgetById("budget-fy-filter"),e=budgetById("budget-type-fy-current"),n=budgetState.currentFiscalYear||Y(new Date);
+q(budgetState.fiscalYears&&budgetState.fiscalYears.length?budgetState.fiscalYears.slice():G(n),n),t&&e&&("typesummary"===j()?e.value||(e.value=t.value||n):t.value&&(e.value=t.value))
+}
+function setBudgetEntryControlsVisible(t){
+!function(){
+var t=document.querySelector?document.querySelector("#budget-entry-form .budget-inline-save-wrap"):null,e=budgetById("budget-entry-inline-save-btn");
+if(!t&&e&&e.parentNode&&(t=e.parentNode),t){
+try{
+t.classList.add("d-flex","gap-2","flex-wrap")
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+e&&(e.classList.remove("d-none","w-100"),e.classList.add("btn","btn-success","fw-bold"),e.setAttribute("data-action","budgetSaveActiveEntry"),e.type="button");
+var n=budgetById("budget-entry-inline-reset-btn");
+n||((n=document.createElement("button")).id="budget-entry-inline-reset-btn",n.type="button",n.className="btn btn-outline-secondary fw-bold",n.setAttribute("data-action","resetBudgetEntryForm"),n.textContent="ล้างข้อมูล",e&&e.parentNode===t?t.insertBefore(n,e):t.appendChild(n))
+}
+}
+();
+var e=budgetById("budget-entry-inline-save-btn"),n=budgetById("budget-entry-inline-reset-btn"),a=budgetById("budget-main-save-btn"),o=budgetById("budget-permanent-save-bar"),forceVisible=!!(t||budgetById("budget-entry-form")||e||n);
+[e,n,a,budgetById("budget-main-reset-btn")].forEach(function(e){
+e&&(e.classList.remove("d-none"),e.style.display=forceVisible?"inline-flex":"none",e.style.visibility=forceVisible?"visible":"hidden",e.style.alignItems="center",e.style.justifyContent="center",forceVisible?e.removeAttribute("aria-hidden"):e.setAttribute("aria-hidden","true"))
+}),o&&(o.style.display=forceVisible?"block":"none",o.style.visibility=forceVisible?"visible":"hidden",o.setAttribute("aria-hidden",forceVisible?"false":"true"));
+var i=budgetById("budget-entry-type-label");
+t&&i&&(i.textContent=budgetFieldValue("budget-entry-type")||"บันทึกข้อมูลงบประมาณ")
+}
+function syncBudgetEntryControlsVisibility(){
+var t=budgetById("b-entry"),visible=!(!t||t.classList.contains("d-none"));
+if(setBudgetEntryControlsVisible(visible),visible)try{
+["budget-entry-inline-save-btn","budget-entry-inline-reset-btn","budget-main-save-btn","budget-main-reset-btn"].forEach(function(id){
+var el=budgetById(id);
+el&&(el.classList.remove("d-none"),el.style.display="inline-flex",el.style.visibility="visible",el.removeAttribute("aria-hidden"),el.disabled=!1)
+});
+var bar=budgetById("budget-permanent-save-bar");
+bar&&(bar.style.display="block",bar.style.visibility="visible",bar.setAttribute("aria-hidden","false"))
+}
+catch(_budgetControlErr){
+budgetWarn("budget.controls.visible",_budgetControlErr)
+}
+}
+function showBudgetValidationWarning(e){
+return e=String(e||"กรุณาตรวจสอบข้อมูล"),budgetRoot.Swal?(appSwalFire("แจ้งเตือน",e,"warning"),!1):(alert(e),!1)
+}
+function resolveBudgetEntryType(){
+var t=budgetById("budget-entry-type"),e=budgetFieldValue("budget-entry-type");
+if(e)return e;
+if(t&&t.options&&t.options.length)for(var n=0;
+n<t.options.length;
+n+=1){
+var a=String(t.options[n].value||t.options[n].text||"").trim();
+if(a&&-1===a.indexOf("--"))return t.value=a,a
+}
+return"การประชุมคณะกรรมาธิการ"
+}
+function renderBudgetEntryForm(n){
+var i=budgetById("dynamic-form-area");
+if(i){
+if(!n)return budgetClearElement(i),void i.appendChild(budgetCreateElement("div","text-center text-muted","กรุณาเลือกประเภทรายการเพื่อกรอกข้อมูล"));
+var u='<option value="">-- เลือกคณะอนุกรรมาธิการ --</option>'+(budgetRoot.__budgetSubcommitteeNames||[]).map(function(t){
+return'<option value="'+budgetEscapeHtml(t)+'">'+budgetEscapeHtml(t)+"</option>"
+}).join(""),s='<select class="form-select budget-province-select"><option value="">-- เลือกจังหวัด --</option></select>',c='<select class="form-select budget-district-select"><option value="">-- อำเภอ/เขต --</option></select>',m='<select class="form-select budget-subdistrict-select"><option value="">-- ตำบล/แขวง --</option></select>',g='<div class="row g-3">';
+if("การประชุมคณะกรรมาธิการ"===n)g+=v("ครั้งที่","budget-round-no","col-md-4"),g+=v("วันที่ประชุม","budget-activity-date","col-md-4","date"),g+=v("ค่าเบี้ยประชุม","budget-meeting-allowance","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("ค่าอาหารว่าง","budget-snack-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("ค่าอาหารกลางวัน","budget-lunch-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("รวมทั้งหมด (อัตโนมัติ)","budget-total-amount","col-md-4","number"," readonly");
+else if("การประชุมคณะอนุกรรมาธิการ"===n)g+='<div class="col-12"><label class="fw-bold text-danger">ชื่อคณะอนุกรรมาธิการ</label><select id="budget-subcommittee-name" class="form-select border-danger">'+u+"</select></div>",g+=v("ครั้งที่","budget-round-no","col-md-4"),g+=v("วันที่ประชุม","budget-activity-date","col-md-4","date"),g+=v("ค่าเบี้ยประชุม","budget-meeting-allowance","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("ค่าอาหารว่าง","budget-snack-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("ค่าอาหารกลางวัน","budget-lunch-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("รวมทั้งหมด (อัตโนมัติ)","budget-total-amount","col-md-4","number"," readonly");
+else if("การศึกษาดูงานในประเทศ"===n)g+=v("เรื่องศึกษาดูงาน","budget-topic","col-md-6"),g+=v("วันที่ยื่นบันทึกงาน","budget-activity-date","col-md-6","date"),g+=v("เดินทาง (เริ่ม)","budget-start-date","col-md-6","date"),g+=v("เดินทาง (สิ้นสุด)","budget-end-date","col-md-6","date"),g+='<div class="col-12"><label class="fw-bold"><i class="fas fa-location-dot me-1"></i>สถานที่ศึกษาดูงาน</label><div class="row g-2"><div class="col-md-3"><label class="small">สถานที่/อาคาร</label><input type="text" class="form-control" id="budget-visit-place"></div><div class="col-md-3"><label class="small">จังหวัด</label>'+s+'</div><div class="col-md-3"><label class="small">อำเภอ/เขต</label>'+c+'</div><div class="col-md-3"><label class="small">ตำบล/แขวง</label>'+m+"</div></div></div>",g+=v("ค่าใช้จ่ายเดินทาง","budget-travel-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("ค่ารับรอง","budget-reception-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("รวมทั้งหมด (อัตโนมัติ)","budget-total-amount","col-md-4","number"," readonly");
+else if("การศึกษาดูงานในประเทศและการจัดสัมมนา"===n||"การจัดสัมมนา"===n)g+=v("การจัดสัมมนา"===n?"ชื่อโครงการสัมมนา":"เรื่องศึกษาดูงาน","budget-topic","col-md-6"),g+=w("กรรมาธิการรับผิดชอบ","budget-committee-responsible",["ไม่มี"].concat((budgetSelectors.getPersonnel?budgetSelectors.getPersonnel("comms"):budgetStoreGet("personnel.comms",[])).map(function(t){
+return t.name||t.fullName||""
+}).filter(Boolean)),"col-md-6"),g+=v("เดินทางเริ่ม","budget-start-date","col-md-6","date"),g+=v("เดินทางสิ้นสุด","budget-end-date","col-md-6","date"),"การศึกษาดูงานในประเทศและการจัดสัมมนา"===n&&(g+='<div class="col-12"><label class="fw-bold"><i class="fas fa-location-dot me-1"></i>สถานที่ศึกษาดูงาน</label><div class="row g-2"><div class="col-md-3"><label class="small">สถานที่ศึกษาดูงาน</label><input type="text" class="form-control" id="budget-visit-place"></div><div class="col-md-3"><label class="small">จังหวัด</label>'+s+'</div><div class="col-md-3"><label class="small">อำเภอ/เขต</label>'+c+'</div><div class="col-md-3"><label class="small">ตำบล/แขวง</label>'+m+"</div></div></div>"),g+=v("ค่าใช้จ่ายเดินทาง (รวม)","budget-travel-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"'),"การจัดสัมมนา"!==n&&(g+=v("ค่ารับรอง","budget-reception-cost","col-md-4","number",' step="0.01" data-input="calcBudgetTotalNow"')),g+=v("ผลรวมทั้งหมด (อัตโนมัติ)","budget-total-amount","col-md-4","number"," readonly"),g+='<div class="col-12 border rounded p-3 bg-white"><div class="d-flex justify-content-between align-items-center mb-2"><div class="fw-bold text-success"><i class="fas fa-list me-1"></i>ชื่อโครงการสัมมนา (เพิ่มได้หลายรายการ)</div><button type="button" class="btn btn-success btn-sm" data-action="addBudgetSeminarRow"><i class="fas fa-plus me-1"></i>เพิ่มแถว</button></div><div id="budget-seminar-rows"></div><div class="text-end mt-2 small fw-bold text-primary">รวมค่าจัดสัมมนาทั้งหมด: <span id="budget-seminar-total-cost">0.00</span> บาท</div></div>';
+else if("การศึกษาดูงานต่างประเทศ"===n)g+=v("ประเทศที่เดินทางไป","budget-countries-text","col-md-12"),g+=v("เดินทางวันที่ (เริ่ม)","budget-start-date","col-md-6","date"),g+=v("ถึงวันที่ (สิ้นสุด)","budget-end-date","col-md-6","date"),g+=v("ค่าใช้จ่ายรวม (บาท)","budget-foreign-trip-cost","col-md-12","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("budget-total-amount","budget-total-amount","d-none","number"," readonly");
+else if("การรับรองแขกต่างประเทศ"===n)g+=v("ประเทศของแขก","budget-countries-text","col-md-6"),g+=v("เรื่อง/โอกาส","budget-topic","col-md-6"),g+=v("วันเดือนปี (เริ่ม)","budget-start-date","col-md-6","date"),g+=v("วันเดือนปี (สิ้นสุด)","budget-end-date","col-md-6","date"),g+=v("สถานที่รับรอง","budget-seminar-locations-text","col-md-12"),g+=v("ค่าใช้จ่ายรวม (บาท)","budget-foreign-guest-cost","col-md-12","number",' step="0.01" data-input="calcBudgetTotalNow"'),g+=v("budget-total-amount","budget-total-amount","d-none","number"," readonly");
+else if("ส่งเสริมและสนับสนุนการดำเนินงาน"===n){
+var f=budgetFieldValue("budget-support-type");
+g+=w("ประเภทรายการ","budget-support-type",["การศึกษาดูงานในประเทศ","การศึกษาดูงานในประเทศและการจัดสัมมนา","การจัดสัมมนา","การรับรองแขกต่างประเทศ","การประชุมคณะกรรมาธิการ","การประชุมคณะอนุกรรมาธิการ","การศึกษาดูงานต่างประเทศ","อื่น ๆ"],"col-md-6"),g+='<div class="col-md-6 d-flex align-items-end"><div class="small text-muted">เลือกประเภทรายการเพื่อแสดงฟอร์มกรอกข้อมูลเฉพาะประเภท ระบบจะนำเฉพาะผลรวมไปบันทึกใน supportCost / amount</div></div>',g+=v("budget-support-cost","budget-support-cost","d-none","number"," readonly"),g+=v("budget-total-amount","budget-total-amount","d-none","number"," readonly"),f||(g+='<div class="col-12"><div class="alert alert-light border text-center mb-0">กรุณาเลือกประเภทรายการส่งเสริมเพื่อกรอกข้อมูล</div></div>')
+}
+n&&(g+='<div class="col-12"><label class="fw-bold">หมายเหตุ</label><textarea id="budget-note" class="form-control" rows="2"></textarea></div>'),!(g+="</div>")&&n&&(g='<div class="alert alert-warning mb-0">ไม่พบแบบฟอร์มสำหรับประเภทรายการนี้ กรุณาตรวจสอบชื่อประเภทรายการ</div>');
+var htmlSetter=budgetRoot.AppDom&&(__appIsFn(budgetRoot.AppDom.renderHtml)?budgetRoot.AppDom.renderHtml:__appIsFn(budgetRoot.AppDom.setTrustedHtml)?budgetRoot.AppDom.setTrustedHtml:__appIsFn(budgetRoot.AppDom.setHtml)?budgetRoot.AppDom.setHtml:null)||(__appIsFn(budgetRoot.safeSetInnerHTML)?budgetRoot.safeSetInnerHTML:null)||(__appIsFn(budgetKit.setHtml)?budgetKit.setHtml:null);
+htmlSetter?htmlSetter(i,g,{
+trusted:!0,applyThaiDateHints:!0,moduleName:"Budget.dynamicForm.prePhase1HtmlOwner"
+}):i.innerHTML=String(g||"");
+budgetRoot.__budgetLastRenderedEntryType=n;
+budgetRoot.__budgetRenderEntryTypeForm=renderBudgetEntryForm;
+budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(i),__appIsFn(budgetRoot.ensureDatePickerAssets)&&Promise.resolve(budgetRoot.ensureDatePickerAssets()).then(function(){
+I(i)
+}).catch(function(e){
+try{
+budgetRoot.AppRuntime&&__appIsFn(budgetRoot.AppRuntime.debugLog)&&budgetRoot.AppRuntime.debugLog("warn","budget.datepicker.lazy",e)
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+return!1
+}),Promise.resolve(!budgetRoot.fillBudgetDropdowns||budgetRoot.fillBudgetDropdowns(!1)).catch(function(_err){
+return"function"==typeof __appObserve&&__appObserve(_err,"ec"),!1
+});
+var b=!!i.querySelector(".budget-province-select, .budget-district-select");
+budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(i),b&&B().then(function(){
+return __appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(i),new Promise(function(e){
+budgetDelay("budget.location.rebind",function(){
+__appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(i),e(!0)
+},80)
+})
+}).catch(function(){
+__appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(i)
+})
+}
+function v(t,e,n,r,a){
+var o="date"===r,i=!o&&T(e),u=o||i?"text":r||"text",d=o?' placeholder="วว/ดด/ปปปป" inputmode="numeric" data-thai-date="1"':"",l=i?' inputmode="decimal" data-budget-money="1" placeholder="0.00"':"",s=o?" app-thai-date-input":"",c=i?" app-money-input text-end":"";
+return'<div class="'+(n||"col-md-4")+'"><label class="fw-bold">'+budgetEscapeHtml(t)+'</label><input type="'+u+'" class="form-control'+s+c+'" id="'+budgetEscapeHtml(e)+'"'+d+l+(a||"")+"></div>"
+}
+function w(t,e,n,r,a){
+var o='<div class="'+(r||"col-md-4")+'"><label class="fw-bold">'+budgetEscapeHtml(t)+'</label><select class="form-select" id="'+budgetEscapeHtml(e)+'" '+(a||"")+'><option value="">-- เลือก --</option>';
+return(n||[]).forEach(function(t){
+o+='<option value="'+budgetEscapeHtml(t)+'">'+budgetEscapeHtml(t)+"</option>"
+}),o+"</select></div>"
+}
+}
+budgetRoot.__budgetRenderEntryTypeForm=renderBudgetEntryForm;
+budgetRoot.__budgetEnsureEntryFormVisible=function(entryType){
+var selected=String(entryType||budgetFieldValue("budget-entry-type")||"").trim();
+selected?renderBudgetEntryForm(selected):renderBudgetEntryForm("");
+"ส่งเสริมและสนับสนุนการดำเนินงาน"===selected&&ht(budgetFieldValue("budget-support-type")||"");
+syncBudgetEntryControlsVisibility&&syncBudgetEntryControlsVisibility();
+return!!budgetById("dynamic-form-area")
+};
+function K(){
+return budgetKit.getThailandProvinceNames?budgetKit.getThailandProvinceNames():(budgetKit.getThailandProvinceOptions?budgetKit.getThailandProvinceOptions():[]).map(function(t){
+return String(t&&(t.value||t.label)||"").trim()
+}).filter(Boolean)
+}
+function qt(t){
+if(Array.isArray(t))return t;
+if(t&&"object"==typeof t&&!Array.isArray(t))return Array.isArray(t.seminarItems)?t.seminarItems:Array.isArray(t.items)?t.items:[];
+var e=String(null==t?"":t).trim();
+if(!e)return[];
+try{
+var n=JSON.parse(e);
+return Array.isArray(n)?n:n&&Array.isArray(n.seminarItems)?n.seminarItems:n&&Array.isArray(n.items)?n.items:[]
+}
+catch(t){
+return"function"==typeof __appObserve&&__appObserve(t,"ec"),[]
+}
+}
+function Qt(t,e,n){
+var r=[],a;
+return[e&&e.seminarItems,t&&t.seminarItems,t&&t.seminarItemsJson,t&&t.seminarItemsJSON,t&&t.payloadJson,t&&t.payloadJSON,t&&t.extraJson,t&&t.extraJSON].forEach(function(t){
+r.length||(r=qt(t))
+}),(r=(Array.isArray(r)?r:[]).map(function(r){
+var a;
+return{
+date:(r=r&&"object"==typeof r?Object.assign({
+},r):{
+}).date||r.seminarDate||r.semDate||t&&t.seminarDate||e&&e.semDate||"",title:r.title||r.seminarTitle||r.projectName||r.topic||r.name||t&&t.topic||"",place:r.place||r.seminarPlace||r.location||"",province:r.province||r.seminarProvince||r["จังหวัด"]||"",district:r.district||r.amphoe||r.amphur||r.seminarDistrict||r["อำเภอ"]||r["อำเภอ/เขต"]||r["เขต"]||"",subDistrict:r.subDistrict||r.subdistrict||r.tambon||r.seminarSubDistrict||r.seminarSubdistrict||r["ตำบล"]||r["ตำบล/แขวง"]||r["แขวง"]||"",cost:r.cost||r.seminarCost||r.amount||r.totalAmount||0
+}
+}).filter(function(t){
+return t.date||t.title||t.place||t.province||t.district||t.subDistrict||Number(t.cost||0)
+})).length?r:[{
+date:t&&t.seminarDate||e&&e.semDate||"",title:t&&t.topic||e&&e.seminarTitle||"",cost:e&&e.seminarCost||0,committeeResponsible:t&&t.committeeResponsible||"",place:e&&e.seminarPlace||t&&t.seminarPlace||n&&n[0]||"",province:e&&e.seminarProvince||t&&t.seminarProvince||n&&n[1]||"",district:e&&e.seminarDistrict||t&&t.seminarDistrict||n&&n[2]||"",subDistrict:e&&e.seminarSubDistrict||e&&e.seminarSubdistrict||t&&t.seminarSubDistrict||t&&t.seminarSubdistrict||n&&n[3]||""
+}
+]
+}
+function Q(n){
+if(n){
+n=Object.assign({
+},n.raw||n._raw||n.import||n.detail||n.record||{
+},n),budgetRoot.showBudgetTab("entry"),budgetById("budget-edit-id")&&(budgetById("budget-edit-id").value=n.id||n.importId||n.recordId||n.__appRowId||n.rowId||n.uuid||"",budgetById("budget-edit-id").setAttribute("data-budget-base-record",function(){
+try{
+return JSON.stringify(n||{
+})
+}
+catch(_json){
+return"function"==typeof __appObserve&&__appObserve(_json,"ec"),""
+}
+}
+()));
+var a=n.extra||{
+},i=nt(n)||n.entryType||"";
+if(budgetById("budget-entry-type")&&(budgetById("budget-entry-type").value=i||n.entryType||""),(!a||"object"!=typeof a||Array.isArray(a))&&(n.payloadJSON||n.payloadJson))try{
+a=JSON.parse(String(n.payloadJSON||n.payloadJson||"{}"))
+}
+catch(t){
+a={
+}
+}
+!(a=a&&"object"==typeof a&&!Array.isArray(a)?a:{
+}).roundNo&&n.roundNo&&(a.roundNo=n.roundNo),!a.meetingAllowance&&n.meetingAllowance&&(a.meetingAllowance=n.meetingAllowance),!a.snackCost&&n.snackCost&&(a.snackCost=n.snackCost),!a.lunchCost&&n.lunchCost&&(a.lunchCost=n.lunchCost),!a.travelCost&&n.travelCost&&(a.travelCost=n.travelCost),!a.receptionCost&&n.receptionCost&&(a.receptionCost=n.receptionCost),!a.seminarCost&&n.seminarCost&&(a.seminarCost=n.seminarCost),!a.foreignTripCost&&n.foreignTripCost&&(a.foreignTripCost=n.foreignTripCost),!a.foreignGuestCost&&n.foreignGuestCost&&(a.foreignGuestCost=n.foreignGuestCost),!a.supportCost&&n.supportCost&&(a.supportCost=n.supportCost),i?(renderBudgetEntryForm(i),budgetById("budget-entry-type")&&(budgetById("budget-entry-type").value=i)):renderBudgetEntryForm(n.entryType||"");
+var u=function(t,e){
+var n=budgetById(t);
+return n?(n.value=null==e?"":e,T(t)&&x(n),n):null
+};
+u("budget-committee-type",n.committeeType||""),u("budget-start-date","-"===D(n.startDate)?"":D(n.startDate)),u("budget-end-date","-"===D(n.endDate)?"":D(n.endDate)),u("budget-activity-date","-"===D(n.activityDate)?"":D(n.activityDate)),u("budget-seminar-date","-"===D(n.seminarDate||a.semDate)?"":D(n.seminarDate||a.semDate)),u("budget-committee-name",n.committeeName||""),u("budget-subcommittee-name",n.subcommitteeName||n.committeeName||""),u("budget-round-no",n.roundNo||a.roundNo||""),u("budget-topic",n.topic||"");
+var d=F(a.visitLocations||n.visitLocations||n.visitLocationsText||""),l=F(a.seminarLocations||n.seminarLocations||n.seminarLocationsText||"");
+u("budget-visit-locations-text",n.visitLocations||n.visitLocationsText||d.join(", ")),u("budget-seminar-locations-text",n.seminarLocations||n.seminarLocationsText||l.join(", ")),u("budget-countries-text",n.countriesText||a.countriesText||""),u("budget-visit-place",d[0]||""),m("budget-visit-province",d[1]||""),m("budget-visit-district",d[2]||""),m("budget-visit-subdistrict",d[3]||""),u("budget-seminar-place",l[0]||""),m("budget-seminar-province",l[1]||""),m("budget-seminar-district",l[2]||""),m("budget-seminar-subdistrict",l[3]||""),u("budget-meeting-allowance",a.meetingAllowance),u("budget-snack-cost",a.snackCost),u("budget-lunch-cost",a.lunchCost),u("budget-travel-cost",a.travelCost),u("budget-reception-cost",a.receptionCost),u("budget-seminar-cost",a.seminarCost);
+var s=budgetById("budget-seminar-rows");
+s&&(budgetClearElement(s),Qt(n,a,l).forEach(function(t){
+window.addBudgetSeminarRow(t)
+})),u("budget-foreign-trip-cost",a.foreignTripCost||n.foreignTripCost||n.foreignStudyCost||n.totalAmount||n.amount||""),u("budget-foreign-guest-cost",a.foreignGuestCost||n.foreignGuestCost||n.guestCost||n.totalAmount||n.amount||""),u("budget-support-type",a.supportType||n.supportType||n.item||n.category||""),u("budget-support-cost",n.amount||a.supportCost||n.supportCost||n.totalAmount||""),u("budget-total-amount",n.totalAmount||n.amount||n.expense||n.spent||budgetRoot.calcBudgetTotalNow()),u("budget-committee-responsible",n.committeeResponsible||n.responsibleCommittee||n.committeeOwner||""),u("budget-common-staff-resp",n.staffResponsible||n.responsibleStaff||n.operationOfficer||n.officer||""),u("budget-note",n.note||n.remark||""),u("budget-common-refund-status",n.refundStatus||budgetConstants.refundPending||"ยังไม่คืนเงิน"),P("budget-common-refund-date",n.refundDate||a&&a.refundDate||"",!1),u("budget-common-report-status",n.reportStatus||budgetConstants.reportPending||"ยังไม่รายงาน"),P("budget-common-report-date",n.reportDate||a&&a.reportDate||"",!1),budgetKit.enhanceThaiDateInputs&&budgetKit.enhanceThaiDateInputs(budgetById("dynamic-form-area")||document),I(budgetById("dynamic-form-area")||document),P("budget-common-refund-date",n.refundDate||a&&a.refundDate||"",!1),P("budget-common-report-date",n.reportDate||a&&a.reportDate||"",!1),B().then(function(e){
+return __appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(budgetById("dynamic-form-area")),m("budget-visit-province",d[1]||""),m("budget-visit-district",d[2]||""),m("budget-visit-subdistrict",d[3]||""),m("budget-seminar-province",l[1]||""),m("budget-seminar-district",l[2]||""),m("budget-seminar-subdistrict",l[3]||""),__appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(budgetById("dynamic-form-area")),I(budgetById("dynamic-form-area")||document),e
+},function(e){
+throw __appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(budgetById("dynamic-form-area")),m("budget-visit-province",d[1]||""),m("budget-visit-district",d[2]||""),m("budget-visit-subdistrict",d[3]||""),m("budget-seminar-province",l[1]||""),m("budget-seminar-district",l[2]||""),m("budget-seminar-subdistrict",l[3]||""),__appIsFn(budgetRoot.bindBudgetLocationAutoSelects)&&budgetRoot.bindBudgetLocationAutoSelects(budgetById("dynamic-form-area")),I(budgetById("dynamic-form-area")||document),e
+}),E(!1),_(),syncBudgetEntryControlsVisibility(),budgetDelay("page:budget.status-date-sync",function(){
+E(!1),_(),syncBudgetEntryControlsVisibility()
+},80)
+}
+function m(t,e){
+var n=budgetById(t);
+if(n){
+var a=null==e?"":String(e);
+n.setAttribute("data-selected",a),a&&(n.value=a)
+}
+}
+}
+function tt(n){
+n=n||{
+};
+var a=budgetRoot.__budgetSummaryReportRowsFromDto(n);
+var personnelExpenseRow=n.personnelExpenseRow||n.personnelRow||n.staffExpenseRow||n.meta&&n.meta.personnelExpenseRow||null;
+if(personnelExpenseRow&&"object"===typeof personnelExpenseRow){
+var personnelSpent=budgetToNumber(personnelExpenseRow.personnelExpense||personnelExpenseRow.staffExpense||personnelExpenseRow.ytdExpense||personnelExpenseRow.spent||personnelExpenseRow.spentAmount||personnelExpenseRow.expense||personnelExpenseRow.expenseAmount||personnelExpenseRow.totalPaid||personnelExpenseRow.amount||0);
+personnelExpenseRow.spent=personnelSpent;
+personnelExpenseRow.spentAmount=personnelSpent;
+personnelExpenseRow.expense=personnelSpent;
+personnelExpenseRow.expenseAmount=personnelSpent;
+personnelExpenseRow.personnelExpense=personnelSpent;
+personnelExpenseRow.staffExpense=personnelSpent;
+personnelExpenseRow.ytdExpense=personnelSpent;
+var personnelExists=a.some(function(row){
+return budgetRoot.isBudgetPersonnelCompRow?budgetRoot.isBudgetPersonnelCompRow(row):!!(row&&row.isPersonnelCompensation);
+});
+if(!personnelExists)a.unshift(personnelExpenseRow);
+}
+budgetState.summaryRows=a.slice(),budgetState.summaryPage=1,budgetState.summaryLimit=Math.min(100,Math.max(20,a.length||20)),budgetRoot.currentSummaryData=a.slice(),n.meta&&n.meta.fy&&(budgetState.latestSummaryFy=String(n.meta.fy||""));
+var personnelPlan="แผนงานบุคลากรภาครัฐ",strategyPlan="แผนงานยุทธศาสตร์เพื่อสนับสนุนด้านการปรับสมดุลและพัฒนาระบบการบริหารจัดการภาครัฐ";
+function cleanText(v){
+return String(null==v?"":v).replace(/\s+/g," ").trim()
+}
+function compact(v){
+return cleanText(v).replace(/\s+/g,"")
+}
+function moneyNum(v){
+return budgetToNumber(v||0)
+}
+function budgetDirectValue(src,key){return src&&Object.prototype.hasOwnProperty.call(src,key)&&null!=src[key]&&""!==String(src[key]).trim()?src[key]:null}
+function normalizedBudgetKeyMap(src){
+var out={
+};
+Object.keys(src||{
+}).forEach(function(k){
+out[String(k||"").replace(/[\s_\-()（）]/g,"").toLowerCase()]=k
+});
+return out
+}
+function firstMoney(row,keys){
+row=row||{
+};
+var extra=row.extra&&"object"==typeof row.extra?row.extra:{
+};
+var maps=[row,extra],norms=[normalizedBudgetKeyMap(row),normalizedBudgetKeyMap(extra)];
+for(var i=0;
+i<keys.length;
+i++)for(var mIdx=0;
+mIdx<maps.length;
+mIdx++){
+var k=keys[i],v=budgetDirectValue(maps[mIdx],k);
+if(null!=v)return moneyNum(v);
+var nk=String(k||"").replace(/[\s_\-()（）]/g,"").toLowerCase(),real=norms[mIdx][nk];
+if(real){
+v=budgetDirectValue(maps[mIdx],real);
+if(null!=v)return moneyNum(v)
+}
+}
+return 0;
+}
+function firstPositiveMoney(row,keys){
+row=row||{
+};
+var extra=row.extra&&"object"==typeof row.extra?row.extra:{
+},best=0,seen=false;
+var maps=[row,extra],norms=[normalizedBudgetKeyMap(row),normalizedBudgetKeyMap(extra)];
+for(var i=0;
+i<keys.length;
+i++)for(var mIdx=0;
+mIdx<maps.length;
+mIdx++){
+var k=keys[i],v=budgetDirectValue(maps[mIdx],k),nk,real,n;
+if(null==v){
+nk=String(k||"").replace(/[\s_\-()（）]/g,"").toLowerCase();
+real=norms[mIdx][nk];
+real&&(v=budgetDirectValue(maps[mIdx],real))
+}
+if(null!=v){
+n=moneyNum(v);
+seen=true;
+if(n>0)return n;
+best=n
+}
+}
+return seen?best:0;
+}
+function summaryBudget(row){
+return firstMoney(row,["budget","totalBudget","amountBudget","วงเงินงบประมาณ","งบประมาณ","งบประมาณที่ได้รับ"])
+}
+function summarySpent(row){
+var standardKeys=["spent","spentAmount","expense","expenseAmount","totalExpense","totalSpent","totalPaid","used","usedAmount","paid","paidAmount","actualAmount","disbursement","disbursed","usedBudget","ยอดใช้จ่าย","รายจ่าย","รายจ่ายรวม","จำนวนรายจ่าย","ค่าใช้จ่าย","ค่าใช้จ่ายรวม","เบิกจ่าย","ยอดเบิกจ่าย","totalAmount","amount","rowAmount","จำนวนเงิน","ยอดรวม","รวมเป็นเงิน"],personnelKeys=["personnelExpense","staffExpense","ytdExpense","salaryExpense","compensationExpense","allowanceExpense","currentMonthlyExpense","monthlyRateTotal","ค่าตอบแทน","ค่าตอบแทนรวม","เงินเดือน","เงินเดือนรวม","ค่าตอบแทนรายเดือน","totalPaid","totalSpent","spent","spentAmount","expense","expenseAmount","รายจ่าย","รายจ่ายรวม","จำนวนรายจ่าย","amount","totalAmount","rowAmount","จำนวนเงิน","ยอดรวม","รวมเป็นเงิน"];
+return isPersonnel(row)?firstPositiveMoney(row,personnelKeys):firstMoney(row,standardKeys)
+}
+function summaryRemain(row,budget,spent){
+for(var keys=["remain","balance","remaining","คงเหลือ","งบประมาณคงเหลือ"],i=0;
+i<keys.length;
+i++){
+var k=keys[i];
+if(row&&null!=row[k]&&""!==String(row[k]).trim())return moneyNum(row[k])
+}
+return budget-spent
+}
+function rowLabel(row){
+return cleanText((row=row||{
+}).item||row.name||row.label||row.title||row.category||row.entryType||"-")||"-"
+}
+function isPersonnel(row){
+var txt=compact([(row=row||{
+}).planGroup,row.plan,row.category,row.entryType,row.item,row.name,row.label,row.title].join(" "));
+return txt.indexOf("แผนงานบุคลากรภาครัฐ")>-1||txt.indexOf("บุคลากรภาครัฐ")>-1||txt.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||txt.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1
+}
+function totals(rows){
+var out={
+budget:0,spent:0,remain:0
+};
+return(rows||[]).forEach(function(row){
+var budget=summaryBudget(row),spent=summarySpent(row),remain=summaryRemain(row,budget,spent);
+out.budget+=budget,out.spent+=spent,out.remain+=remain
+}),out.remain=out.budget-out.spent,out
+}
+function pctText(total){
+return moneyNum(total.budget)>0?(moneyNum(total.spent)/moneyNum(total.budget)*100).toFixed(2):"0.00"
+}
+function groupRow(label){
+return'<tr class="budget-summary-plan-row table-secondary fw-bold"><td colspan="4">'+budgetEscapeHtml(label)+"</td></tr>"
+}
+function itemRow(row){
+var budget=summaryBudget(row=row||{
+}),spent=summarySpent(row),remain=summaryRemain(row,budget,spent),pct=budget>0?spent/budget*100:0;
+return'<tr class="budget-summary-item-row"><td class="ps-3 budget-summary-item-name">'+budgetEscapeHtml(rowLabel(row))+'</td><td class="text-end text-success">'+budgetFormatAmount(budget)+'</td><td class="text-end text-danger budget-spent-cell"><span class="spent-main">'+budgetFormatAmount(spent)+'</span><span class="spent-pct-line spent-pct-yellow">('+pct.toFixed(2)+'%)</span></td><td class="text-end text-primary fw-bold">'+budgetFormatAmount(remain)+"</td></tr>"
+}
+function totalRow(label,total,marker,cls){
+return'<tr data-summary-total="'+marker+'" class="budget-summary-total-row '+(cls||"")+'"><td class="text-center fw-bold">'+budgetEscapeHtml(label)+'</td><td class="text-end text-success fw-bold">'+budgetFormatAmount(total.budget||0)+'</td><td class="text-end text-danger budget-spent-cell fw-bold"><span class="spent-main">'+budgetFormatAmount(total.spent||0)+'</span><span class="spent-pct-line spent-pct-yellow">('+pctText(total)+'%)</span></td><td class="text-end text-primary fw-bold">'+budgetFormatAmount(total.remain||0)+"</td></tr>"
+}
+var personnelRows=[],strategyRows=[];
+a.forEach(function(row){
+(isPersonnel(row)?personnelRows:strategyRows).push(row)
+});
+var html="";
+personnelRows.length&&(html+=groupRow(personnelPlan),html+=personnelRows.map(itemRow).join("")),html+=groupRow(strategyPlan),html+=strategyRows.length?strategyRows.map(itemRow).join(""):'<tr class="budget-summary-item-row"><td class="ps-3 text-muted">-</td><td class="text-end text-success">0.00</td><td class="text-end text-danger budget-spent-cell"><span class="spent-main">0.00</span><span class="spent-pct-line spent-pct-yellow">(0.00%)</span></td><td class="text-end text-primary fw-bold">0.00</td></tr>';
+var strategyTotal=totals(strategyRows),allTotal=totals(a);
+return n.grandTotals={
+noPersonnel:strategyTotal,all:allTotal
+},n.totals=n.grandTotals,html+=totalRow("รวมทั้งสิ้น (ไม่รวมแผนงานบุคลากรภาครัฐ)",strategyTotal,"noPersonnel","budget-summary-subtotal"),html+=totalRow("รวมทั้งสิ้น",allTotal,"all","budget-summary-grandtotal"),budgetSetHtml("budget-summary-body",a.length?html:'<tr><td colspan="4" class="text-center text-muted p-4">ไม่มีข้อมูล</td></tr>'+html),budgetRoot.__budgetEnsureSummaryDesktopTableVisible(),setTimeout(budgetRoot.__budgetEnsureSummaryDesktopTableVisible,60),setTimeout(budgetRoot.__budgetEnsureSummaryDesktopTableVisible,180),budgetRoot.renderBudgetStandardFooter("budget-summary",0,1,1,""),budgetRoot.__budgetEnsureSummaryDesktopTableVisible(),a
+}
+function et(t){
+var e=String(t||"").trim();
+return{
+"การศึกษาดูงานในประเทศและจัดสัมมนา":"การศึกษาดูงานในประเทศและการจัดสัมมนา","จัดสัมมนา":"การจัดสัมมนา","การเดินทางศึกษาดูงานต่างประเทศ":"การศึกษาดูงานต่างประเทศ"
+}
+[e]||e
+}
+function nt(t){
+return et(((t=t||{
+}).extra||{
+}).supportType||t.supportType||t.item||t.entryType||"")
+}
+function rt(t,e){
+if(!t)return"";
+var n=[];
+if(Array.isArray(t))n=t;
+else if("string"==typeof t){
+var r=t.trim();
+if(!r)return"";
+if("["!==r.charAt(0)&&"{"!==r.charAt(0))return r;
+try{
+var a=JSON.parse(r);
+n=Array.isArray(a)?a:[a]
+}
+catch(t){
+return r
+}
+}
+else"object"==typeof t&&(n=[t]);
+return n.map(function(t,n){
+return e?e(t,n):String(t||"")
+}).filter(Boolean).join(", ")
+}
+function at(t){
+var e=(t=t||{
+}).extra||{
+},n=e.seminarItems||e.seminarLocations||t.seminarItems||t.seminarLocations||t.seminarLocationsJSON||t.seminarLocationsJson||"";
+if(Array.isArray(n))return n;
+if("string"==typeof n&&n.trim())try{
+var r=JSON.parse(n);
+return Array.isArray(r)?r:[r]
+}
+catch(t){
+"function"==typeof __appObserve&&__appObserve(t,"ec")
+}
+return[]
+}
+function ot(t){
+return rt(((t=t||{
+}).extra||{
+}).countries||t.countries||t.countriesText||t.countriesJSON||t.countriesJson||"",function(t){
+return"string"==typeof t?t:t&&(t.country||t.name||t.title)||""
+})||"-"
+}
+function it(t,e){
+for(var n=(t=t||{
+}).extra||{
+},r=0;
+r<e.length;
+r++){
+var a=e[r];
+if(null!=t[a]&&""!==String(t[a]).trim())return t[a];
+if(null!=n[a]&&""!==String(n[a]).trim())return n[a]
+}
+return""
+}
+function ut(t,e){
+var n=it(t||{
+},[e]);
+return""===n?"":n
+}
+function dt(t){
+t=t||{
+};
+var isPersonnelAmountRow=function(row){
+var x=String((row=row||{}).entryType||row.category||row.item||row.name||row.label||row.title||"").replace(/[\s​-‍\uFEFF]/g,"");
+return x.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||x.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1||x.indexOf("บุคลากรภาครัฐ")>-1||row.isPersonnelCompensation===!0
+};
+var isPersonnelDt=isPersonnelAmountRow(t),keys=isPersonnelDt?["personnelExpense","staffExpense","ytdExpense","salaryExpense","compensationExpense","allowanceExpense","currentMonthlyExpense","monthlyRateTotal","ค่าตอบแทน","ค่าตอบแทนรวม","เงินเดือน","เงินเดือนรวม","ค่าตอบแทนรายเดือน","totalPaid","totalSpent","spent","expense","spentAmount","expenseAmount","รายจ่าย","รายจ่ายรวม","จำนวนรายจ่าย","amount","totalAmount","rowAmount","จำนวนเงิน","ยอดรวม","รวมเป็นเงิน"]:["spent","expense","paid","paidAmount","actualAmount","expenseAmount","disbursement","disbursed","usedBudget","usedAmount","รายจ่าย","รายจ่ายรวม","จำนวนรายจ่าย","ค่าใช้จ่าย","ค่าใช้จ่ายรวม","เบิกจ่าย","ยอดเบิกจ่าย","amount","totalAmount","rowAmount","จำนวนเงิน","ยอดรวม","รวมเป็นเงิน"],zeroSeen="";
+for(var i=0;i<keys.length;i++){
+var v=it(t,[keys[i]]);
+if(""!==v&&null!=v){
+if(!isPersonnelDt)return v;
+if(budgetToNumber(v)>0)return v;
+zeroSeen=v
+}
+}
+if(isPersonnelDt&&""!==zeroSeen)return zeroSeen
+var r=["meetingAllowance","snackCost","lunchCost","travelCost","receptionCost","seminarCost","foreignTripCost","foreignGuestCost","supportCost"].reduce(function(e,n){
+return e+budgetToNumber(ut(t,n))
+},0);
+return r||""
+}
+function lt(t){
+return function(t){
+var e=(t=t||{
+}).extra||{
+},n=String(t.entryType||t.category||e.entryType||e.category||"").replace(/\s+/g,"");
+if(n.indexOf("ส่งเสริมและสนับสนุนการดำเนินงาน")>-1)return!0;
+if(n.indexOf("ส่งเสริม")>-1&&n.indexOf("สนับสนุน")>-1)return!0;
+var r=String(t.item||t.supportType||e.supportType||"").replace(/\s+/g,"");
+return r.indexOf("ส่งเสริม")>-1&&r.indexOf("สนับสนุน")>-1
+}
+(t)&&ut(t,"supportCost")||""
+}
+function st(t,e){
+var n=(t=t||{
+}).extra||{
+};
+return"_idx"===e?"":"committeeName"===e?function(t){
+var e=String(null==t?"":t).replace(/\s+/g," ").trim();
+if(!e)return"คณะกรรมาธิการ";
+var n=e.replace(/[\s\u200B-\u200D\uFEFF]/g,"");
+return-1!==n.indexOf("คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ")||0===n.indexOf("ณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ")?"คณะกรรมาธิการ":e
+}
+(it(t,["committeeName","commissionName","committeeType"])||"คณะกรรมาธิการ"):"subcommitteeName"===e?it(t,["subcommitteeName","committeeName"])||"-":"supportType"===e?et(n.supportType||t.supportType||t.item||t.entryType||""):"topic"===e?function(t){
+var e=nt(t=t||{
+})||et(t.entryType||t.category||""),n=t.roundNo||t.extra&&t.extra.roundNo||"";
+return"การประชุมคณะกรรมาธิการ"===e?n?"ครั้งที่ "+n:"-":"การประชุมคณะอนุกรรมาธิการ"===e?[t.committeeName||t.subcommitteeName||"",n?"ครั้งที่ "+n:""].filter(Boolean).join(" / ")||"-":t.topic||t.item||t.entryType||"-"
+}
+(t):"detail"===e?it(t,["detail","details","description","note","remark","notes"])||"-":"visitLocations"===e?function(t){
+return rt(((t=t||{
+}).extra||{
+}).visitLocations||t.visitLocations||t.visitLocationsText||t.visitLocationsJSON||t.visitLocationsJson||"",function(t){
+return"string"==typeof(t=t||{
+})?t:[t.place||t.location||t.name||t.title||"",t.district||t.amphoe||"",t.province||""].filter(Boolean).join(" / ")
+})||"-"
+}
+(t):"seminarTitle"===e?function(t){
+return at(t).map(function(t){
+return t&&(t.title||t.name||t.topic||t.projectName||"")
+}).filter(Boolean).join(", ")||t&&(t.seminarTitle||t.topic)||"-"
+}
+(t):"seminarLocations"===e?function(t){
+return at(t).map(function(t){
+return t?"string"==typeof t?t:[t.place||t.location||t.venue||"",t.district||t.amphoe||"",t.province||""].filter(Boolean).join(" / "):""
+}).filter(Boolean).join(", ")||rt(t&&(t.extra&&t.extra.seminarLocations||t.seminarLocations||t.seminarLocationsText||t.seminarLocationsJSON||t.seminarLocationsJson)||"",function(t){
+return t?"string"==typeof t?t:[t.place||t.location||t.venue||"",t.district||t.amphoe||"",t.province||""].filter(Boolean).join(" / "):""
+})||"-"
+}
+(t):"countriesText"===e||"guestCountry"===e?ot(t):"combinedStatus"===e?function(t){
+return[(t=t||{
+}).refundStatus||t.extra&&t.extra.refundStatus||"-",t.reportStatus||t.extra&&t.extra.reportStatus||"-"].join(" / ")
+}
+(t):"activityDate"===e?it(t,["activityDate","seminarDate","startDate","date"]):"amount"===e?dt(t)||"":"supportCost"===e?lt(t)||ut(t,"supportCost")||"":"foreignTripCost"===e?function(t){
+return ut(t,"foreignTripCost")||""
+}
+(t):"foreignGuestCost"===e?function(t){
+return ut(t,"foreignGuestCost")||""
+}
+(t):"totalAmount"===e?dt(t):null!=t[e]&&""!==String(t[e]).trim()?t[e]:null!=n[e]&&""!==String(n[e]).trim()?n[e]:""
+}
+function ct(t){
+t=et(t||"");
+var e={
+label:"จัดการ",key:"actions",html:function(t,e){
+if(t&&(t.synthetic===!0||t.readOnly===!0||t.canDelete===!1||t.deletable===!1||t.isPersonnelCompensation===!0))return'<span class="text-muted small">อ่านอย่างเดียว</span>';
+return n=mt(t,e),'<div class="btn-group btn-group-sm flex-wrap" role="group"><button type="button" class="btn btn-outline-primary" data-action="viewBudgetImportRecord" data-id="'+budgetEscapeHtml(n)+'">แสดงข้อมูล</button><button type="button" class="btn btn-outline-warning" data-action="editBudgetImportRecord" data-id="'+budgetEscapeHtml(n)+'">แก้ไข</button><button type="button" class="btn btn-outline-danger" data-action="deleteBudgetImportRecord" data-id="'+budgetEscapeHtml(n)+'">ลบ</button></div>';
+var n
+},noPrint:!0
+},n=[{
+label:"ลำดับ",key:"_idx",cls:"text-center"
+}
+],r=[{
+label:"เจ้าหน้าที่รับผิดชอบ",key:"staffResponsible"
+}
+].concat([{
+label:"สถานะคืนเงิน",key:"refundStatus",html:function(t){
+return statusAgingHtml(t,"refund")
+}
+},{
+label:"สถานะรายงาน",key:"reportStatus",html:function(t){
+return statusAgingHtml(t,"report")
+}
+}
+]);
+if(function(v){
+var x=String(v||"").replace(/[\s\u00A0\u200B-\u200D\uFEFF]/g,"");
+return x.indexOf("ค่าตอบแทนผู้ปฏิบัติงาน")>-1||x.indexOf("ผู้ปฏิบัติงานให้คณะกรรมาธิการ")>-1||x.indexOf("บุคลากรภาครัฐ")>-1
+}
+(t))return n.concat([{
+label:"ประเภทรายการ",key:"entryType"
+},{
+label:"ปีงบประมาณ",key:"fy"
+},{
+label:"งบประมาณ",key:"budget",fmt:"money"
+},{
+label:"รายจ่าย",key:"totalAmount",fmt:"money"
+},{
+label:"คงเหลือ",key:"remain",fmt:"money"
+},e]);
+return"การประชุมคณะกรรมาธิการ"===t?n.concat([{
+label:"ครั้งที่",key:"roundNo"
+},{
+label:"วันเดือนปี",key:"activityDate",fmt:"date"
+},{
+label:"ค่าเบี้ยประชุม",key:"meetingAllowance",fmt:"money"
+},{
+label:"ค่าอาหารว่าง",key:"snackCost",fmt:"money"
+},{
+label:"ค่าอาหารกลางวัน",key:"lunchCost",fmt:"money"
+},{
+label:"รวมทั้งหมด",key:"totalAmount",fmt:"money"
+},{
+label:"เจ้าหน้าที่รับผิดชอบ",key:"staffResponsible"
+},{
+label:"สถานะคืนเงิน",key:"refundStatus",html:function(t){
+return statusAgingHtml(t,"refund")
+}
+},{
+label:"สถานะรายงาน",key:"reportStatus",html:function(t){
+return statusAgingHtml(t,"report")
+}
+},{
+label:"สถานะคืนเงิน/สถานะรายงาน",key:"combinedStatus"
+},e]):"การประชุมคณะอนุกรรมาธิการ"===t?n.concat([{
+label:"ชื่อคณะอนุกรรมาธิการ",key:"subcommitteeName"
+},{
+label:"ครั้งที่",key:"roundNo"
+},{
+label:"วันเดือนปี",key:"activityDate",fmt:"date"
+},{
+label:"ค่าเบี้ยประชุม",key:"meetingAllowance",fmt:"money"
+},{
+label:"ค่าอาหารว่าง",key:"snackCost",fmt:"money"
+},{
+label:"ค่าอาหารกลางวัน",key:"lunchCost",fmt:"money"
+},{
+label:"รวมทั้งหมด",key:"totalAmount",fmt:"money"
+},{
+label:"เจ้าหน้าที่รับผิดชอบ",key:"staffResponsible"
+},{
+label:"สถานะคืนเงิน",key:"refundStatus",html:function(t){
+return statusAgingHtml(t,"refund")
+}
+},{
+label:"สถานะรายงาน",key:"reportStatus",html:function(t){
+return statusAgingHtml(t,"report")
+}
+},{
+label:"สถานะคืนเงิน/สถานะรายงาน",key:"combinedStatus"
+},e]):"การศึกษาดูงานในประเทศ"===t?n.concat([{
+label:"เรื่องศึกษาดูงาน",key:"topic"
+},{
+label:"สถานที่ศึกษาดูงาน",key:"visitLocations"
+},{
+label:"วันเดินทาง (เริ่ม)",key:"startDate",fmt:"date"
+},{
+label:"วันเดินทาง (สิ้นสุด)",key:"endDate",fmt:"date"
+},{
+label:"ค่าใช้จ่ายเดินทาง",key:"travelCost",fmt:"money"
+},{
+label:"ค่ารับรอง",key:"receptionCost",fmt:"money"
+},{
+label:"รวมทั้งหมด",key:"totalAmount",fmt:"money"
+}
+],r,[e]):"การศึกษาดูงานในประเทศและการจัดสัมมนา"===t?n.concat([{
+label:"เรื่องศึกษาดูงาน",key:"topic"
+},{
+label:"สถานที่ศึกษาดูงาน",key:"visitLocations"
+},{
+label:"โครงการสัมมนา",key:"seminarTitle"
+},{
+label:"สถานที่สัมมนา",key:"seminarLocations"
+},{
+label:"วันเดินทาง (เริ่ม)",key:"startDate",fmt:"date"
+},{
+label:"วันเดินทาง (สิ้นสุด)",key:"endDate",fmt:"date"
+},{
+label:"ค่าใช้จ่ายเดินทาง",key:"travelCost",fmt:"money"
+},{
+label:"ค่ารับรอง",key:"receptionCost",fmt:"money"
+},{
+label:"ค่าใช้จ่ายในการจัดสัมมนา",key:"seminarCost",fmt:"money"
+},{
+label:"รวมทั้งหมด",key:"totalAmount",fmt:"money"
+},{
+label:"กรรมาธิการรับผิดชอบ",key:"committeeResponsible"
+}
+],r,[e]):"การจัดสัมมนา"===t?n.concat([{
+label:"ชื่อโครงการสัมมนา",key:"seminarTitle"
+},{
+label:"สถานที่สัมมนา",key:"seminarLocations"
+},{
+label:"วันเดินทาง (เริ่ม)",key:"startDate",fmt:"date"
+},{
+label:"วันเดินทาง (สิ้นสุด)",key:"endDate",fmt:"date"
+},{
+label:"ค่าใช้จ่ายเดินทาง",key:"travelCost",fmt:"money"
+},{
+label:"ค่าใช้จ่ายในการจัดสัมมนา",key:"seminarCost",fmt:"money"
+},{
+label:"รวมทั้งหมด",key:"totalAmount",fmt:"money"
+},{
+label:"กรรมาธิการรับผิดชอบ",key:"committeeResponsible"
+}
+],r,[e]):"การศึกษาดูงานต่างประเทศ"===t?n.concat([{
+label:"ประเทศที่เดินทางไป",key:"countriesText"
+},{
+label:"วันเดินทาง (เริ่ม)",key:"startDate",fmt:"date"
+},{
+label:"วันเดินทาง (สิ้นสุด)",key:"endDate",fmt:"date"
+},{
+label:"ค่าใช้จ่ายรวม",key:"foreignTripCost",fmt:"money"
+},{
+label:"กรรมาธิการรับผิดชอบ",key:"committeeResponsible"
+}
+],r,[e]):"การรับรองแขกต่างประเทศ"===t?n.concat([{
+label:"ประเทศของแขก",key:"guestCountry"
+},{
+label:"เรื่อง/โอกาส",key:"topic"
+},{
+label:"วันเดือนปี (เริ่ม)",key:"startDate",fmt:"date"
+},{
+label:"วันเดือนปี (สิ้นสุด)",key:"endDate",fmt:"date"
+},{
+label:"ค่าใช้จ่ายรวม",key:"foreignGuestCost",fmt:"money"
+},{
+label:"กรรมาธิการรับผิดชอบ",key:"committeeResponsible"
+}
+],r,[e]):n.concat([{
+label:"ประเภทรายการ",key:"supportType"
+},{
+label:"วันเดือนปี",key:"activityDate",fmt:"date"
+},{
+label:"เรื่อง",key:"topic"
+},{
+label:"รายละเอียด",key:"detail"
+},{
+label:"ค่าใช้จ่ายทั้งหมด (บาท)",key:"amount",fmt:"money"
+},{
+label:"สถานะคืนเงิน",key:"refundStatus",html:function(t){
+return statusAgingHtml(t,"refund")
+}
+},{
+label:"สถานะรายงาน",key:"reportStatus",html:function(t){
+return statusAgingHtml(t,"report")
+}
+},e])
+}
+function mt(t,e){
+t=t||{
+};
+var n=String(t.id||t.importId||t.recordId||t.uuid||t.rowId||t._id||'').trim();
+n||(n='row-'+String(null==e?(budgetState.importRows||[]).indexOf(t):e));
+try{
+t.__appRowId=n
+}
+catch(_ignore){
+typeof __appObserve==="function"&&__appObserve(_ignore,"c6.SPB:2247")
+}
+return n;
+}
+function pt(t){
+try{
+var node=t&&t.getAttribute?t:(t&&t.target&&t.target.closest?t.target.closest('[data-id],[data-record-id],[data-row-id]'):null);
+if(node)t=String(node.getAttribute('data-id')||node.getAttribute('data-record-id')||node.getAttribute('data-row-id')||'').trim();
+}
+catch(_nodeErr){
+typeof __appObserve==="function"&&__appObserve(_nodeErr,"c6.SPB:2256")
+}
+t=String(t||'').trim();
+if(!t)return null;
+var e=(budgetState.importRows||[]).concat(budgetState.typeSummaryRows||[]).concat(budgetState.__typeSummaryDisplayRows||[]);
+for(var n=0;
+n<e.length;
+n++){
+var r=e[n]||{
+};
+if(String(r.id||'')===t||String(r.importId||'')===t||String(r.recordId||'')===t||String(r.uuid||'')===t||String(r.rowId||'')===t||String(r._id||'')===t||String(r.__appRowId||'')===t||('row-'+n)===t||mt(r,n)===t)return r;
+}
+return null;
+}
+function gt(){
+var t=document.querySelectorAll("#budget-seminar-rows .budget-seminar-row"),e=0;
+Array.prototype.forEach.call(t,function(t){
+var n=t.querySelector(".budget-seminar-cost");
+e+=budgetToNumber(n&&n.value)
+});
+var n=budgetById("budget-seminar-total-cost");
+return n&&(n.textContent=budgetFormatAmount(e).replace(/บาท$/,"")),budgetById("budget-seminar-cost")&&(budgetById("budget-seminar-cost").value=e?String(e):""),e
+}
+function ft(){
+var t=document.querySelectorAll("#budget-seminar-rows .budget-seminar-row");
+return Array.prototype.map.call(t||[],function(t){
+function e(e){
+var n=t.querySelector(e);
+return n?String(n.value||"").trim():""
+}
+return{
+date:e(".budget-seminar-date"),title:e(".budget-seminar-title"),place:e(".budget-seminar-place"),province:e(".budget-seminar-province"),district:e(".budget-seminar-district"),subDistrict:e(".budget-seminar-subdistrict"),cost:budgetToNumber(e(".budget-seminar-cost"))
+}
+}).filter(function(t){
+return t.date||t.title||t.place||t.province||t.district||t.subDistrict||Number(t.cost||0)
+})
+}
+function yt(e){
+e=function(e){
+var n=Object.assign({
+},e||{
+});
+n.__authTransportOwner="AppApiMiddlewarePipeline";
+try{
+!n.clientContext&&budgetRoot.Utils&&__appIsFn(budgetRoot.Utils.getClientContext)&&(n.clientContext=budgetRoot.Utils.getClientContext())
+}
+catch(t){
+budgetWarn("budget.payload.clientContext",t)
+}
+return n.lite=!0,n.fast=!0,n.noWait=!0,n.sourceOfTruth="BudgetImports",n.readFromBudgetImports=!0,n.materializedFirst=!1,n.readModelFirst=!1,n.readThroughMaterialized=!1,n.allowLiveDefaultValue=!1,n.disableDefaultDefaultValue=!0,n.allowHeavyDefaultValue=!1,n.allowEmergencyDirect=!1,n.materializedOnly=!1,n.strictFy=!0,n.noCache=!0===n.noCache||!0===n.reload,n.forceFresh=!0===n.forceFresh||!0===n.noCache||!0===n.reload,n.bypassCache=!0===n.bypassCache||!0===n.noCache,n.cacheTtlSeconds=n.forceFresh?0:n.cacheTtlSeconds||600,n.limit=n.limit||20,n.pageSize=n.pageSize||n.limit||20,n.maxRows=n.maxRows||800,n.totalTarget=n.totalTarget||n.maxRows,n
+}
+(e||{
+});
+var n="apiBudgetGetTypeSummaryByFY";
+return budgetRoot.AppPageKit&&__appIsFn(budgetRoot.AppPageKit.apiRunner)?budgetRoot.AppPageKit.apiRunner(n,e,"Scripts_Page_Budget.typeSummary",3e4):Promise.reject(new Error("AppPageKit.apiRunner ไม่พร้อมใช้งาน"))
+}
+function budgetTypeSummaryRows_(value){
+var meta=H(value)||{
+},rows=Array.isArray(meta.rows)?meta.rows:Array.isArray(meta.data)?meta.data:Array.isArray(meta.items)?meta.items:Array.isArray(meta.records)?meta.records:Array.isArray(value)?value:Array.isArray(value&&value.rows)?value.rows:[];
+return{
+meta:meta,rows:Array.isArray(rows)?rows:[]
+}
+}
+function bt(t,e){
+e=e||ct("ทั้งหมด"===et(budgetFieldValue("budget-type-filter-current")||"")?"":budgetFieldValue("budget-type-filter-current")).length||9,budgetSetHtml("budget-type-summary-body-final",'<tr><td colspan="'+e+'" class="text-center text-danger p-3">'+budgetEscapeHtml(t||"โหลดข้อมูลไม่สำเร็จ")+'<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary" data-action="loadBudgetTypeSummary">โหลดใหม่</button></div></td></tr>')
+}
+function vt(t,e){
+if(t=t||{
+},"_idx"===(e=e||{
+}).key||"_actions"===e.key)return"";
+var n=st(t,e.key);
+return"money"===e.fmt?budgetFormatAmount(n||0):"date"===e.fmt?D(n||"")||"-":null==n||""===n?"-":String(n)
+}
+function wt(t){
+var e=nt(t=t||{
+})||t.entryType||"",n=ct(e).filter(function(t){
+return t&&!t.noPrint&&"_actions"!==t.key&&"_idx"!==t.key
+}),r={
+},a=[];
+n.forEach(function(n){
+var o=String(n.label||n.key||"").trim();
+"ส่งเสริมและสนับสนุนการดำเนินงาน"===e&&"supportType"===n.key&&(o="ประเภทรายการส่งเสริม"),o&&!r[o]&&(r[o]=!0,a.push([o,vt(t,n)]))
+});
+var o=it(t,["note","remark","remarks","หมายเหตุ"]);
+return r["หมายเหตุ"]||(r["หมายเหตุ"]=!0,a.push(["หมายเหตุ",o||"-"])),'<table class="table table-bordered table-sm"><tbody>'+a.map(function(t){
+var e=String(null==t[1]||""===t[1]?"-":t[1]),n=budgetEscapeHtml(e).replace(/&lt;br\s*\/?&gt;/gi,"<br>");
+return'<tr><th style="width:30%;background:#f8f9fa;">'+budgetEscapeHtml(t[0])+"</th><td>"+n+"</td></tr>"
+}).join("")+"</tbody></table>"
+}
+function ht(n){
+var a=budgetById("dynamic-form-area");
+function budgetSupportOptionsHtml(selected){
+return["การศึกษาดูงานในประเทศ","การศึกษาดูงานในประเทศและการจัดสัมมนา","การจัดสัมมนา","การรับรองแขกต่างประเทศ","การประชุมคณะกรรมาธิการ","การประชุมคณะอนุกรรมาธิการ","การศึกษาดูงานต่างประเทศ","อื่น ๆ"].map(function(item){
+return'<option value="'+budgetEscapeHtml(item)+'"'+(String(item)===String(selected||"")?" selected":"")+">"+budgetEscapeHtml(item)+"</option>"
+}).join("")
+}
+if(a){
+var existing=budgetById("budget-support-type");
+if(existing){
+n&&(existing.value=n);
+return
+}
+var o=document.createElement("div"),html='<div class="col-md-6"><label class="fw-bold text-primary">ประเภทรายการ</label><select class="form-select border-primary" id="budget-support-type"><option value="">-- เลือกประเภทรายการ --</option>'+budgetSupportOptionsHtml(n)+'</select></div><div class="col-md-6 d-flex align-items-end"><div class="small text-muted">ประเภทรายการงบประมาณยังคงเป็น ส่งเสริมและสนับสนุนการดำเนินงาน</div></div>';
+o.className="row g-3 mb-2 budget-support-selector-wrap";
+var supportSetter=budgetRoot.AppDom&&(__appIsFn(budgetRoot.AppDom.renderHtml)?budgetRoot.AppDom.renderHtml:__appIsFn(budgetRoot.AppDom.setTrustedHtml)?budgetRoot.AppDom.setTrustedHtml:__appIsFn(budgetRoot.AppDom.setHtml)?budgetRoot.AppDom.setHtml:null)||(__appIsFn(budgetRoot.safeSetInnerHTML)?budgetRoot.safeSetInnerHTML:null)||(__appIsFn(budgetKit.setHtml)?budgetKit.setHtml:null);
+supportSetter?supportSetter(o,html,{
+trusted:!0,moduleName:"Budget.supportSelector.prePhase1HtmlOwner"
+}):o.innerHTML=html;
+a.insertBefore(o,a.firstChild)
+}
+}
+}
+();
+</script>
+
+
+<style data-app-owner="budget-ui-modern-current">#p-budget.budget-modern-ui{--budget-blue:#0b2b52;--budget-blue2:#164b82;--budget-gold:#c5a028;--budget-line:rgba(15,23,42,.10);--budget-soft:#f6f9fc;--budget-radius:20px;--budget-shadow:0 18px 44px rgba(15,23,42,.08);--budget-shadow-soft:0 10px 28px rgba(15,23,42,.06)}#p-budget.budget-modern-ui .budget-modern-hero{position:relative;overflow:hidden;padding:1.15rem 1.25rem;margin-bottom:1rem;border:1px solid rgba(197,160,40,.26);border-radius:24px;background:linear-gradient(135deg,#09284d 0%,#0f3f70 58%,#173b62 100%);box-shadow:var(--budget-shadow);color:#fff}#p-budget.budget-modern-ui .budget-modern-hero:after{content:"";position:absolute;right:-90px;top:-90px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(197,160,40,.34),rgba(197,160,40,0) 68%);pointer-events:none}#p-budget.budget-modern-ui .budget-modern-hero .app-page-heading{display:block;color:#fff!important;font-size:clamp(1.25rem,2vw,1.72rem);font-weight:900;letter-spacing:-.02em}#p-budget.budget-modern-ui .budget-modern-subtitle{color:rgba(255,255,255,.76);font-size:.94rem;margin-top:.18rem}#p-budget.budget-modern-ui .budget-modern-fy{position:relative;z-index:1;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:.55rem .75rem;backdrop-filter:blur(12px)}#p-budget.budget-modern-ui .budget-modern-fy label{color:rgba(255,255,255,.84)!important}#p-budget.budget-modern-ui #budget-fy-filter{border:0;border-radius:12px;box-shadow:0 8px 18px rgba(0,0,0,.12)}#p-budget.budget-modern-ui #budgetTab{gap:.5rem;padding:.38rem;border:1px solid var(--budget-line);border-radius:18px;background:#fff;box-shadow:var(--budget-shadow-soft);overflow-x:auto;flex-wrap:nowrap}#p-budget.budget-modern-ui #budgetTab .nav-item{white-space:nowrap}#p-budget.budget-modern-ui #budgetTab .nav-link{border:0;border-radius:14px;color:#40556f;background:transparent;padding:.72rem 1rem;transition:background .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease}#p-budget.budget-modern-ui #budgetTab .nav-link:hover{background:#eef5ff;color:var(--budget-blue);transform:translateY(-1px)}#p-budget.budget-modern-ui #budgetTab .nav-link.active{background:linear-gradient(135deg,var(--budget-blue),var(--budget-blue2));color:#fff;box-shadow:0 10px 24px rgba(11,43,82,.22)}#p-budget.budget-modern-ui .app-card{border:1px solid var(--budget-line)!important;border-radius:var(--budget-radius)!important;box-shadow:var(--budget-shadow-soft)!important;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)!important}#p-budget.budget-modern-ui #budget-ai-risk-card{border:1px solid rgba(22,75,130,.12)!important;border-radius:18px;background:linear-gradient(135deg,#f7fbff,#eef6ff)!important}#p-budget.budget-modern-ui .app-table-scroll{border:1px solid var(--budget-line);border-radius:18px;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.75);overflow:auto}#p-budget.budget-modern-ui table.app-table-standard{margin-bottom:0;border-collapse:separate;border-spacing:0}#p-budget.budget-modern-ui table.app-table-standard thead th{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,#f8fafc,#eef3f8)!important;color:#223752;border-bottom:1px solid var(--budget-line)!important}#p-budget.budget-modern-ui table.app-table-standard tbody tr{transition:background-color .15s ease,transform .15s ease}#p-budget.budget-modern-ui table.app-table-standard tbody tr:hover{background:#f7fbff;transform:translateY(-1px)}#p-budget.budget-modern-ui table.app-table-standard td,#p-budget.budget-modern-ui table.app-table-standard th{padding:.78rem .72rem;vertical-align:middle}#p-budget.budget-modern-ui .budget-summary-grandtotal td,#p-budget.budget-modern-ui .budget-summary-grandtotal th{background:#0b2b52!important;color:#fff!important;font-weight:900}#p-budget.budget-modern-ui .budget-summary-subtotal td,#p-budget.budget-modern-ui .budget-summary-subtotal th{background:#fff9e7!important;font-weight:800}#p-budget.budget-modern-ui #dynamic-form-area,#p-budget.budget-modern-ui .budget-support-selector-wrap,#p-budget.budget-modern-ui .budget-entry-action-bar{border-radius:18px!important;border-color:rgba(22,75,130,.14)!important;background:var(--budget-soft)!important}#p-budget.budget-modern-ui .form-control,#p-budget.budget-modern-ui .form-select{border-radius:13px;border-color:#d5e0ea;min-height:44px}#p-budget.budget-modern-ui .form-control:focus,#p-budget.budget-modern-ui .form-select:focus{border-color:#8fb2da;box-shadow:0 0 0 .22rem rgba(22,75,130,.12)}#p-budget.budget-modern-ui .btn-primary,#p-budget.budget-modern-ui .btn-success{border:0;box-shadow:0 10px 20px rgba(11,43,82,.16)}#p-budget.budget-modern-ui .btn-primary{background:linear-gradient(135deg,#0b2b52,#1769aa)}#p-budget.budget-modern-ui .btn-success{background:linear-gradient(135deg,#0f7a4f,#18a76c)}#p-budget.budget-modern-ui .btn-outline-primary,#p-budget.budget-modern-ui .btn-outline-success,#p-budget.budget-modern-ui .btn-outline-secondary{border-radius:12px}@media(max-width:767.98px){#p-budget.budget-modern-ui .budget-modern-hero{align-items:flex-start!important;gap:.85rem;flex-direction:column;padding:1rem}#p-budget.budget-modern-ui .budget-modern-fy{width:100%;justify-content:space-between}#p-budget.budget-modern-ui #budgetTab .nav-link{padding:.62rem .78rem;font-size:.92rem}#p-budget.budget-modern-ui .app-card{padding:1rem!important}}</style>
+<script data-app-owner="budget-ui-modern-current">
+(function (root, doc) {
+    "use strict";
+    if (!root || !doc || root.__BUDGET_UI_MODERN_CURRENT__)
+        return;
+    root.__BUDGET_UI_MODERN_CURRENT__ = !0;
+    var OWNER = "budget-ui-modern-current";
+    function q(s, c) { return (c || doc).querySelector(s); }
+    function add(el, cls) {
+        if (el && el.classList)
+            el.classList.add(cls);
+        return el;
+    }
+    function apply() {
+        var page = doc.getElementById("p-budget");
+        if (!page)
+            return !1;
+        add(page, "budget-modern-ui");
+        page.setAttribute("data-budget-ui", OWNER);
+        var title = q(".app-page-heading", page), hero = title && title.closest ? title.closest(".d-flex") : null;
+        add(hero, "budget-modern-hero");
+        if (title && !title.dataset.budgetModernTitle) {
+            title.dataset.budgetModernTitle = "1";
+            title.insertAdjacentHTML("afterend", '<div class="budget-modern-subtitle no-print">ภาพรวมงบประมาณ บันทึกรายการ และรายงานแยกประเภทในหน้าจอเดียว</div>');
+        }
+        var fy = doc.getElementById("budget-fy-filter"), fyWrap = fy && fy.closest ? fy.closest(".d-flex") : null;
+        add(fyWrap, "budget-modern-fy");
+        add(doc.getElementById("budgetTab"), "budget-modern-tabs");
+        ["b-summary", "b-entry", "b-typesummary"].forEach(function (id) { var card = doc.getElementById(id); card = card && card.querySelector ? card.querySelector(".app-card,.card") : null; add(card, "budget-modern-card"); });
+        Array.prototype.forEach.call(page.querySelectorAll(".app-table-scroll"), function (el) { add(el, "budget-modern-table-shell"); });
+        return !0;
+    }
+    root.AppBudgetModernUi = { owner: OWNER, apply: apply, noApiContractChange: !0 };
+    doc.addEventListener("DOMContentLoaded", apply);
+    doc.addEventListener("app:page-activated", function (ev) {
+        var id = ev && ev.detail && (ev.detail.pageId || ev.detail.id || ev.detail.page);
+        if (!id || String(id).indexOf("budget") >= 0)
+            apply();
+    });
+    setTimeout(apply, 0);
+    setTimeout(apply, 300);
+})(window, document);
+</script>
+<script data-app-owner="budget-entry-action-owner-current">
+(function (root, doc) {
+    "use strict";
+    if (!root || !doc || root.__BUDGET_SAVE_COMPAT_OWNER_CURRENT__)
+        return;
+    root.__BUDGET_SAVE_COMPAT_OWNER_CURRENT__ = !0;
+    var isFn = root.AppRuntimeHelpers.isFn, OWNER = "BudgetSaveContract.compat-delegate-current";
+    function canonicalSave(ev) { var fn = isFn(root.budgetSaveActiveEntry) && root.budgetSaveActiveEntry !== canonicalSave ? root.budgetSaveActiveEntry : null; return !fn && root.BudgetPage && isFn(root.BudgetPage.budgetSaveActiveEntry) && (fn = root.BudgetPage.budgetSaveActiveEntry), !fn && root.AppPages && root.AppPages.actions && root.AppPages.actions.budget && isFn(root.AppPages.actions.budget.budgetSaveActiveEntry) && (fn = root.AppPages.actions.budget.budgetSaveActiveEntry), fn ? fn(ev) : !1; }
+    root.BudgetSaveContract = { owner: OWNER, save: canonicalSave, delegateOnly: !0, overwrittenCanonicalOwner: !1, captureBinding: !1, readForm: function () { return {}; } }, root.budgetSave = root.budgetSave || canonicalSave;
+})(window, document);
+</script>
