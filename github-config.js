@@ -1,6 +1,6 @@
 /* GitHub Pages frontend configuration — r246 bridge-less RPC. */
 window.APP_GITHUB_CONFIG = Object.freeze({
-  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxufAfgbBgxCa62UwR2fY57NCRGHgj9TqFUwrdtGaBQwW0RJY0BzRq2KZ_pEsglNK_x/exec",
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbw9K43K8OVUqHKRqZ08nSDlruqzAT9m8GrjpanIVUy5RgcUYRr5pFK_jFFWisU9e8T-/exec",
   TRANSPORT_MODE: "form-post-jsonp-result",
   RPC_VERSION: "r246-github-form-post-jsonp-rpc",
   HEALTH_TIMEOUT_MS: 10000,
