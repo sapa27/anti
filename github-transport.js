@@ -13,6 +13,7 @@
   var readyPromise = null;
   var nonce = "";
   var bridgePort = null;
+  var bridgeWindow = null;
   var bridgeChannel = "";
   var bridgeOrigin = "";
   var bridgeLoadState = "idle";
@@ -34,6 +35,7 @@
     postTimeouts: 0,
     bridgeFallbackCalls: 0,
     opaquePostResults: 0,
+    opaqueBridgeMessages: 0,
     authBridgeFirstCalls: 0,
     authBridgeReadyFailures: 0,
     authPostFallbackCalls: 0
@@ -82,6 +84,18 @@
     origin = text(origin).toLowerCase();
     return origin === "https://script.google.com" ||
       /^https:\/\/(?:[a-z0-9-]+\.)*script\.googleusercontent\.com$/.test(origin);
+  }
+  function trustedBridgeMessage(event, data) {
+    var origin = text(event && event.origin).toLowerCase();
+    if (trustedBridgeOrigin(origin)) return true;
+    /* Apps Script HtmlService may surface its sandbox as an opaque origin.
+       Accept that case only for the active bridge nonce + exact bridge version.
+       The nonce is generated per bridge with 192 bits of randomness and is never
+       placed in global state, so this does not turn "null" into a wildcard. */
+    if (origin !== "null") return false;
+    if (!data || data.nonce !== nonce || data.bridgeVersion !== EXPECTED_BRIDGE_VERSION) return false;
+    transportMetrics.opaqueBridgeMessages += 1;
+    return true;
   }
   function randomNonce() {
     var bytes = new Uint8Array(24);
@@ -149,12 +163,13 @@
     bridgeLastError = "";
     bridgeOrigin = "";
     closeBridgePort();
+    bridgeWindow = null;
     readyPromise = new Promise(function (resolve, reject) {
       var timeout = root.setTimeout(function () {
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r255 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r256 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
       }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 10000)));
@@ -173,7 +188,7 @@
       function onReady(event) {
         var data = event.data || {};
         if (data.nonce !== nonce) return;
-        if (!trustedBridgeOrigin(event.origin)) return;
+        if (!trustedBridgeMessage(event, data)) return;
         if (data.type === "GAS_BRIDGE_ERROR") return fail(data);
         if (data.type !== "GAS_BRIDGE_READY") return;
         if (data.bridgeVersion !== EXPECTED_BRIDGE_VERSION) {
@@ -185,8 +200,9 @@
           return;
         }
         if (transferredPort) attachPort(transferredPort);
+        bridgeWindow = event.source && typeof event.source.postMessage === "function" ? event.source : null;
         bridgeChannel = text(data.channel || (transferredPort ? "message-port" : "window-postmessage"));
-        bridgeOrigin = text(event.origin);
+        bridgeOrigin = text(event.origin) === "null" ? "opaque-apps-script-sandbox" : text(event.origin);
         root.clearTimeout(timeout);
         cleanupReadyListener();
         bridgeLoadState = "ready";
@@ -217,13 +233,20 @@
 
   root.addEventListener("message", function (event) {
     var data = event.data || {};
-    if (data.nonce !== nonce || !trustedBridgeOrigin(event.origin)) return;
+    if (data.nonce !== nonce || !trustedBridgeMessage(event, data)) return;
     handleResult(data);
   }, false);
 
   function sendCall(message) {
     if (bridgePort) {
       bridgePort.postMessage(message);
+      return;
+    }
+    /* Reply to the exact window that emitted READY. Apps Script HtmlService can
+       introduce a nested sandbox window, so iframe.contentWindow is not always
+       the bridge script window. */
+    if (bridgeWindow && typeof bridgeWindow.postMessage === "function") {
+      bridgeWindow.postMessage(message, "*");
       return;
     }
     if (!iframe || !iframe.contentWindow) throw createError({ message: "GAS Bridge window unavailable", code: "GAS_BRIDGE_WINDOW_UNAVAILABLE" });
@@ -352,7 +375,7 @@
       return response;
     }).catch(function (error) {
       transportMetrics.localAssetFallbacks += 1;
-      if (root.console && console.warn) console.warn("[r255] local asset fallback to GAS", req.name, error && error.message || error);
+      if (root.console && console.warn) console.warn("[r256] local asset fallback to GAS", req.name, error && error.message || error);
       return null;
     });
   }
@@ -476,7 +499,7 @@
       if (!authBridgeCanFallback(bridgeError)) throw bridgeError;
       transportMetrics.authBridgeReadyFailures += 1;
       transportMetrics.authPostFallbackCalls += 1;
-      if (root.console && console.warn) console.warn("[r255] auth bridge unavailable; fallback to POST before API call", bridgeError && bridgeError.code || "", bridgeError && bridgeError.message || bridgeError);
+      if (root.console && console.warn) console.warn("[r256] auth bridge unavailable; fallback to POST before API call", bridgeError && bridgeError.code || "", bridgeError && bridgeError.message || bridgeError);
       var fallbackTimeout = Number(config.AUTH_POST_FALLBACK_TIMEOUT_MS || 15000);
       return postRun(invocation.fn, invocation.args, optionsWithTimeout(options, fallbackTimeout)).catch(function (postError) {
         var message = "ไม่สามารถเชื่อมต่อ GAS สำหรับเข้าสู่ระบบได้" +
@@ -528,6 +551,7 @@
     bridgeLoadState = "idle";
     bridgeLastError = "";
     bridgeOrigin = "";
+    bridgeWindow = null;
     return true;
   };
   root.AppTransport.clearLocalAssetCache = function () {
@@ -555,6 +579,7 @@
       bridgeLastError: bridgeLastError,
       bridgeChannel: bridgeChannel,
       bridgeOrigin: bridgeOrigin,
+      bridgeWindowReady: !!bridgeWindow,
       expectedBridgeVersion: EXPECTED_BRIDGE_VERSION,
       frontendTransportVersion: FRONTEND_TRANSPORT_VERSION,
       localAssetMode: config.LOCAL_ASSET_MODE !== false,

@@ -11,6 +11,6 @@ window.APP_GITHUB_CONFIG = Object.freeze({
   BRIDGE_VERSION: "github-pages-bridge-v1",
   LOCAL_ASSET_MODE: true,
   LOCAL_ASSET_BASE: "./assets/",
-  LOCAL_ASSET_VERSION: "r255",
+  LOCAL_ASSET_VERSION: "r256",
   LOCAL_ASSET_TIMEOUT_MS: 8000
 });
