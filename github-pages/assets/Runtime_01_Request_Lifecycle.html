@@ -1,0 +1,397 @@
+<!-- M14 — canonical request lifecycle owner. Loaded inside bundle:appCore after Scripts_Core_Runtime. -->
+<script id="app-request-lifecycle-current">
+(function (root, doc) {
+  "use strict";
+  if (!root || !doc || root.__APP_REQUEST_LIFECYCLE_CURRENT__) return;
+
+  var OWNER = "Runtime_01_Request_Lifecycle.AppRequestLifecycle";
+  var STAMP = "m14-request-lifecycle-consolidation-2026-08-07-r238";
+  var CACHE_STAMP = "m14-client-cache-r238";
+  var CACHE_PREFIX = "commission:current7:";
+  var EVENT_NAME = "app:data:mutated";
+  var pipeline = root.AppApiMiddlewarePipeline;
+  if (!pipeline || typeof pipeline.run !== "function") {
+    throw new Error("APP_API_PIPELINE_REQUIRED_CURRENT");
+  }
+
+  var baseRun = pipeline.run;
+  var methods = Object.create(null);
+  var inFlight = Object.create(null);
+  var laneEpoch = Object.create(null);
+  var requestMetaById = Object.create(null);
+  var activeRequests = Object.create(null);
+  var mutationPending = Object.create(null);
+  var mutationCompleted = Object.create(null);
+  var sequence = 0;
+  var mutationSequence = 0;
+  var metrics = {
+    calls: 0,
+    transportStarts: 0,
+    dedupHits: 0,
+    staleSuppressed: 0,
+    staleCacheWritesSkipped: 0,
+    softCancelled: 0,
+    retries: 0,
+    completed: 0,
+    failed: 0,
+    peakInFlight: 0,
+    mutationCount: 0,
+    refreshCount: 0,
+    ignoredDuplicateRefresh: 0
+  };
+
+  function text(value) { return root.AppRuntime && root.AppRuntime.text ? root.AppRuntime.text(value) : (value == null ? "" : String(value)); }
+  function isFn(value) { return Boolean(root.AppRuntime && root.AppRuntime.isFn ? root.AppRuntime.isFn(value) : typeof value === "function"); }
+  function now() { return Date.now ? Date.now() : (new Date()).getTime(); }
+  function warn(label, error, detail) {
+    try {
+      if (root.AppRuntime && isFn(root.AppRuntime.recordWarning)) root.AppRuntime.recordWarning(label, error, detail || {});
+      else if (root.__appObserve) root.__appObserve(error, label);
+    } catch (_warnErr) {
+      try { root.AppErrorPolicy && isFn(root.AppErrorPolicy.ignore) && root.AppErrorPolicy.ignore("requestLifecycle.warn", _warnErr); } catch (_ignored) { void _ignored; }
+    }
+  }
+  function emit(name, detail) {
+    try { doc.dispatchEvent(new CustomEvent(name, { detail: detail || {} })); return true; }
+    catch (err) { warn("requestLifecycle.emit", err, { eventName: name }); return false; }
+  }
+
+  /* -------------------- Data contract + client cache -------------------- */
+  function policySource(input) {
+    input = input && input.data ? input.data : input || {};
+    return input.dataPolicy || input.dataContract && input.dataContract.dataPolicy || input.appConfig && input.appConfig.dataPolicy || input.methods && input || null;
+  }
+  function absorbDataContract(input) {
+    var policy = policySource(input);
+    if (!policy || !policy.methods || typeof policy.methods !== "object") return false;
+    Object.keys(methods).forEach(function (name) { delete methods[name]; });
+    Object.keys(policy.methods).forEach(function (name) { methods[name] = policy.methods[name]; });
+    root.__APP_DATA_POLICY_STAMP__ = text(policy.stamp || STAMP);
+    try { root.AppStore && root.AppStore.set && root.AppStore.set("data.policy", policy); } catch (err) { warn("requestLifecycle.dataContract.store", err); }
+    emit("app:data-contract-ready", { owner: OWNER, stamp: root.__APP_DATA_POLICY_STAMP__, routeCount: Object.keys(methods).length });
+    return true;
+  }
+  function methodSpec(methodName) { return methods[text(methodName)] || null; }
+  function mutationSpec(methodName) { var spec = methodSpec(methodName); return spec && spec.write === true && spec.mutation ? spec.mutation : null; }
+  function clientTtl(methodName) { var spec = methodSpec(methodName); return Math.max(0, Number(spec && spec.clientTtlSeconds || 0) || 0); }
+  function dataContractStatus() {
+    return {
+      ok: Object.keys(methods).length > 0,
+      owner: OWNER,
+      stamp: root.__APP_DATA_POLICY_STAMP__ || STAMP,
+      routeCount: Object.keys(methods).length,
+      writeContractCount: Object.keys(methods).filter(function (name) { return methods[name] && methods[name].write === true && methods[name].mutation; }).length,
+      regexInferenceDisabled: true
+    };
+  }
+  root.AppDataContractOwner = Object.freeze({ owner: OWNER, stamp: STAMP, absorb: absorbDataContract, method: methodSpec, mutation: mutationSpec, clientTtl: clientTtl, status: dataContractStatus });
+
+  function stable(value, depth) {
+    depth = Number(depth || 0) || 0;
+    if (depth > 8) return "[depth]";
+    if (value == null) return "";
+    if (typeof value !== "object") return typeof value === "function" ? "[fn]" : String(value);
+    if (Array.isArray(value)) return "[" + value.map(function (item) { return stable(item, depth + 1); }).join(",") + "]";
+    return "{" + Object.keys(value).sort().filter(function (key) {
+      return !/^(token|_token|authToken|csrf|csrfToken|_csrf|nextToken|password|requestId|clientRequestId|_securityContext|actionToken|csrfActionToken|__perfRequestLane|__perfRequestEpoch|latestOnly|suppressStale|requestLane|latestLane|retries|retryDelay|retryDelayMs)$/i.test(key);
+    }).map(function (key) { return JSON.stringify(key) + ":" + stable(value[key], depth + 1); }).join(",") + "}";
+  }
+  function cacheKey(methodName, payload) {
+    var raw = methodName + "|" + text(root.__APP_BOOTSTRAP__ && (root.__APP_BOOTSTRAP__.assetStamp || root.__APP_BOOTSTRAP__.appStamp) || CACHE_STAMP) + "|" + stable(payload || {}, 0), hash = 0;
+    for (var i = 0; i < raw.length; i += 1) { hash = (hash << 5) - hash + raw.charCodeAt(i); hash |= 0; }
+    return CACHE_PREFIX + methodName + ":" + String(hash).replace("-", "n");
+  }
+  function storage() { try { return root.sessionStorage || null; } catch (_e) { return null; } }
+  function cacheGet(methodName, payload) {
+    var ttl = clientTtl(methodName);
+    if (!ttl || payload && (payload.forceFresh === true || payload.noCache === true || payload.bypassCache === true)) return null;
+    try {
+      var st = storage(); if (!st) return null;
+      var key = cacheKey(methodName, payload), raw = st.getItem(key); if (!raw) return null;
+      var entry = JSON.parse(raw);
+      if (!entry || entry.expiresAt < now()) { st.removeItem(key); return null; }
+      var value = entry.value;
+      if (value && typeof value === "object") { value.clientCacheHit = true; value.clientCacheSource = "production-sessionStorage"; }
+      return value;
+    } catch (_e) { return null; }
+  }
+  function cacheSet(methodName, payload, value) {
+    var requestId = text(payload && payload.requestId), meta = requestId ? requestMetaById[requestId] : null;
+    if (meta && Number(laneEpoch[meta.lane] || 0) !== Number(meta.epoch || 0)) { metrics.staleCacheWritesSkipped += 1; return false; }
+    var ttl = clientTtl(methodName);
+    if (!ttl || !value || value.ok === false) return false;
+    try {
+      var st = storage(); if (!st) return false;
+      st.setItem(cacheKey(methodName, payload), JSON.stringify({ value: value, storedAt: now(), expiresAt: now() + ttl * 1000, stamp: CACHE_STAMP }));
+      return true;
+    } catch (_e) { return false; }
+  }
+  function cacheClear() {
+    try {
+      var st = storage(), keys = []; if (!st) return 0;
+      for (var i = 0; i < st.length; i += 1) { var key = st.key(i); if (key && key.indexOf(CACHE_PREFIX) === 0) keys.push(key); }
+      keys.forEach(function (key) { st.removeItem(key); });
+      return keys.length;
+    } catch (_e) { return 0; }
+  }
+  var cacheApi = Object.freeze({
+    owner: OWNER,
+    stamp: CACHE_STAMP,
+    get: cacheGet,
+    set: cacheSet,
+    clear: cacheClear,
+    cacheable: methods,
+    configure: absorbDataContract,
+    mode: "request-lifecycle-single-owner",
+    wrapsAppApi: false,
+    status: function () { var status = dataContractStatus(); status.mode = "request-lifecycle-single-owner"; status.cacheable = Object.keys(methods).filter(function (name) { return clientTtl(name) > 0; }).length; return status; }
+  });
+  root.AppClientCacheOwner = cacheApi;
+  root.__APP_PRODUCTION_CLIENT_CACHE_READY__ = true;
+  try { absorbDataContract(root.AppStore && root.AppStore.get ? root.AppStore.get("data.contract", {}) : {}); } catch (err) { warn("requestLifecycle.dataContract.restore", err); }
+
+  /* -------------------- Mutation refresh single owner -------------------- */
+  function normalizePage(value) {
+    var page = text(value).toLowerCase().replace(/^p-/, "");
+    if (page === "dash") page = "dashboard";
+    if (page === "personnel") page = "people";
+    if (page === "reporttrack") page = "track";
+    if (page === "committee-meeting") page = "meeting";
+    return page;
+  }
+  function firstValue() { for (var i = 0; i < arguments.length; i += 1) { var value = arguments[i]; if (value !== undefined && value !== null && text(value)) return value; } return ""; }
+  function responseMeta(value) { if (!value || typeof value !== "object") return {}; return value.meta && typeof value.meta === "object" ? value.meta : value.data && value.data.meta && typeof value.data.meta === "object" ? value.data.meta : {}; }
+  function mutationRequestId(method, payload, value, context) {
+    var meta = responseMeta(value), client = payload && payload.clientContext || {};
+    var found = firstValue(value && value.requestId, meta.requestId, payload && (payload.requestId || payload.clientRequestId), client.requestId, context && context.requestId);
+    if (found) return text(found);
+    mutationSequence += 1;
+    return "mut-" + now() + "-" + mutationSequence + "-" + text(method);
+  }
+  function cacheEpoch(value) { var meta = responseMeta(value); return Number(firstValue(value && value.cacheEpoch, meta.cacheEpoch, value && value.data && value.data.cacheEpoch, 0)) || 0; }
+  function storeRemove(path) {
+    try { var store = root.AppStore; if (store && isFn(store.remove)) return store.remove(path); if (store && isFn(store.set)) return store.set(path, null); }
+    catch (err) { warn("requestLifecycle.storeRemove", err, { path: path }); }
+    return false;
+  }
+  function storeSet(path, value) { try { return root.AppStore && isFn(root.AppStore.set) ? root.AppStore.set(path, value) : value; } catch (err) { warn("requestLifecycle.storeSet", err, { path: path }); return value; } }
+  function clearSessionCache() {
+    try {
+      var st = root.sessionStorage, keys = [];
+      for (var i = 0; st && i < st.length; i += 1) { var key = st.key(i); if (key && (/^commission:current7:/.test(key) || /^report-track-page-cache/.test(key))) keys.push(key); }
+      keys.forEach(function (key) { st.removeItem(key); });
+    } catch (err) { warn("requestLifecycle.sessionCache", err); }
+  }
+  function clearPeopleState() {
+    ["personnel.loadedAt", "personnel.cacheStamp", "personnel.loadOk", "personnel.bundle.current", "people.bundle"].forEach(storeRemove);
+    try {
+      var state = root.PeoplePage && root.PeoplePage.state;
+      if (state) { state.loadedAt = ""; state.loadedTabs = {}; state.inFlightByTab = {}; state.loading = null; }
+      root.__peopleFirstLoadInFlight = null;
+    } catch (err) { warn("requestLifecycle.peopleState", err); }
+  }
+  function clearPageCaches(detail) {
+    try { cacheClear(); } catch (err) { warn("requestLifecycle.clientCache", err); }
+    clearSessionCache();
+    var pages = detail.affectedPages || [];
+    storeSet("data.lastMutationAt", now()); storeSet("data.lastMutationMethod", detail.method); storeSet("data.lastMutationRequestId", detail.requestId);
+    pages.forEach(function (page) { storeSet(normalizePage(page) + ".forceFreshNext", true); });
+    if (pages.indexOf("petitioner") >= 0) { storeRemove("petitioner.page"); storeSet("petitioner.loadedAt", ""); storeSet("petitioner.loadOk", false); root.__petitionerLoadPromise = null; root.__petitionerLoadKey = ""; }
+    if (pages.indexOf("people") >= 0) clearPeopleState();
+    if (pages.indexOf("search") >= 0 || pages.indexOf("report") >= 0) {
+      try { if (root.__REPORT_TRACK_ROWS__) { if (pages.indexOf("search") >= 0) delete root.__REPORT_TRACK_ROWS__.search; if (pages.indexOf("report") >= 0) delete root.__REPORT_TRACK_ROWS__.report; } }
+      catch (err) { warn("requestLifecycle.reportTrackRows", err); }
+    }
+    return true;
+  }
+  function currentPage() {
+    var page = "";
+    try { page = root.AppPages && text(root.AppPages.__currentPage) || root.AppLifecycle && isFn(root.AppLifecycle.current) && root.AppLifecycle.current() || root.AppStore && isFn(root.AppStore.get) && root.AppStore.get("ui.currentPage", "") || ""; }
+    catch (err) { warn("requestLifecycle.currentPage", err); }
+    return normalizePage(page);
+  }
+  function scheduleMutationRefresh(detail) {
+    var page = currentPage();
+    if (!page || detail.affectedPages.indexOf(page) < 0) return false;
+    var key = page + "|" + detail.requestId;
+    if (mutationPending[key] || mutationCompleted[key]) { metrics.ignoredDuplicateRefresh += 1; return false; }
+    mutationPending[key] = root.setTimeout(function () {
+      delete mutationPending[key]; mutationCompleted[key] = now();
+      Object.keys(mutationCompleted).forEach(function (oldKey) { if (now() - mutationCompleted[oldKey] > 30000) delete mutationCompleted[oldKey]; });
+      metrics.refreshCount += 1;
+      var refreshDetail = { source: OWNER, reason: "write-mutation-reconcile", method: detail.method, entity: detail.entity, affectedPages: detail.affectedPages.slice(), requestId: detail.requestId, cacheEpoch: detail.cacheEpoch, forceFresh: true, noCache: true, bypassCache: true, mutationContract: STAMP };
+      try {
+        var job = root.AppPages && isFn(root.AppPages.refresh) ? root.AppPages.refresh(page, refreshDetail) : root.AppLifecycle && isFn(root.AppLifecycle.refresh) ? root.AppLifecycle.refresh(page, refreshDetail) : Promise.resolve(false);
+        Promise.resolve(job).then(function (value) { emit("app:mutation:refresh-complete", Object.assign({}, refreshDetail, { ok: value !== false, pageId: page })); return value; }, function (err) { warn("requestLifecycle.refresh", err, { pageId: page, method: detail.method }); });
+      } catch (err) { warn("requestLifecycle.refreshSync", err, { pageId: page, method: detail.method }); }
+    }, 160);
+    emit("app:mutation:refresh-scheduled", { pageId: page, method: detail.method, requestId: detail.requestId, owner: OWNER });
+    return true;
+  }
+  function afterMutationApi(method, payload, value, context) {
+    var contract = mutationSpec(method);
+    if (!contract || value && typeof value === "object" && value.ok === false) return value;
+    var detail = { ok: true, method: text(method), entity: contract.entity, affectedPages: contract.pages.slice(), cacheEpoch: cacheEpoch(value), requestId: mutationRequestId(method, payload || {}, value, context || {}), owner: OWNER, at: (new Date()).toISOString(), forceFresh: true, noCache: true, bypassCache: true, mutationContract: STAMP };
+    clearPageCaches(detail); metrics.mutationCount += 1; emit(EVENT_NAME, detail); return value;
+  }
+  function mutationStatus() {
+    return { ok: true, owner: OWNER, stamp: STAMP, eventName: EVENT_NAME, writeContractCount: dataContractStatus().writeContractCount, mutationCount: metrics.mutationCount, refreshCount: metrics.refreshCount, ignoredDuplicateCount: metrics.ignoredDuplicateRefresh, pendingCount: Object.keys(mutationPending).length, legacyBrokerRetired: true, singleRefreshOwner: true };
+  }
+  doc.addEventListener(EVENT_NAME, function (event) { var detail = event && event.detail || {}; if (detail.ok === true && detail.owner === OWNER && mutationSpec(detail.method)) scheduleMutationRefresh(detail); }, false);
+  var mutationApi = Object.freeze({ owner: OWNER, stamp: STAMP, eventName: EVENT_NAME, contractOwner: root.AppDataContractOwner, contractFor: mutationSpec, afterApi: afterMutationApi, clearCaches: clearPageCaches, schedule: scheduleMutationRefresh, status: mutationStatus });
+  root.AppMutationCoordinator = mutationApi;
+  root.AppMutationRefresh = Object.freeze({ owner: OWNER, stamp: STAMP, thinAdapter: true, canonical: "AppRequestLifecycle.mutation", clearCaches: clearPageCaches, refreshActive: scheduleMutationRefresh, install: function () { return true; }, status: mutationStatus });
+  root.AppWriteRefreshBroker = Object.freeze({ owner: OWNER, retired: true, thinAdapter: true, canonical: "AppRequestLifecycle.mutation", stamp: "retired-by-AppRequestLifecycle", status: mutationStatus });
+  root.__APP_MUTATION_COORDINATOR_CURRENT__ = true;
+  if (root.AppPages) root.AppPages.__writeRefreshBrokerStamp = "retired-by-AppRequestLifecycle";
+
+  /* -------------------- Request lifecycle orchestration -------------------- */
+  function isWrite(method) {
+    var spec = methodSpec(method);
+    if (spec && spec.write === true) return true;
+    return /^api(?:Admin)?(?:Save|Delete|Update|Queue|Process|Create|Migrate|SystemRepair|Revoke|Cleanup|Refresh|BudgetSave|BudgetDelete|BudgetAdminSave)/.test(text(method));
+  }
+  function requestKey(method, payload) { return text(method) + "|" + stable(payload || {}, 0); }
+  function laneKey(method, payload) { return text(payload && (payload.requestLane || payload.latestLane || payload.pageOwner || payload.__pageId) || method); }
+  function clonePayload(payload) { if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload || {}; var out = {}; Object.keys(payload).forEach(function (key) { out[key] = payload[key]; }); return out; }
+  function ensureRequestId(payload) { var current = text(payload && payload.requestId); if (current) return current; sequence += 1; return "m14-" + now().toString(36) + "-" + sequence.toString(36); }
+  function transientError(err) {
+    var code = text(err && (err.code || err.errorCode || err.name)).toUpperCase(), msg = text(err && (err.message || err.error) || err).toUpperCase();
+    return /GOOGLE_SCRIPT_RUN_(?:TIMEOUT|FAILED)|GAS_DIRECT_(?:TIMEOUT|FAILED|EMPTY_RESPONSE)|GAS_BRIDGE(?:_(?:REQUEST|READY))?_TIMEOUT|NETWORK(?:_ERROR)?|FAILED TO FETCH|LOAD FAILED|SCRIPT ERROR|RATE[_ -]?LIMIT|TOO MANY REQUESTS|429/.test(code + " " + msg);
+  }
+  function retryPolicy(ctx, write) {
+    if (write) return { retries: 0, delayMs: 0 };
+    var opts = ctx && ctx.optionsArg && typeof ctx.optionsArg === "object" ? ctx.optionsArg : {}, payload = ctx && ctx.payload && typeof ctx.payload === "object" ? ctx.payload : {};
+    var retries = Number(opts.retries != null ? opts.retries : payload.__requestRetries != null ? payload.__requestRetries : 0) || 0;
+    var delayMs = Number(opts.retryDelayMs != null ? opts.retryDelayMs : opts.retryDelay != null ? opts.retryDelay : payload.__requestRetryDelayMs != null ? payload.__requestRetryDelayMs : 500) || 500;
+    return { retries: Math.max(0, Math.min(2, retries)), delayMs: Math.max(100, Math.min(5000, delayMs)) };
+  }
+  function wait(ms) { return new Promise(function (resolve) { root.setTimeout(resolve, Math.max(0, Number(ms) || 0)); }); }
+  function runWithRetry(ctx, policy, attempt) {
+    attempt = Number(attempt || 0) || 0;
+    if (attempt > 0) metrics.retries += 1;
+    return Promise.resolve().then(function () { return baseRun.call(pipeline, ctx); }).catch(function (err) {
+      if (attempt >= policy.retries || !transientError(err)) throw err;
+      return wait(policy.delayMs * (attempt + 1)).then(function () { return runWithRetry(ctx, policy, attempt + 1); });
+    });
+  }
+  function staleError(method, lane, epoch) { var err = new Error("STALE_RESPONSE_SUPPRESSED"); err.code = "STALE_RESPONSE_SUPPRESSED"; err.errorCode = err.code; err.stale = true; err.method = text(method); err.requestLane = lane; err.requestEpoch = epoch; err.owner = OWNER; return err; }
+  function startRequest(method, lane) {
+    sequence += 1;
+    var id = "life-" + now().toString(36) + "-" + sequence.toString(36);
+    activeRequests[id] = { id: id, method: text(method), lane: text(lane), startedAt: now() };
+    metrics.peakInFlight = Math.max(metrics.peakInFlight, Object.keys(activeRequests).length);
+    emit("app:request:start", { owner: OWNER, requestId: id, method: text(method), lane: text(lane), activeCount: Object.keys(activeRequests).length });
+    return id;
+  }
+  function classifyError(error) {
+    var code = text(error && (error.code || error.errorCode || error.name)).toUpperCase(), message = text(error && (error.message || error.error) || error).toUpperCase(), source = code + " " + message;
+    if (/STALE_RESPONSE_SUPPRESSED/.test(source) || error && error.stale) return "stale";
+    if (/AUTH|SESSION|CSRF|TOKEN/.test(source)) return "auth";
+    if (/PERMISSION|FORBIDDEN|DENIED|UNAUTHORIZED/.test(source)) return "permission";
+    if (/VALIDATION|INVALID|REQUIRED|BAD_REQUEST/.test(source)) return "validation";
+    if (transientError(error)) return "transport";
+    return error ? "application" : "none";
+  }
+  function loadingStatus() {
+    var count = Object.keys(activeRequests).length;
+    return { owner: OWNER, activeCount: count, isLoading: count > 0, peakInFlight: metrics.peakInFlight };
+  }
+  function finishRequest(id, ok, error) {
+    var entry = activeRequests[id] || null; delete activeRequests[id];
+    emit("app:request:end", { owner: OWNER, requestId: id, method: entry && entry.method || "", lane: entry && entry.lane || "", ok: ok === true, errorCode: text(error && (error.code || error.errorCode)), errorClass: classifyError(error), activeCount: Object.keys(activeRequests).length });
+  }
+  function runLifecycle(ctx) {
+    metrics.calls += 1; ctx = ctx || {};
+    var method = text(ctx.method), payload = ctx.payload && typeof ctx.payload === "object" && !Array.isArray(ctx.payload) ? ctx.payload : {}, write = isWrite(method);
+    var dedupKey = !write && method ? requestKey(method, payload) : "";
+    if (dedupKey && inFlight[dedupKey]) { metrics.dedupHits += 1; return inFlight[dedupKey]; }
+    var latestOnly = !write && (payload.latestOnly === true || payload.suppressStale === true), lane = latestOnly ? laneKey(method, payload) : "", epoch = 0;
+    if (latestOnly) {
+      epoch = Math.max(0, Number(laneEpoch[lane] || 0) || 0) + 1; laneEpoch[lane] = epoch;
+      var cloned = clonePayload(payload); delete cloned.latestOnly; delete cloned.suppressStale; delete cloned.requestLane; delete cloned.latestLane;
+      var serverRequestId = ensureRequestId(cloned); cloned.requestId = serverRequestId; requestMetaById[serverRequestId] = { lane: lane, epoch: epoch }; ctx.payload = cloned;
+    }
+    var lifecycleId = startRequest(method, lane), policy = retryPolicy(ctx, write); metrics.transportStarts += 1;
+    var promise = runWithRetry(ctx, policy, 0).then(function (value) {
+      if (latestOnly && Number(laneEpoch[lane] || 0) !== epoch) { metrics.staleSuppressed += 1; throw staleError(method, lane, epoch); }
+      return value;
+    });
+    promise = promise.then(function (value) {
+      metrics.completed += 1; finishRequest(lifecycleId, true); return value;
+    }, function (err) {
+      metrics.failed += 1; finishRequest(lifecycleId, false, err); throw err;
+    });
+    if (dedupKey) inFlight[dedupKey] = promise;
+    return promise.then(function (value) {
+      if (dedupKey && inFlight[dedupKey] === promise) delete inFlight[dedupKey];
+      if (latestOnly && ctx.payload && ctx.payload.requestId) delete requestMetaById[ctx.payload.requestId];
+      return value;
+    }, function (err) {
+      if (dedupKey && inFlight[dedupKey] === promise) delete inFlight[dedupKey];
+      if (latestOnly && ctx.payload && ctx.payload.requestId) delete requestMetaById[ctx.payload.requestId];
+      throw err;
+    });
+  }
+  function cancelLane(lane) { lane = text(lane); if (!lane) return false; laneEpoch[lane] = Math.max(0, Number(laneEpoch[lane] || 0) || 0) + 1; metrics.softCancelled += 1; emit("app:request:lane-cancelled", { owner: OWNER, lane: lane, epoch: laneEpoch[lane] }); return true; }
+  function apiRunner(method, payload, moduleName, timeoutMs) {
+    if (root.AppPageKit && isFn(root.AppPageKit.apiRunner)) return root.AppPageKit.apiRunner(method, payload || {}, moduleName || "AppRequestLifecycle", timeoutMs);
+    if (root.AppApi && isFn(root.AppApi.call)) return root.AppApi.call(method, payload || {}, { moduleName: moduleName || "AppRequestLifecycle", timeoutMs: timeoutMs });
+    return Promise.reject(new Error("AppRequestLifecycle API unavailable"));
+  }
+  function moduleApi(moduleName, defaults) {
+    defaults = defaults || {};
+    return function (method, payload, onSuccess, onFailure) {
+      var promise = apiRunner(method, payload || {}, moduleName || "AppRequestLifecycle.module", defaults.timeoutMs);
+      if (isFn(onSuccess) || isFn(onFailure)) promise = promise.then(function (value) { if (isFn(onSuccess)) onSuccess(value); return value; }, function (err) { if (isFn(onFailure)) return onFailure(err); throw err; });
+      return promise;
+    };
+  }
+  function status() {
+    var data = dataContractStatus(), mutation = mutationStatus();
+    return {
+      ok: true,
+      owner: OWNER,
+      stamp: STAMP,
+      transportOwnerCount: 1,
+      requestLifecycleOwnerCount: 1,
+      clientCacheOwnerCount: 1,
+      mutationCoordinatorOwnerCount: 1,
+      refreshOwnerCount: 1,
+      singleFlight: true,
+      softCancellation: true,
+      latestResponseWins: true,
+      staleClientCacheWriteGuard: true,
+      centralizedRetryPolicy: true,
+      centralizedErrorMapping: true,
+      centralizedRequestEvents: true,
+      loadingOwnerCount: 1,
+      activeInFlight: Object.keys(inFlight).length,
+      activeRequests: Object.keys(activeRequests).length,
+      activeLanes: Object.keys(laneEpoch).length,
+      metrics: Object.assign({}, metrics),
+      dataContract: data,
+      mutation: mutation,
+      publicApiAdded: false,
+      uiDomChanged: false,
+      spreadsheetSchemaChanged: false,
+      businessRulesChanged: false
+    };
+  }
+
+  pipeline.run = runLifecycle;
+  pipeline.performanceStatus = status;
+  pipeline.requestLifecycleStatus = status;
+  pipeline.__m14RequestLifecycle = true;
+  pipeline.__performanceConsolidationCurrent = true;
+  pipeline.__f4PerformanceOwner = OWNER;
+  pipeline.__f4PerformanceStamp = STAMP;
+  root.AppRequestLifecycle = Object.freeze({ owner: OWNER, stamp: STAMP, run: runLifecycle, apiRunner: apiRunner, module: moduleApi, cancelLane: cancelLane, classifyError: classifyError, loadingStatus: loadingStatus, cache: cacheApi, mutation: mutationApi, dataContract: root.AppDataContractOwner, status: status });
+  root.__APP_PERFORMANCE_CONSOLIDATION_CURRENT__ = true;
+  root.__APP_REQUEST_LIFECYCLE_CURRENT__ = true;
+  try {
+    if (root.AppOwnerRegistry && isFn(root.AppOwnerRegistry.promote)) ["AppRequestLifecycle", "AppClientCacheOwner", "AppMutationCoordinator", "AppDataContractOwner"].forEach(function (name) { root.AppOwnerRegistry.promote(name, OWNER); });
+  } catch (err) { warn("requestLifecycle.ownerRegistry", err); }
+  emit("app:request-lifecycle-ready", { owner: OWNER, stamp: STAMP, singleFlight: true, latestResponseWins: true, mutationRefreshSingleOwner: true });
+})(window, document);
+</script>
