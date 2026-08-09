@@ -1,0 +1,353 @@
+<!-- M12 r236: extracted from Scripts_Core_Runtime.html; canonical deferred owner: Runtime_02_Date_Time -->
+<script id="runtime-thai-datepicker-current-canonical-single-owner">
+!function (root) {
+    "use strict";
+    if (!root.__APP_THAI_DATE_CANONICAL_CURRENT__) {
+        root.__APP_THAI_DATE_CANONICAL_CURRENT__ = !0;
+        var doc = root.document;
+        if (doc) {
+            var MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"], activeInput = null, activeOutsideCloser = null, activeRepositioner = null, activeScrollParents = [], activeFrame = 0, lastOpenAt = 0, DATEPICKER_FIX_STAMP = "thai-datepicker-fast-open-current", text = function __E2_text_3(v) { return null == v ? "" : String(v).trim(); }, parseDate = function __E2_parseDate_3(v) {
+                if (!v && 0 !== v)
+                    return null;
+                if ("[object Date]" === Object.prototype.toString.call(v) && !isNaN(v.getTime()))
+                    return v;
+                var s = function normalizeDigits(v) { return text(v).replace(/[๐]/g, "0").replace(/[๑]/g, "1").replace(/[๒]/g, "2").replace(/[๓]/g, "3").replace(/[๔]/g, "4").replace(/[๕]/g, "5").replace(/[๖]/g, "6").replace(/[๗]/g, "7").replace(/[๘]/g, "8").replace(/[๙]/g, "9"); }(v), m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+                if (m) {
+                    var y = Number(m[1]);
+                    y > 2400 && (y -= 543);
+                    var d1 = new Date(y, Number(m[2]) - 1, Number(m[3]));
+                    return isNaN(d1.getTime()) ? null : d1;
+                }
+                if (m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/)) {
+                    var yy = Number(m[3]);
+                    yy < 100 && (yy += 2500), yy > 2400 && (yy -= 543);
+                    var d2 = new Date(yy, Number(m[2]) - 1, Number(m[1]));
+                    return isNaN(d2.getTime()) ? null : d2;
+                }
+                var d3 = new Date(s);
+                return isNaN(d3.getTime()) ? null : d3;
+            }, toThaiDate = function __E2_toThaiDate_1(v) { var d = v instanceof Date ? v : parseDate(v); return d ? pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + (d.getFullYear() + 543) : text(v); };
+            root.toThaiDate = toThaiDate, root.fmtThaiDate = toThaiDate, root.thaiDate = toThaiDate, root.fmtDate = toThaiDate, root.parseDate = parseDate, root.toDateInputValue = toThaiDate;
+            var thaiPickerFormatNs = root.__appSingleOwnerNs("AppFormat");
+            thaiPickerFormatNs.parseDate = parseDate, thaiPickerFormatNs.toThaiDate = toThaiDate, thaiPickerFormatNs.fmtThaiDate = toThaiDate, thaiPickerFormatNs.toDateInputValue = toThaiDate;
+            var api = { __canonicalOwner: "SCR:thai-date-production-current", __singleOwner: !0, __engineStamp: "thai-date-production-current.63", __optimizationStamp: "thai-datepicker-fast-open-current.65", __dateOwner: "ProductionCURRENT.DatepickerCanonical", __archivedAliases: ["AppDatePicker", "AppThaiDatePicker", "enhanceThaiDateInputs", "applyThaiDateHints", "ScriptsUtils.enhanceThaiDateInputs", "ScriptsUtils.applyThaiDateHints"], open: open, close: close, enhance: enhance, set: setValue, format: toThaiDate, display: toThaiDate, parse: parseDate, toIso: toIso, iso: toIso }, enhanceTimer = 0, enhanceScope = null;
+            function scheduleEnhance(scope) {
+                return enhanceScope = scope || enhanceScope || activeScope(), enhanceTimer || (enhanceTimer = setTimeout(function () {
+                    var target = enhanceScope || activeScope();
+                    enhanceTimer = 0, enhanceScope = null;
+                    try {
+                        enhance(target);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                }, 80)), !0;
+            }
+            function activeScope() {
+                try {
+                    return doc.querySelector(".page:not(.d-none):not([hidden]),.app-page:not(.d-none):not([hidden]),#app") || doc;
+                }
+                catch (_e) {
+                    return doc;
+                }
+            }
+            root.AppDatePicker = api, root.AppThaiDatePicker = api, root.ensureDatePickerAssets = function () { return Promise.resolve(api); }, root.enhanceThaiDateInputs = enhance, root.applyThaiDateHints = enhance;
+            var thaiPickerScriptsUtils = root.__appSingleOwnerNs("ScriptsUtils");
+            thaiPickerScriptsUtils.enhanceThaiDateInputs = enhance, thaiPickerScriptsUtils.applyThaiDateHints = enhance, thaiPickerScriptsUtils.openThaiDatePicker = function (el) { return el && enhance(el), open(el); }, root.__APP_THAI_DATE_CANONICAL_OWNER__ = "SCR:thai-date-fast-open-current.65", root.__APP_THAI_DATE_EARLY_PUBLIC_BRIDGE_RENDERER__ && (root.__APP_THAI_DATE_EARLY_PUBLIC_BRIDGE_RENDERER__.adapterOnly = !0, root.__APP_THAI_DATE_EARLY_PUBLIC_BRIDGE_RENDERER__.adoptedBy = root.__APP_THAI_DATE_CANONICAL_OWNER__, root.__APP_THAI_DATE_EARLY_PUBLIC_BRIDGE_RENDERER__.adoptedAt = Date.now()), doc.removeEventListener && close(), root.__APP_THAI_DATE_CORE_DELEGATION_CLEAN_CURRENT__ || (root.__APP_THAI_DATE_CORE_DELEGATION_CLEAN_CURRENT__ = !0, doc.addEventListener("focusin", delegated, !0), doc.addEventListener("click", delegated, !0), doc.addEventListener("keydown", delegated, !0), ["app:page-activated"].forEach(function (evt) {
+                doc.addEventListener(evt, function (e) {
+                    try {
+                        scheduleEnhance(e && e.detail && e.detail.scope || activeScope());
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                }, !1);
+            }));
+            try {
+                root.requestIdleCallback ? root.requestIdleCallback(function () { scheduleEnhance(activeScope()); }, { timeout: 1200 }) : setTimeout(function () { scheduleEnhance(activeScope()); }, 350);
+            }
+            catch (_e) {
+                __appObserve(_e, "ec");
+            }
+        }
+    }
+    function pad(n) { return root.AppFormat.pad2(n); }
+    function toIso(v) { var d = v instanceof Date ? v : parseDate(v); return d ? d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) : ""; }
+    function isDateInput(el) {
+        if (!el || "input" !== String(el.tagName || "").toLowerCase())
+            return !1;
+        var hay = text((el.id || "") + " " + (el.name || "") + " " + (el.className || "") + " " + (el.getAttribute("placeholder") || "") + " " + (el.getAttribute("data-date-locale") || "")).toLowerCase();
+        return "date" === el.type || "1" === el.getAttribute("data-thai-date") || /app-thai-date-input|buddhist|th-th|วว\/ดด\/ปปปป|วัน\/เดือน\/ปี|dd\/mm\/yyyy|date|duedate|extenddate|offerdate|recdate|letterdate|refunddate|reportdate|meetingdate|startdate|enddate|วันที่|วันเดือนปี/.test(hay);
+    }
+    function setValue(input, d, silent) {
+        if (d = d instanceof Date ? d : parseDate(d), !input || !d)
+            return "";
+        try {
+            input.type = "text";
+        }
+        catch (_e) {
+            __appObserve(_e, "ec");
+        }
+        var out = toThaiDate(d);
+        if (input.value = out, input.dataset.isoValue = toIso(d), input.setAttribute("data-date-display", out), !silent)
+            try {
+                input.dispatchEvent(new Event("input", { bubbles: !0 })), input.dispatchEvent(new Event("change", { bubbles: !0 }));
+            }
+            catch (_e) {
+                __appObserve(_e, "ec");
+            }
+        return out;
+    }
+    function enhance(scope) {
+        var list, host = scope && scope.querySelectorAll ? scope : doc;
+        try {
+            host === doc && (host = doc.querySelector(".page:not(.d-none):not([hidden]),.app-page:not(.d-none):not([hidden]),#app") || doc);
+        }
+        catch (_scopeErr) {
+            __appObserve(_scopeErr, "thaiDate.scope");
+        }
+        try {
+            list = host.querySelectorAll('input[data-thai-date],input.app-thai-date-input,input[type="date"],input[placeholder*="วว/ดด/ปปปป"],input[placeholder*="วัน/เดือน/ปี"],input[placeholder*="dd/mm/yyyy"],input[data-date-locale]');
+        }
+        catch (_e) {
+            list = [];
+        }
+        return (!list || !list.length) && host && "input" === String(host.tagName || "").toLowerCase() && (list = [host]), Array.prototype.forEach.call(list || [], function (input) {
+            if (isDateInput(input))
+                if ("1" !== input.dataset.thaiDateCanonicalReady) {
+                    input.dataset.thaiDateCanonicalReady = "1", input.classList.add("app-thai-date-input"), input.setAttribute("data-thai-date", "1"), input.setAttribute("placeholder", "วว/ดด/ปปปป"), input.setAttribute("inputmode", "numeric"), input.setAttribute("autocomplete", "off"), input.setAttribute("lang", "th-TH");
+                    try {
+                        input.type = "text";
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                    delete input.dataset.thaiDateCURRENT1Ready, delete input.dataset.thaiDateCURRENT2Ready, delete input.dataset.thaiDateCURRENTReady, delete input.dataset.thaiDateCURRENT4Ready;
+                    var d = parseDate(input.value || input.dataset.isoValue || input.getAttribute("value") || "");
+                    d && setValue(input, d, !0), input.addEventListener("blur", function () { var x = parseDate(input.value || input.dataset.isoValue || ""); x && setValue(input, x, !0); }, !1);
+                }
+                else if ("date" === input.type)
+                    try {
+                        input.type = "text";
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+        }), !0;
+    }
+    function close() {
+        !function removeOutsideCloser() {
+            if (activeOutsideCloser && (["pointerdown", "mousedown", "touchstart", "click"].forEach(function (evt) {
+                try {
+                    doc.removeEventListener(evt, activeOutsideCloser, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+            }), activeOutsideCloser = null), activeRepositioner) {
+                try {
+                    root.removeEventListener("resize", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+                try {
+                    doc.removeEventListener("scroll", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+                try {
+                    root.removeEventListener("wheel", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+                try {
+                    root.removeEventListener("touchmove", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+                if (root.visualViewport) {
+                    try {
+                        root.visualViewport.removeEventListener("resize", activeRepositioner, !0);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                    try {
+                        root.visualViewport.removeEventListener("scroll", activeRepositioner, !0);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                }
+                (activeScrollParents || []).forEach(function (node) {
+                    try {
+                        node.removeEventListener("scroll", activeRepositioner, !0);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                    try {
+                        node.removeEventListener("wheel", activeRepositioner, !0);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                    try {
+                        node.removeEventListener("touchmove", activeRepositioner, !0);
+                    }
+                    catch (_e) {
+                        __appObserve(_e, "ec");
+                    }
+                }), activeScrollParents = [], activeRepositioner = null;
+            }
+            if (activeFrame && root.cancelAnimationFrame)
+                try {
+                    root.cancelAnimationFrame(activeFrame);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+            activeFrame = 0;
+        }();
+        var old = doc.getElementById("app-thai-date-lite-popover");
+        return old && old.parentNode && old.parentNode.removeChild(old), activeInput = null, !0;
+    }
+    function setImportant(el, name, value) {
+        if (el && el.style)
+            try {
+                el.style.setProperty(name, String(value), "important");
+            }
+            catch (_e) {
+                try {
+                    el.style[name] = String(value);
+                }
+                catch (_e2) {
+                    __appObserve(_e2, "rt.s");
+                }
+            }
+    }
+    function schedulePlace(pop, input) {
+        if (!activeFrame) {
+            var run = function () {
+                activeFrame = 0;
+                try {
+                    if (!activeInput || activeInput !== input || !doc.body || !doc.body.contains(pop))
+                        return close();
+                    place(pop, input);
+                }
+                catch (_e) {
+                    close();
+                }
+            };
+            root.requestAnimationFrame ? activeFrame = root.requestAnimationFrame(run) : (activeFrame = 1, setTimeout(run, 16));
+        }
+    }
+    function place(pop, input) {
+        if (!pop || !input || !input.getBoundingClientRect)
+            return !1;
+        var r = input.getBoundingClientRect(), vv = root.visualViewport || null, vw = Math.max(300, Number(vv && vv.width || root.innerWidth || doc.documentElement.clientWidth || 360)), vh = Math.max(320, Number(vv && vv.height || root.innerHeight || doc.documentElement.clientHeight || 640)), vx = Number(vv && vv.offsetLeft || 0), vy = Number(vv && vv.offsetTop || 0);
+        if (!r || !(r.width || r.height || r.top || r.left || r.bottom || r.right) || r.bottom < -12 || r.top > vh + 12 || r.right < -12 || r.left > vw + 12)
+            return close(), !1;
+        var minW = Math.min(292, Math.max(240, vw - 16)), w = Math.min(360, Math.max(minW, Math.min(vw - 16, Math.max(r.width || 0, minW)))), leftInView = Math.max(8, Math.min(vw - w - 8, r.left)), belowSpace = Math.max(0, vh - r.bottom - 8 - 6), aboveSpace = Math.max(0, r.top - 8 - 6), useAbove = belowSpace < Math.min(336, Math.max(180, belowSpace)) && aboveSpace > belowSpace, maxH = useAbove ? aboveSpace : belowSpace;
+        maxH < 180 && (maxH = Math.max(180, vh - 16)), maxH = Math.min(520, maxH);
+        var topInView = useAbove ? Math.max(8, r.top - maxH - 6) : Math.min(vh - maxH - 8, r.bottom + 6);
+        topInView < 8 && (topInView = 8);
+        var left = Math.round(vx + leftInView), top = Math.round(vy + topInView);
+        return setImportant(pop, "position", "fixed"), setImportant(pop, "left", left + "px"), setImportant(pop, "top", top + "px"), setImportant(pop, "right", "auto"), setImportant(pop, "bottom", "auto"), setImportant(pop, "margin", "0"), setImportant(pop, "width", w + "px"), setImportant(pop, "max-height", Math.max(180, Math.floor(maxH)) + "px"), setImportant(pop, "overflow-y", "auto"), setImportant(pop, "overflow-x", "hidden"), setImportant(pop, "overscroll-behavior", "contain"), setImportant(pop, "box-sizing", "border-box"), setImportant(pop, "transform", "none"), pop.setAttribute("data-date-overflow-safe", "current"), pop.setAttribute("data-date-anchor-follow", DATEPICKER_FIX_STAMP), !0;
+    }
+    function stopOnly(e) { e && e.stopPropagation && e.stopPropagation(); }
+    function option(value, label, selected) { var o = doc.createElement("option"); return o.value = String(value), o.textContent = label, selected && (o.selected = !0), o; }
+    function buildSelect(cls, label) { var wrap = doc.createElement("label"); wrap.className = "app-thai-date-lite-select-wrap"; var span = doc.createElement("span"); span.className = "visually-hidden", span.textContent = label; var sel = doc.createElement("select"); return sel.className = cls, sel.setAttribute("aria-label", label), wrap.appendChild(span), wrap.appendChild(sel), ["pointerdown", "mousedown", "touchstart", "click"].forEach(function (evt) { sel.addEventListener(evt, stopOnly, !1); }), { wrap: wrap, select: sel }; }
+    function open(input) {
+        if (!isDateInput(input) || !doc.body)
+            return !1;
+        var existing = doc.getElementById("app-thai-date-lite-popover");
+        if (activeInput === input && existing && doc.body.contains(existing))
+            return lastOpenAt = Date.now(), schedulePlace(existing, input), !0;
+        lastOpenAt = Date.now(), enhance(input), close(), activeInput = input;
+        var seed = parseDate(input.dataset.isoValue || input.value || "") || new Date, view = new Date(seed.getFullYear(), seed.getMonth(), Math.min(seed.getDate(), 28)), pop = doc.createElement("div");
+        return pop.id = "app-thai-date-lite-popover", pop.className = "app-thai-date-lite-popover", pop.setAttribute("role", "dialog"), pop.setAttribute("aria-label", "เลือกวันเดือนปี"), pop.setAttribute("data-thai-datepicker-current", "1"), ["pointerdown", "mousedown", "touchstart", "click"].forEach(function (evt) { pop.addEventListener(evt, stopOnly, !1); }), function redraw() {
+            pop.textContent = "";
+            var head = doc.createElement("div");
+            head.className = "app-thai-date-lite-head d-flex align-items-center gap-2";
+            var prev = doc.createElement("button");
+            prev.type = "button", prev.className = "btn btn-sm btn-outline-secondary", prev.textContent = "‹", prev.addEventListener("click", function (e) { stopOnly(e), view = new Date(view.getFullYear(), view.getMonth() - 1, 1), redraw(); }, !1);
+            var next = doc.createElement("button");
+            next.type = "button", next.className = "btn btn-sm btn-outline-secondary", next.textContent = "›", next.addEventListener("click", function (e) { stopOnly(e), view = new Date(view.getFullYear(), view.getMonth() + 1, 1), redraw(); }, !1);
+            var month = buildSelect("form-select form-select-sm app-thai-date-month-select", "เลือกเดือน");
+            MONTHS.forEach(function (name, i2) { month.select.appendChild(option(i2, name, i2 === view.getMonth())); }), month.select.addEventListener("change", function (e) { stopOnly(e), view = new Date(view.getFullYear(), Number(month.select.value), 1), redraw(); }, !1);
+            for (var year = buildSelect("form-select form-select-sm app-thai-date-year-select", "เลือกปี"), current = view.getFullYear(), y = current - 8; y <= current + 8; y++)
+                year.select.appendChild(option(y, String(y + 543), y === current));
+            year.select.addEventListener("change", function (e) { stopOnly(e), view = new Date(Number(year.select.value), view.getMonth(), 1), redraw(); }, !1);
+            var title = doc.createElement("div");
+            title.className = "app-thai-date-lite-title flex-fill d-flex gap-2", title.appendChild(month.wrap), title.appendChild(year.wrap), head.appendChild(prev), head.appendChild(title), head.appendChild(next), pop.appendChild(head);
+            var grid = doc.createElement("div");
+            grid.className = "app-thai-date-lite-grid", ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].forEach(function (d) { var x = doc.createElement("div"); x.className = "app-thai-date-lite-dow", x.textContent = d, grid.appendChild(x); });
+            for (var first = new Date(view.getFullYear(), view.getMonth(), 1), last = new Date(view.getFullYear(), view.getMonth() + 1, 0), i = 0; i < first.getDay(); i++)
+                grid.appendChild(doc.createElement("div"));
+            for (var day = 1; day <= last.getDate(); day++)
+                (function (dn) {
+                    var b = doc.createElement("button");
+                    b.type = "button", b.className = "app-thai-date-lite-day", b.textContent = String(dn), b.addEventListener("click", function (e) {
+                        stopOnly(e), setValue(input, new Date(view.getFullYear(), view.getMonth(), dn), !1), close();
+                        try {
+                            input.focus();
+                        }
+                        catch (_e) {
+                            __appObserve(_e, "ec");
+                        }
+                    }, !1), grid.appendChild(b);
+                })(day);
+            pop.appendChild(grid);
+        }(), doc.body.appendChild(pop), setImportant(pop, "position", "fixed"), setImportant(pop, "left", "-9999px"), setImportant(pop, "top", "-9999px"), setImportant(pop, "right", "auto"), setImportant(pop, "bottom", "auto"), place(pop, input), function bindPositionListeners(pop, input) {
+            activeScrollParents = [], activeRepositioner = function (ev) { return ev && "scroll" === ev.type ? close() : schedulePlace(pop, input); };
+            try {
+                root.addEventListener("resize", activeRepositioner, !0);
+            }
+            catch (_e) {
+                __appObserve(_e, "ec");
+            }
+            try {
+                doc.addEventListener("scroll", activeRepositioner, !0);
+            }
+            catch (_e) {
+                __appObserve(_e, "ec");
+            }
+            if (root.visualViewport) {
+                try {
+                    root.visualViewport.addEventListener("resize", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+                try {
+                    root.visualViewport.addEventListener("scroll", activeRepositioner, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+            }
+        }(pop, input), schedulePlace(pop, input), setTimeout(function () { schedulePlace(pop, input); }, 0), setTimeout(function () { schedulePlace(pop, input); }, 80), activeOutsideCloser = function (e) { var target = e && e.target; target === input || target && target.closest && target.closest("#app-thai-date-lite-popover") || close(); }, setTimeout(function () {
+            ["pointerdown", "mousedown", "touchstart", "click"].forEach(function (evt) {
+                try {
+                    doc.addEventListener(evt, activeOutsideCloser, !0);
+                }
+                catch (_e) {
+                    __appObserve(_e, "ec");
+                }
+            });
+        }, 0), !0;
+    }
+    function delegated(ev) {
+        var t = ev && ev.target;
+        if (!t || t.closest && t.closest("#app-thai-date-lite-popover"))
+            return !0;
+        var input = isDateInput(t) ? t : t.closest ? t.closest('input[data-thai-date],input.app-thai-date-input,input[placeholder*="วว/ดด/ปปปป"],input[placeholder*="วัน/เดือน/ปี"],input[type="date"]') : null;
+        return !input || "click" === ev.type && activeInput === input && Date.now() - Number(lastOpenAt || 0) < 500 || "keydown" === ev.type && !{ Enter: 1, " ": 1, ArrowDown: 1 }[ev.key] || ("keydown" === ev.type && ev.cancelable && ev.preventDefault(), open(input), !0);
+    }
+}(window);
+</script>
