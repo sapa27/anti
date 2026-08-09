@@ -1,6 +1,6 @@
 /* GitHub Pages frontend configuration. */
 window.APP_GITHUB_CONFIG = Object.freeze({
-  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycby9X-ZlFky_qLv8BXBP80sh6lL14zscD8jHIx1c0t1FyGGTjsqDaIKqdxJN72Mf7crj/exec",
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxufAfgbBgxCa62UwR2fY57NCRGHgj9TqFUwrdtGaBQwW0RJY0BzRq2KZ_pEsglNK_x/exec",
   STATIC_LOGO_URL: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg",
   BRIDGE_MODE: "github-bridge",
   BRIDGE_TIMEOUT_MS: 10000,
@@ -9,6 +9,6 @@ window.APP_GITHUB_CONFIG = Object.freeze({
   BRIDGE_VERSION: "github-pages-bridge-v1",
   LOCAL_ASSET_MODE: true,
   LOCAL_ASSET_BASE: "./assets/",
-  LOCAL_ASSET_VERSION: "r251",
+  LOCAL_ASSET_VERSION: "r252",
   LOCAL_ASSET_TIMEOUT_MS: 8000
 });

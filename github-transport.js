@@ -145,7 +145,7 @@
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r251 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r252 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
       }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 10000)));
@@ -343,7 +343,7 @@
       return response;
     }).catch(function (error) {
       transportMetrics.localAssetFallbacks += 1;
-      if (root.console && console.warn) console.warn("[r251] local asset fallback to GAS", req.name, error && error.message || error);
+      if (root.console && console.warn) console.warn("[r252] local asset fallback to GAS", req.name, error && error.message || error);
       return null;
     });
   }
