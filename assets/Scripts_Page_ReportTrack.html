@@ -1,127 +1,6 @@
-<style id="p0-deferred-style-reporttrack-current" data-app-fragment="reporttrack-common">.app-report-table-wide{min-width:1200px}.app-report-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}:where(#p-search,#p-report) .table td:nth-child(2),:where(#p-search,#p-report) .table th:nth-child(2){white-space:nowrap;min-width:110px;text-align:center}#search-table-target td:last-child,#report-table-target td:last-child{position:relative;z-index:2;overflow:visible;}#search-table-target .btn,#report-table-target .btn{position:relative;z-index:3;}</style>
-<script type="text/x-template" id="tpl-page-search" data-app-fragment="search">
-<div class="page"id="p-search">
-<div class="visually-hidden"role="status"aria-live="polite"data-app-a11y="live-region"></div>
-<div id="search-main-view">
-<h1 class="app-page-heading fw-bold mb-4 text-primary"><i class="fas fa-search me-2"aria-hidden="true"></i>ค้นหาเรื่องพิจารณา</h1>
-<div class="input-group mb-4 shadow-sm">
-<input class="form-control"data-action="searchAllInput"id="s-input"aria-label="ค้นหาเรื่องพิจารณา"placeholder="พิมพ์คำค้นหา เช่น ชื่อเรื่อง, ลำดับเรื่อง, ผู้เสนอญัตติ/ผู้ร้อง..."data-app-term-placeholder="searchPlaceholder"type="text"/>
-<button class="btn btn-primary"data-action="searchAll"><i class="fas fa-search"></i>ค้นหา</button>
-</div>
-<div class="app-table-scroll table-custom">
-<table data-page-size="20"data-app-pager="off"class="table table-hover align-middle mb-0 small app-table-standard no-app-pager app-mobile-priority-table app-mobile-search-table">
-<thead class="table-light text-center">
-<tr>
-<th width="8%">ลำดับเรื่อง</th>
-<th width="12%">เลขรับเรื่อง</th>
-<th width="12%">วันที่รับเรื่อง</th>
-<th width="22%">ชื่อเรื่อง</th>
-<th width="20%">ชื่อเรื่องพิจารณา(ถ้ามี)</th>
-<th width="16%"data-app-term="petitionerShort">ผู้เสนอญัตติ/ผู้ร้อง</th>
-<th width="10%">สถานะ</th>
-<th width="6%">จัดการ</th>
-</tr>
-</thead>
-<tbody id="search-table-res">
-<tr>
-<td class="text-center text-muted p-4"colspan="8">กรุณาพิมพ์เพื่อค้นหา</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="mt-3 no-print app-table-footer"id="search-pagination"></div>
-</div>
-<div class="d-none"id="summary-view">
-<div class="no-print mb-3">
-<button class="btn btn-secondary"data-report-action="closeSummary"type="button"><i class="fas fa-xmark me-1"></i>ปิด</button>
-<button class="btn btn-primary float-end"data-action="printPage"><i class="fas fa-print me-1"></i>พิมพ์ข้อมูล</button>
-</div>
-<div class="text-center print-header-show mb-4">
-<img data-logo="parliament"decoding="async"id="summary-logo-img"loading="lazy"src="<?= getActiveLogoUrl_() ?>"style="width: 64px; height:64px; object-fit:contain; margin-bottom: 10px;"/>
-<h5 class="fw-bold">รายละเอียดเรื่องพิจารณา</h5>
-</div>
-<div id="pdf-content"></div>
-<div class="mt-4"id="pdf-history-content"></div>
-<div class="card shadow-sm border-0 mt-4 app-card"id="case-ai-summary-card">
-<div class="card-body">
-<div class="d-flex justify-content-between align-items-center mb-3">
-<h6 class="fw-bold mb-0"><i class="fas fa-robot me-2 text-primary"></i>Executive Summary</h6>
-<button class="btn btn-outline-primary btn-sm"data-action="generateCaseExecutiveSummary"type="button">สรุปโดย AI</button>
-</div>
-<div class="small text-muted"id="case-ai-summary-result">กดปุ่มเพื่อสรุปข้อมูลเรื่องโดย AI</div>
-</div>
-</div>
-<div class="print-footer-container mt-4"id="summary-print-footer"></div>
-</div>
-</div>
-</script>
-<script type="text/x-template" id="tpl-page-track" data-app-fragment="track">
-<div class="page app-layout-contract-currentStamp"id="p-track">
-<div class="visually-hidden"role="status"aria-live="polite"data-app-a11y="live-region"></div>
-<h1 class="app-page-heading fw-bold mb-4">ระบบติดตามหนังสือ</h1>
-<div class="no-print mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
-<div class="btn-group shadow-sm overflow-auto"role="group">
-<button class="btn btn-outline-primary active app-btn-nowrap"data-action="filterTrack"data-filter-track="all"id="btn-track-all">หนังสือทั้งหมด</button>
-<button class="btn btn-outline-info app-btn-nowrap"data-action="filterTrack"data-filter-track="notdue"id="btn-track-notdue">ไม่ครบกำหนด</button>
-<button class="btn btn-outline-danger app-btn-nowrap"data-action="filterTrack"data-filter-track="overdue"id="btn-track-overdue">ครบ/เลยกำหนด</button>
-<button class="btn btn-outline-success app-btn-nowrap"data-action="filterTrack"data-filter-track="received"id="btn-track-received">ตอบรับแล้ว</button>
-</div>
-<div class="d-flex gap-2">
-<button class="btn btn-success shadow-sm app-btn-nowrap"data-action="exportToExcel"data-export-name="ข้อมูลติดตามหนังสือ"data-export-target="track-table-target"><i class="fas fa-file-excel me-1"></i>Excel</button>
-<button class="btn btn-secondary shadow-sm app-btn-nowrap"data-action="printTrack"><i class="fas fa-print me-2"></i>พิมพ์</button>
-</div>
-</div>
-<div class="print-header-show text-center mb-4"id="track-print-header"style="display:none;">
-<h2 class="app-section-heading fw-bold mt-2"id="track-print-title">รายงานการติดตามหนังสือ (ทั้งหมด)</h2>
-<h5 class="fw-bold"data-app-print-standard="fullOrganization">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</h5>
-</div>
-<div class="app-table-scroll table-custom">
-<table data-page-size="20"data-app-pager="off"class="table table-hover table-bordered align-middle small bg-white mb-0 app-track-table app-table-standard no-app-pager app-mobile-priority-table app-mobile-track-table"id="track-table-target">
-<thead class="table-light text-center"id="track-thead"></thead>
-<tbody id="track-tbody"><tr data-table-state="loading"><td colspan="7" class="text-center text-muted p-4">กำลังโหลดข้อมูล...</td></tr></tbody>
-</table>
-</div>
-<div class="mt-3 no-print app-table-footer"id="track-pagination"></div>
-<div class="print-footer-container"id="track-print-footer"></div>
-</div>
-</script>
-<script type="text/x-template" id="tpl-page-report" data-app-fragment="report">
-<div class="page"id="p-report">
-<div class="visually-hidden"role="status"aria-live="polite"data-app-a11y="live-region"></div>
-<div class="print-header-show text-center"id="report-print-header">
-<div class="report-print-logo-wrap mb-2"><img alt="ตรารัฐสภา"class="report-print-logo"id="report-logo-img"/></div>
-<h2 class="app-section-heading fw-bold mb-1">จัดพิมพ์รายงานเรื่องพิจารณา</h2>
-<h5 class="fw-bold mb-1"data-app-print-standard="fullOrganization">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</h5>
-<div class="small fw-bold text-muted"id="report-grouping-label"></div>
-</div>
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 no-print no-print-in-report gap-3">
-<h1 class="app-page-heading fw-bold mb-0">จัดพิมพ์รายงานเรื่องพิจารณา</h1>
-<div class="d-flex flex-wrap align-items-center gap-2 report-toolbar">
-<input class="form-control form-control-sm app-flex-grow-input"id="report-search-name"aria-label="ค้นหาในรายงาน"placeholder="ค้นหา..."type="text"/>
-<select class="form-select form-select-sm app-select-auto"data-change="updateReportGroupOptions"id="report-type"aria-label="เลือกรูปแบบการจัดกลุ่มรายงาน">
-<option value="all">เรื่องทั้งหมด</option>
-<option value="cat">แยกตามประเภทเรื่อง</option>
-<option value="sub">แยกตามประเด็น</option>
-<option value="comm">แยกตาม กมธ.</option>
-<option value="status">แยกตามสถานะ</option>
-</select>
-<select class="form-select form-select-sm d-none app-select-auto"id="report-group-value"aria-label="เลือกกลุ่มข้อมูล"></select>
-<button class="btn btn-info btn-sm text-nowrap"data-action="loadReportData"><i class="fas fa-download me-1"></i>โหลดข้อมูล</button>
-<button class="btn btn-primary btn-sm text-nowrap"data-action="printReportPdf"data-print-style="landscape"data-print-target="report"><i class="fas fa-list-check me-1"></i>เลือกข้อมูล</button>
-<button class="btn btn-success btn-sm text-nowrap"data-action="exportToExcel"data-export-name="รายงานเรื่องพิจารณา"data-export-target="report-table-target"><i class="fas fa-file-excel me-1"></i>Excel</button>
-</div>
-</div>
-<div class="alert alert-secondary small no-print"id="report-load-help">กดปุ่ม<strong>โหลดข้อมูล</strong>เพื่อแสดงรายการ</div>
-<div class="report-guard overflow-auto app-report-scroll">
-<table data-page-size="20"data-app-pager="off"class="report-table table-bordered table app-report-table-wide app-table-standard no-app-pager"id="report-table-target">
-<thead id="report-header-row"></thead>
-<tbody id="report-table-body"></tbody>
-</table>
-</div>
-<div class="mt-3 no-print app-table-footer"id="report-pagination"></div>
-<div class="print-footer-container"id="report-print-footer"></div>
-</div>
-</script>
+
+
+
 <script id="report-track-page-runtime-owner-p3" data-app-fragment="reporttrack-common">
   !(function (root) {
     "use strict";
@@ -597,12 +476,7 @@
               table = tb && tb.closest ? tb.closest("table") : null,
               hadRows =
                 Array.isArray(reportState.rows) && reportState.rows.length > 0;
-            (!hadRows &&
-              tb &&
-              setHtml(
-                tb,
-                '<tr><td colspan="7" class="text-center text-muted p-4">กำลังโหลดข้อมูล...</td></tr>',
-              ),
+            (!hadRows && tb && setHtml(tb, ""),
               table && table.setAttribute("aria-busy", "true"),
               applyHeaders());
             return loadCases(reportState, "report", {
@@ -949,20 +823,7 @@
             source: options.source || (options.forceFresh === !0 || options.forceRefresh === !0 ? "track-page-mutation-force-fresh-f0-r228" : "track-page-status-filter-cache-first-current"),
           };
         return (
-          tbody &&
-            (root.AppPageKit && root.AppPageKit.setTableState
-              ? root.AppPageKit.setTableState(
-                  tbody,
-                  TRACK_HEADERS.length,
-                  "กำลังโหลดข้อมูล...",
-                  "text-center text-muted p-4",
-                )
-              : setHtml(
-                  tbody,
-                  '<tr><td colspan="' +
-                    TRACK_HEADERS.length +
-                    '" class="text-center text-muted p-4">กำลังโหลดข้อมูล...</td></tr>',
-                )),
+          tbody && setHtml(tbody, ""),
           api("apiGetTracking", trackPayload)
             .then(function (res) {
               var data = unwrap(res),
@@ -6241,7 +6102,7 @@
     "use strict";
     if (root && !root.__APP_PRINT_ENGINE_SINGLE_OWNER__) {
         root.__APP_PRINT_ENGINE_SINGLE_OWNER__ = !0;
-        var doc = root.document, t = "SCR:AppPrint.FinalOwner", e = "print-final-owner-production-current-r251", r = "คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร", n = "เอกสารสำหรับพิมพ์", a = ["summary-view", "pet-summary-view", "ps-print-view", "p-search", "p-report", "p-track", "p-petitioner", "p-personnel", "p-budget", "p-meeting", "p-dash"], i = { "meeting-case-detail": "รายละเอียดเรื่องพิจารณา", "petitioner-detail": "ข้อมูลผู้ร้องเรียน", "personnel-report": "รายงานบุคลากร", "budget-summary": "รายงานสรุปค่าใช้จ่ายงบประมาณ", "track-summary": "รายงานการติดตามหนังสือ", report: "รายงานสรุปเรื่องพิจารณา", "people-history": "ประวัติการดำรงตำแหน่ง", ai: "รายงานจากผู้ช่วย AI", default: n }, p = { "summary-view": "รายละเอียดเรื่องพิจารณา", "pet-summary-view": "ข้อมูลผู้ร้องเรียน", "ps-print-view": "รายงานบุคลากร", "p-search": "ค้นหาเรื่องพิจารณา", "p-report": "รายงานสรุปเรื่องพิจารณา", "p-track": "รายงานการติดตามหนังสือ", "p-petitioner": "ข้อมูลผู้ร้องเรียน", "p-personnel": "รายงานบุคลากร", "p-budget": "ระบบบริหารงบประมาณ", "p-meeting": "จัดการเรื่องพิจารณา", "p-dash": "Dashboard" }, o = { printPage: 1, printReportPdf: 1, printTrack: 1, printBudgetSummary: 1, printTypeSummary: 1, printPersonnelReportMenu: 1, printSalaryReportOnly: 1, printWorkloadReport: 1, printBudgetImportRecord: 1, searchPrintCase: 1 }, d = { ok: !0, phase: "current", stamp: e, owner: t, engine: "AppPrint.printWithProfile", pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1, compatFacade: "AppPrintProfile delegates only" }, l = root.AppPageKit && root.AppPageKit.moduleKit ? root.AppPageKit.moduleKit("Print.Engine") : root.AppPageKit || {}, s = l && l.text || function (t) { return String(null == t ? "" : t); }, c = l && l.trim || function (t) { return s(t).replace(/\s+/g, " ").trim(); }, u = l && l.byId || function (t) { return t && doc && doc.getElementById ? doc.getElementById(t) : null; }, f = l && (l.esc || l.escapeHtml) || function (t) { return String(null == t ? "" : t).replace(/[&<>"']/g, function (t) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[t]; }); }, warn = function (e, r) {
+        var doc = root.document, t = "SCR:AppPrint.FinalOwner", e = "print-final-owner-production-current-r252", r = "คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร", n = "เอกสารสำหรับพิมพ์", a = ["summary-view", "pet-summary-view", "ps-print-view", "p-search", "p-report", "p-track", "p-petitioner", "p-personnel", "p-budget", "p-meeting", "p-dash"], i = { "meeting-case-detail": "รายละเอียดเรื่องพิจารณา", "petitioner-detail": "ข้อมูลผู้ร้องเรียน", "personnel-report": "รายงานบุคลากร", "budget-summary": "รายงานสรุปค่าใช้จ่ายงบประมาณ", "track-summary": "รายงานการติดตามหนังสือ", report: "รายงานสรุปเรื่องพิจารณา", "people-history": "ประวัติการดำรงตำแหน่ง", ai: "รายงานจากผู้ช่วย AI", default: n }, p = { "summary-view": "รายละเอียดเรื่องพิจารณา", "pet-summary-view": "ข้อมูลผู้ร้องเรียน", "ps-print-view": "รายงานบุคลากร", "p-search": "ค้นหาเรื่องพิจารณา", "p-report": "รายงานสรุปเรื่องพิจารณา", "p-track": "รายงานการติดตามหนังสือ", "p-petitioner": "ข้อมูลผู้ร้องเรียน", "p-personnel": "รายงานบุคลากร", "p-budget": "ระบบบริหารงบประมาณ", "p-meeting": "จัดการเรื่องพิจารณา", "p-dash": "Dashboard" }, o = { printPage: 1, printReportPdf: 1, printTrack: 1, printBudgetSummary: 1, printTypeSummary: 1, printPersonnelReportMenu: 1, printSalaryReportOnly: 1, printWorkloadReport: 1, printBudgetImportRecord: 1, searchPrintCase: 1 }, d = { ok: !0, phase: "current", stamp: e, owner: t, engine: "AppPrint.printWithProfile", pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1, compatFacade: "AppPrintProfile delegates only" }, l = root.AppPageKit && root.AppPageKit.moduleKit ? root.AppPageKit.moduleKit("Print.Engine") : root.AppPageKit || {}, s = l && l.text || function (t) { return String(null == t ? "" : t); }, c = l && l.trim || function (t) { return s(t).replace(/\s+/g, " ").trim(); }, u = l && l.byId || function (t) { return t && doc && doc.getElementById ? doc.getElementById(t) : null; }, f = l && (l.esc || l.escapeHtml) || function (t) { return String(null == t ? "" : t).replace(/[&<>"']/g, function (t) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[t]; }); }, warn = function (e, r) {
             try {
                 if (l.warn)
                     return l.warn(e, r, { owner: t });

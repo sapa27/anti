@@ -1,54 +1,5 @@
 
-<script type="text/x-template"id="tpl-page-petitioner">
-<div class="page"id="p-petitioner">
-<div class="visually-hidden"role="status"aria-live="polite"data-app-a11y="live-region"></div>
-<div id="pet-main-view">
-<h1 class="app-page-heading fw-bold mb-4 text-info"><i class="fas fa-user-tag me-2"aria-hidden="true"></i>ข้อมูลผู้ร้องเรียน</h1>
-<div class="card p-3 shadow-sm border-0 mb-4 bg-light">
-<div class="row g-2 align-items-center">
-<div class="col-md-8">
-<div class="input-group">
-<input class="form-control"data-input="renderPetitionerList"id="pet-search-input"placeholder="ค้นหาชื่อ, เบอร์โทร, ตำบล, อำเภอ หรือจังหวัด..."type="text"/>
-<button class="btn btn-info text-white"data-action="renderPetitionerList"><i class="fas fa-search"></i>ค้นหา</button>
-</div>
-</div>
-<div class="col-md-4 text-end">
-<button class="btn btn-success w-100"data-action="openPetModal"><i class="fas fa-plus"></i>เพิ่มผู้ร้องเรียน</button>
-</div>
-</div>
-</div>
-<div class="app-table-scroll table-custom">
-<table data-page-size="20"class="table table-hover align-middle mb-0 small">
-<thead class="table-light text-center">
-<tr>
-<th style="width:70px">ลำดับ</th>
-<th>ชื่อ-สกุล</th>
-<th>เบอร์โทรศัพท์</th>
-<th>ที่อยู่</th>
-<th>เรื่องที่เกี่ยวข้อง</th>
-<th class="no-print">จัดการ</th>
-</tr>
-</thead>
-<tbody id="pet-table-res">
-<tr>
-<td class="text-center text-muted p-4"colspan="6">ไม่มีข้อมูล</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="mt-3 no-print app-table-footer"id="pet-pagination"></div>
-</div>
-<div class="d-none"id="pet-summary-view">
-<div class="no-print mb-3">
-<button class="btn btn-secondary"data-action="closePetSummary"><i class="fas fa-arrow-left me-1"></i>ย้อนกลับ</button>
-<button class="btn btn-primary float-end"data-action="printPage"><i class="fas fa-print me-1"></i>พิมพ์ข้อมูล</button>
-</div>
-<div id="pet-summary-content"></div>
-<div class="mt-4"id="pet-cases-content"></div>
-<div class="print-footer-container mt-4"id="pet-print-footer"></div>
-</div>
-</div>
-</script>
+
 <script>
 !function(){
 "use strict";
