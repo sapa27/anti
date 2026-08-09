@@ -1,0 +1,92 @@
+<!-- M12 r236: extracted from Scripts_Core_Runtime.html; canonical deferred owner: Runtime_04_Thailand_Location -->
+<script id="app-thailand-location-shared-owner-current">
+(function(root,doc){"use strict";
+if(!root||root.__APP_THAI_LOCATION_SHARED_OWNER_CURRENT__)return;
+root.__APP_THAI_LOCATION_SHARED_OWNER_CURRENT__=!0;
+var OWNER="Core.AppThailandLocation.current",tree=[],inFlight=null,loadedAt=0;
+function text(v){return v==null?"":String(v).trim()}
+function isFn(v){return !!(root.AppRuntime&&root.AppRuntime.isFn?root.AppRuntime.isFn(v):typeof v==="function")}
+function unwrap(v){var cur=v||{},i=0;while(cur&&typeof cur==="object"&&i++<8){if(Array.isArray(cur))return cur;if(Array.isArray(cur.rows))return cur.rows;if(Array.isArray(cur.provinces))return cur.provinces;if(cur.data&&typeof cur.data==="object"){cur=cur.data;continue}if(cur.result&&typeof cur.result==="object"){cur=cur.result;continue}if(cur.payload&&typeof cur.payload==="object"){cur=cur.payload;continue}break}return[]}
+function normalize(raw){return unwrap(raw).map(function(p){var name=text(p&& (p.name||p.province||p.label||p.value)),districts=Array.isArray(p&&p.districts)?p.districts:[];return{name:name,districts:districts.map(function(d){var dn=text(d&&(d.name||d.district||d.label||d.value)),subs=Array.isArray(d&&d.subDistricts)?d.subDistricts:Array.isArray(d&&d.subdistricts)?d.subdistricts:[];return{name:dn,subDistricts:subs.map(function(sd){return{name:text(sd&&(sd.name||sd.subDistrict||sd.subdistrict||sd.label||sd.value)),zip:text(sd&&(sd.zip||sd.postalCode||sd.postcode))}}).filter(function(sd){return!!sd.name})}}).filter(function(d){return!!d.name})}}).filter(function(p){return!!p.name})}
+function merge(next){var map={};tree.concat(next||[]).forEach(function(p){if(!p||!p.name)return;var cur=map[p.name]||(map[p.name]={name:p.name,districts:[]}),dmap={};cur.districts.forEach(function(d){dmap[d.name]=d});(p.districts||[]).forEach(function(d){var target=dmap[d.name]||(dmap[d.name]={name:d.name,subDistricts:[]});var smap={};(target.subDistricts||[]).forEach(function(sd){smap[sd.name]=sd});(d.subDistricts||[]).forEach(function(sd){smap[sd.name]=Object.assign({},smap[sd.name]||{},sd)});target.subDistricts=Object.keys(smap).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return smap[k]})});cur.districts=Object.keys(dmap).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return dmap[k]})});tree=Object.keys(map).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return map[k]});loadedAt=Date.now?Date.now():0;return tree}
+function api(payload){if(root.AppPageKit&&isFn(root.AppPageKit.apiRunner))return root.AppPageKit.apiRunner("apiGetThailandLocations",payload||{},OWNER,60000);if(root.AppApi&&isFn(root.AppApi.run))return root.AppApi.run("apiGetThailandLocations",payload||{},{moduleName:OWNER,timeoutMs:60000});return Promise.reject(new Error("ตัวเรียก API จังหวัด/อำเภอยังไม่พร้อม"))}
+function hasProvince(name){return!name||tree.some(function(p){return p.name===text(name)})}
+function ensure(force,province){province=text(province);if(tree.length&&!force&&hasProvince(province))return Promise.resolve(tree);if(inFlight&&!force)return inFlight;inFlight=api({summaryOnly:!1,province:province||"",cacheTtlSeconds:21600,source:OWNER}).then(function(res){var next=normalize(res);if(!next.length&&province)return api({summaryOnly:!1,cacheTtlSeconds:21600,source:OWNER+".all"}).then(function(all){return merge(normalize(all))});return merge(next)}).finally(function(){inFlight=null});return inFlight}
+function provinceRows(){return tree.slice()}
+function provinceNames(){return provinceRows().map(function(p){return p.name})}
+function options(rows){return(rows||[]).map(function(x){var name=text(x&& (x.name||x.value||x.label)||x);return{value:name,label:name,name:name,zip:text(x&&x.zip)}}).filter(function(x){return!!x.value})}
+function provinceOptions(){return options(provinceRows())}
+function findProvince(name){name=text(name);return provinceRows().filter(function(p){return p.name===name})[0]||null}
+function districtOptions(province){var p=findProvince(province);return options(p&&p.districts||[])}
+function findDistrict(province,district){var p=findProvince(province),name=text(district);return(p&&p.districts||[]).filter(function(d){return d.name===name})[0]||null}
+function subDistrictOptions(province,district){var d=findDistrict(province,district);return options(d&&d.subDistricts||[])}
+function byId(v){return root.AppDom&&root.AppDom.byId?root.AppDom.byId(v):(v&&v.nodeType?v:(doc&&doc.getElementById?doc.getElementById(String(v||"")):null))}
+function fill(select,items,placeholder,selected){if(!select)return;var current=text(selected||select.getAttribute("data-selected")||select.value);while(select.firstChild)select.removeChild(select.firstChild);var first=doc.createElement("option");first.value="";first.textContent=placeholder||"-- เลือก --";select.appendChild(first);(items||[]).forEach(function(item){var value=text(item.value||item.name||item),label=text(item.label||item.name||value),opt=doc.createElement("option");opt.value=value;opt.textContent=label;current===value&&(opt.selected=!0);select.appendChild(opt)});current&&(select.value=current)}
+function populate(config){config=config||{};var province=byId(config.province||config.provinceId),district=byId(config.district||config.districtId),sub=byId(config.subDistrict||config.subdistrict||config.subDistrictId),postal=byId(config.postalCode||config.zip||config.postalCodeId),initial=config.initial||{},selectedProvince=text(initial.province||province&&province.getAttribute("data-selected")||province&&province.value),selectedDistrict=text(initial.district||district&&district.getAttribute("data-selected")||district&&district.value),selectedSub=text(initial.subDistrict||initial.subdistrict||sub&&sub.getAttribute("data-selected")||sub&&sub.value),selectedZip=text(initial.postalCode||initial.zip||postal&&postal.value);
+function updatePostal(){if(!postal)return;var item=subDistrictOptions(province&&province.value,district&&district.value).filter(function(x){return x.value===text(sub&&sub.value)})[0];postal.value=text(item&&item.zip||selectedZip||postal.value);isFn(config.onChange)&&config.onChange({province:text(province&&province.value),district:text(district&&district.value),subDistrict:text(sub&&sub.value),postalCode:text(postal.value)})}
+function updateSub(){fill(sub,subDistrictOptions(province&&province.value,district&&district.value),"-- เลือกตำบล / แขวง --",selectedSub);updatePostal()}
+function updateDistrict(){fill(district,districtOptions(province&&province.value),"-- เลือกอำเภอ / เขต --",selectedDistrict);updateSub()}
+return ensure(!1,selectedProvince).then(function(){fill(province,provinceOptions(),"-- เลือกจังหวัด --",selectedProvince);updateDistrict();if(province&&!province.dataset.appThaiLocationBound){province.dataset.appThaiLocationBound="1";province.addEventListener("change",function(){selectedDistrict="";selectedSub="";selectedZip="";updateDistrict()})}if(district&&!district.dataset.appThaiLocationBound){district.dataset.appThaiLocationBound="1";district.addEventListener("change",function(){selectedSub="";selectedZip="";updateSub()})}if(sub&&!sub.dataset.appThaiLocationBound){sub.dataset.appThaiLocationBound="1";sub.addEventListener("change",updatePostal)}return!0})}
+var owner={owner:OWNER,ensure:ensure,populate:populate,getTree:function(){return tree.slice()},getProvinceNames:provinceNames,getProvinceOptions:provinceOptions,getDistrictOptions:districtOptions,getSubDistrictOptions:subDistrictOptions,status:function(){return{ok:!0,owner:OWNER,provinceCount:tree.length,loadedAt:loadedAt,inFlight:!!inFlight}}};
+root.AppThailandLocation=owner;root.ensureThailandLocationsLoaded=ensure;root.populateThaiAddressSelectors=populate;root.getThailandProvinceNames=provinceNames;root.getThailandProvinceOptions=provinceOptions;root.getThailandDistrictOptions=districtOptions;root.getThailandSubDistrictOptions=subDistrictOptions;root.ScriptsUtils=root.ScriptsUtils||{};root.ScriptsUtils.populateThaiAddressSelectors=populate;root.ScriptsUtils.getThailandProvinceNames=provinceNames;root.ScriptsUtils.getThailandProvinceOptions=provinceOptions;root.ScriptsUtils.getThailandDistrictOptions=districtOptions;root.ScriptsUtils.getThailandSubDistrictOptions=subDistrictOptions;
+})(window,document);
+</script>
+<script id="app-core-location-owner-current">
+(function (root, doc) {
+    "use strict";
+    if (!root || root.__APP_CORE_LOCATION_OWNER_CURRENT__)
+        return;
+    root.__APP_CORE_LOCATION_OWNER_CURRENT__ = true;
+    function text(v) { return root.AppRuntime && root.AppRuntime.text ? root.AppRuntime.text(v).toString() : (v == null ? "" : String(v)); }
+    function clean(v) { return text(v).replace(/[\u00A0\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").trim(); }
+    function first(o, keys) {
+        o = o || {};
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (o[k] != null && clean(o[k]))
+                return o[k];
+        }
+        return "";
+    }
+    function parseAddress(v) {
+        var s = clean(v), m, out = { subDistrict: "", district: "", province: "", postalCode: "" };
+        if (!s)
+            return out;
+        if ((m = s.match(/(\d{5})(?!.*\d)/)))
+            out.postalCode = m[1];
+        m = s.match(/(?:ต\.|ตำบล|แขวง)\s*([^\s,]+).*?(?:อ\.|อำเภอ|เขต)\s*([^\s,]+).*?(?:จ\.|จังหวัด)\s*([^\s,]+)/) || s.replace(/\d{5}(?!.*\d)/, "").match(/([^\s,]+)\s+([^\s,]+)\s+([^\s,]+)$/);
+        if (m) {
+            out.subDistrict = m[1];
+            out.district = m[2];
+            out.province = m[3];
+        }
+        return out;
+    }
+    function normalize(o) { o = o || {}; var p = parseAddress(first(o, ["address", "fullAddress", "ที่อยู่", "location", "สถานที่"])); return { subDistrict: clean(first(o, ["subDistrict", "subdistrict", "tambon", "ตำบล", "ตำบล/แขวง", "แขวง"])) || p.subDistrict, district: clean(first(o, ["district", "amphoe", "amphur", "อำเภอ", "อำเภอ/เขต", "เขต"])) || p.district, province: clean(first(o, ["province", "จังหวัด"])) || p.province, postalCode: clean(first(o, ["postalCode", "postcode", "zipCode", "zip", "รหัสไปรษณีย์", "รหัสไปรษณี", "รหัสไปรษณีย"])) || p.postalCode || "" }; }
+    function byId(v) { return v && v.nodeType ? v : doc && doc.getElementById ? doc.getElementById(String(v || "")) : null; }
+    function collect(prefix) { prefix = clean(prefix || "app-location"); return normalize({ subDistrict: (byId(prefix + "-subdistrict") || {}).value, district: (byId(prefix + "-district") || {}).value, province: (byId(prefix + "-province") || {}).value, postalCode: (byId(prefix + "-postalCode") || {}).value }); }
+    function esc(v) { return text(v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c; }); }
+    var api = { owner: "Scripts_Core_Runtime:AppCoreLocation:canonical-r200", standard: "ตำบล|อำเภอ|จังหวัด|รหัสไปรษณีย์", normalize: normalize, compose: function (v) { var x = normalize(v); return [x.subDistrict, x.district, x.province, x.postalCode].filter(Boolean).join(""); }, collect: collect, tripletHtml: function (prefix, value) { prefix = clean(prefix || "app-location"); value = normalize(value || {}); return '<div class="row g-2 app-location-standard" data-location-standard="tambon-district-province-postal"><div class="col-md-3"><label class="small fw-bold">ตำบล</label><select id="' + esc(prefix + '-subdistrict') + '" class="form-select"><option value="">-- เลือกตำบล --</option></select></div><div class="col-md-3"><label class="small fw-bold">อำเภอ</label><select id="' + esc(prefix + '-district') + '" class="form-select"><option value="">-- เลือกอำเภอ --</option></select></div><div class="col-md-3"><label class="small fw-bold">จังหวัด</label><select id="' + esc(prefix + '-province') + '" class="form-select"><option value="">-- เลือกจังหวัด --</option></select></div><div class="col-md-3"><label class="small fw-bold">รหัสไปรษณีย์</label><input id="' + esc(prefix + '-postalCode') + '" class="form-control" readonly value="' + esc(value.postalCode || '') + '" placeholder="อัตโนมัติ"></div></div>'; }, bind: function (prefix, value, onChange) {
+            prefix = clean(prefix || "app-location");
+            value = normalize(value || {});
+            var cfg = { province: prefix + "-province", district: prefix + "-district", subDistrict: prefix + "-subdistrict", postalCode: prefix + "-postalCode", initial: value, onChange: function () { typeof onChange === "function" && onChange(collect(prefix)); } }, populate = root.populateThaiAddressSelectors || root.ScriptsUtils && root.ScriptsUtils.populateThaiAddressSelectors;
+            return Promise.resolve(typeof root.ensureThailandLocationsLoaded === "function" ? root.ensureThailandLocationsLoaded(true) : true).catch(function () { return true; }).then(function () {
+                typeof populate === "function" && populate(cfg);
+                [cfg.province, cfg.district, cfg.subDistrict, cfg.postalCode].forEach(function (id) {
+                    var e = byId(id);
+                    if (e && !e.dataset.appCoreLocationBound) {
+                        e.dataset.appCoreLocationBound = "1";
+                        e.addEventListener("change", function () { typeof onChange === "function" && onChange(collect(prefix)); });
+                    }
+                });
+                var postal = byId(cfg.postalCode);
+                postal && value.postalCode && !postal.value && (postal.value = value.postalCode);
+                typeof onChange === "function" && onChange(collect(prefix));
+                return true;
+            });
+        } };
+    root.AppCoreLocation = api;
+    root.ScriptsUtils = root.ScriptsUtils || {};
+    root.ScriptsUtils.location = api;
+})(window, document);
+</script>

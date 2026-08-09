@@ -1,0 +1,775 @@
+
+
+<script>
+!function(){
+"use strict";
+var root=window;
+if(!root.__petitionerModuleInitialized){
+root.__petitionerModuleInitialized=!0;
+var Utils=root.AppRuntimeModules.requirePageKit("Petitioner.Page",{
+timeoutMs:2e4,
+required:["byId","esc","val","text","clearNode","storeGet","storeSet","apiRunner"]
+}),sharedDom=root.AppDom||Utils.dom||{},byId=Utils.byId,esc=Utils.esc,val=Utils.val,text=Utils.text,warn=petitionerWarn,clearNode=Utils.clearNode,clearDomNode=__appIsFn(sharedDom.clear)?sharedDom.clear.bind(sharedDom):clearNode;
+var store=root.AppStore||root.GlobalStore||null,Selectors=root.AppSelectors||{
+},storeGet=Utils&&__appIsFn(Utils.storeGet)?Utils.storeGet:function(key,defaultValue){
+try{
+return store&&__appIsFn(store.get)?store.get(key,defaultValue):defaultValue
+}
+catch(_storeGetErr){
+return warn("petitioner.storeGet",_storeGetErr,{
+key:key
+}),defaultValue
+}
+},storeSet=Utils&&__appIsFn(Utils.storeSet)?Utils.storeSet:function(key,value){
+try{
+return store&&__appIsFn(store.set)?store.set(key,value):value
+}
+catch(_storeSetErr){
+return warn("petitioner.storeSet",_storeSetErr,{
+key:key
+}),value
+}
+},token=Utils.token||function(){
+return storeGet("auth.token","")||storeGet("token","")||root.__authToken||""
+},csrfToken=Utils.csrfToken||function(){
+return storeGet("auth.csrfToken","")||storeGet("csrfToken","")||root.__csrfToken||""
+},apiCall=function(method,payload){
+return Utils.apiRunner(method,Object.assign({},payload||{}),"Scripts_Page_Petitioner",2e4)
+},appSwalFire=function(){
+return root.AppUi&&__appIsFn(root.AppUi.fire)?root.AppUi.fire.apply(root.AppUi,arguments):root.appSwalFire?root.appSwalFire.apply(root,arguments):Promise.resolve({
+isConfirmed:!1
+})
+};
+root.setPrintStyle=root.setPrintStyle||function(layoutMode,targetMode){
+return!(!root.AppPrint||!__appIsFn(root.AppPrint.setStyle))&&root.AppPrint.setStyle(layoutMode,targetMode)
+},root.updatePrintFooter=root.updatePrintFooter||function(){
+return!1
+},root.formatPetitionerPhone=root.formatPetitionerPhone||formatPetitionerPhone;
+var petitionerPageState=root.petitionerPageState||{
+currentPage:1,pageSize:25,lastQuery:"",totalRecords:0,totalPages:1,serverPaged:!0,relatedCountsIncluded:!1
+};
+root.petitionerPageState=petitionerPageState,root.AppRuntime.exportGlobal("petitionerChangePage",__petitionerChangePageImpl,"PetitionerPage.pager"),window.loadPetitioners=function(force){
+var query=text(val("pet-search-input")).toLowerCase().trim(),requestKey=[petitionerPageState.currentPage,petitionerPageState.pageSize,query].join("|"),cacheKey="petitioner.page."+requestKey;
+if(window.__petitionerLoadPromise&&!force&&window.__petitionerLoadKey===requestKey)return window.__petitionerLoadPromise;
+var requestSeq=(window.__petitionerLoadSeq=Number(window.__petitionerLoadSeq||0)+1),cachedFast=storeGet(cacheKey,null);
+if(!force&&cachedFast&&Array.isArray(cachedFast.rows))return storeSet("petitioner.cachedRows",cachedFast.rows.slice()),petitionerPageState.totalRecords=Number(cachedFast.totalRecords||cachedFast.rows.length)||0,petitionerPageState.totalPages=Number(cachedFast.totalPages||1)||1,petitionerPageState.serverPaged=!0,petitionerPageState.lastQuery=query,__appIsFn(window.renderPetitionerList)&&window.renderPetitionerList(),Promise.resolve(cachedFast.rows);
+var tbody=byId("pet-table-res");
+if(tbody){clearDomNode(tbody);var tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=6,td.className="text-center p-4 text-muted",td.textContent="กำลังโหลดข้อมูลผู้ร้องเรียน...",tr.appendChild(td),tbody.appendChild(tr)}
+window.__petitionerLoadKey=requestKey;
+return window.__petitionerLoadPromise=apiCall("apiGetPetitioners",{
+forceFresh:!0===force,page:petitionerPageState.currentPage,limit:petitionerPageState.pageSize,query:query,cacheTtlSeconds:force?0:300,source:"petitioner-page-server-paged-r165"
+}).then(function(res){
+if(requestSeq!==window.__petitionerLoadSeq)return [];
+var envelope=petitionerResponseEnvelope(res),rows=petitionerRowsFromResponse(envelope).map(function(row){var addr=canonicalPetitionerAddress(row||{});return Object.assign({},row||{},addr,{phone:formatPetitionerPhone((row||{}).phone||(row||{}).tel||(row||{}).mobile||(row||{})["เบอร์โทรศัพท์"]||"")})});
+petitionerPageState.totalRecords=Number(envelope.totalRecords||envelope.total||rows.length)||0,petitionerPageState.totalPages=Number(envelope.totalPages||Math.max(1,Math.ceil(petitionerPageState.totalRecords/petitionerPageState.pageSize)))||1,petitionerPageState.currentPage=Number(envelope.page||petitionerPageState.currentPage)||1,petitionerPageState.serverPaged=!1!==envelope.serverPaged,petitionerPageState.relatedCountsIncluded=!0===envelope.relatedCountsIncluded,petitionerPageState.lastQuery=query;
+return storeSet("petitioner.cachedRows",rows.slice()),storeSet(cacheKey,{rows:rows.slice(),totalRecords:petitionerPageState.totalRecords,totalPages:petitionerPageState.totalPages}),storeSet("petitioner.loadedAt",(new Date).toISOString()),storeSet("petitioner.loadOk",!0),__appIsFn(window.renderPetitionerList)&&window.renderPetitionerList(),rows
+}).catch(function(err){
+var cachedRows=storeGet("petitioner.cachedRows",[]);if(Array.isArray(cachedRows)&&cachedRows.length)return __appIsFn(window.renderPetitionerList)&&window.renderPetitionerList(),cachedRows;
+if(tbody){clearDomNode(tbody);var tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=8,td.className="text-center text-muted p-4",td.textContent="ยังไม่มีข้อมูลผู้ร้องเรียน หรือระบบยังโหลดข้อมูลไม่สำเร็จ",tr.appendChild(td),tbody.appendChild(tr)}
+return warn("petitioner.load.serverPaged",err),[]
+}).finally(function(){requestSeq===window.__petitionerLoadSeq&&(window.__petitionerLoadPromise=null,window.__petitionerLoadKey="")}),window.__petitionerLoadPromise
+},root.AppRuntime.exportGlobal("renderPetitionerList",__petitionerRenderListImpl,"PetitionerPage.render"),window.openPetModal=window.openPetModal||function(){
+return!!root.Swal&&petitionerPrompt("เพิ่มข้อมูลผู้ร้องเรียน",{
+}).then(function(res){
+return!(!res.isConfirmed||!res.value)&&apiSavePetitionerRecord(res.value)
+})
+},window.editPetModal=function(petId){
+var rec=findPetitionerRecord(petId=petActionId(petId)||text(petId||""));
+return!rec&&petId&&root.loadPetitioners?root.loadPetitioners(!1).then(function(){
+return window.editPetModal(petId)
+}):!(!rec||!root.Swal)&&petitionerPrompt("แก้ไขข้อมูลผู้ร้องเรียน",rec).then(function(res){
+return!(!res.isConfirmed||!res.value)&&apiSavePetitionerRecord(res.value)
+})
+},window.deletePetitioner=window.deletePetitioner||function(petId){
+return!!root.Swal&&appSwalFire({
+title:"ยืนยันการลบ?",icon:"warning",showCancelButton:!0,confirmButtonText:"ลบ",cancelButtonText:"ยกเลิก",confirmButtonColor:"#d33"
+}).then(function(res){
+if(!res.isConfirmed)return!1;
+var payload={
+petId:petId,id:petId,actionMethod:"apiDeletePetitioner",forceFresh:!0,noCache:!0,bypassCache:!0,__authTransportOwner:"AppApiMiddlewarePipeline"
+};
+return apiCall("apiDeletePetitioner",payload).then(function(){
+var rows=storeGet("petitioner.cachedRows",[]);
+return rows=Array.isArray(rows)?rows.filter(function(r,idx){
+return petitionerRowKey(r,idx)!==petId&&text(r&&r.petId)!==petId&&text(r&&r.id)!==petId
+}):[],storeSet("petitioner.cachedRows",rows),__appIsFn(root.renderPetitionerList)&&root.renderPetitionerList(),appSwalFire("สำเร็จ","ลบข้อมูลแล้ว","success")
+}).catch(function(err){
+return appSwalFire("ผิดพลาด",String(err&&err.message?err.message:err),"error")
+})
+})
+},window.showPetSummary=function(id){
+var src=id,btn=null,inlineRec=null;
+try{
+var x=src&&src.event?src.event:src;
+x&&x.target&&x.target.closest?btn=x.target.closest("[data-pet-id],[data-id],[data-record-json]"):x&&x.closest?btn=x.closest("[data-pet-id],[data-id],[data-record-json]"):x&&x.currentTarget&&x.currentTarget.closest&&(btn=x.currentTarget.closest("[data-pet-id],[data-id],[data-record-json]")),btn&&btn.getAttribute("data-record-json")&&(inlineRec=JSON.parse(btn.getAttribute("data-record-json")||"{}"))
+}
+catch(_inlineErr){
+warn("petitioner.summary.inlineRecord",_inlineErr)
+}
+id=petActionId(id)||text(btn&&(btn.getAttribute("data-pet-id")||btn.getAttribute("data-id"))||id||"");
+var rec=inlineRec&&(inlineRec.name||inlineRec.petId||inlineRec.id)?inlineRec:findPetitionerRecord(id);
+try{
+var oldSummary=byId("pet-summary-content");
+if(oldSummary)for(;
+oldSummary.firstChild;
+)oldSummary.removeChild(oldSummary.firstChild)
+}
+catch(_clearOldSummary){
+warn("petitioner.summary.clearBeforeFind",_clearOldSummary)
+}
+if(!rec&&id&&root.loadPetitioners)return root.loadPetitioners(!1).then(function(){
+var retry;
+return findPetitionerRecord(id)?window.showPetSummary(id):(warn("petitioner.show.recordNotFound",new Error("ไม่พบข้อมูลผู้ร้องเรียนสำหรับแสดงข้อมูล"),{
+id:id
+}),!1)
+});
+if(!rec){
+var mainFallback=byId("p-petitioner-main")||byId("pet-main-view"),summaryFallback=byId("pet-summary-view");
+return summaryFallback&&(summaryFallback.classList.add("d-none"),summaryFallback.style&&(summaryFallback.style.display="none",summaryFallback.style.visibility="hidden"),summaryFallback.setAttribute&&summaryFallback.setAttribute("aria-hidden","true")),mainFallback&&(mainFallback.classList.remove("d-none"),mainFallback.style&&(mainFallback.style.display="",mainFallback.style.visibility=""),mainFallback.setAttribute&&mainFallback.setAttribute("aria-hidden","false")),!1
+}
+var main=byId("p-petitioner-main")||byId("pet-main-view"),summary=byId("pet-summary-view");
+if(main&&(main.classList.add("d-none"),main.style&&(main.style.display="none",main.style.visibility="hidden"),main.setAttribute&&main.setAttribute("aria-hidden","true")),summary){
+summary.classList.remove("d-none"),summary.style&&(summary.style.display="",summary.style.visibility="visible"),summary.setAttribute&&summary.setAttribute("aria-hidden","false");
+for(var parent=summary.parentElement;
+parent&&parent!==document.body;
+)parent.classList&&parent.classList.remove("d-none"),parent.style&&(parent.style.display="",parent.style.visibility=""),parent=parent.parentElement
+}
+window.setPrintStyle("portrait","pet"),root.updatePrintFooter("pet-print-footer");
+var tbody=byId("pet-summary-content");
+if(tbody){
+try{
+clearDomNode(tbody)
+}
+catch(_clearSummary){
+typeof __appObserve==="function"&&__appObserve(_clearSummary,"c6.SPT:206")
+}
+renderPetitionerSummaryTable(tbody,rec)
+}
+var caseTarget=byId("pet-cases-content");
+if(caseTarget){
+var sourceRows=[];
+try{
+sourceRows=Selectors.getCaseRows?Selectors.getCaseRows():[]
+}
+catch(_caseSelectorErr){
+sourceRows=[]
+}
+sourceRows.length||(sourceRows=storeGet("case.cachedRows",[])||storeGet("cases.cachedRows",[])||storeGet("search.rows",[])||storeGet("report.rows",[]));
+var cases=(Array.isArray(sourceRows)?sourceRows:[]).filter(function(row){
+var hay=casePetitionerHaystack(row),name=normalizeRelatedText(rec.name);
+return hay&&name&&(-1!==hay.indexOf(name)||-1!==name.indexOf(hay))
+});
+renderPetitionerCaseTable(caseTarget,cases),!cases.length&&apiCall&&(renderPetitionerCaseTable(caseTarget,[]),apiCall("apiGetPetitionerRelatedCounts",{
+names:[text(rec.name)],limit:100,includeRows:!0,source:"petitioner-detail-related"
+}).then(function(res){
+var payload=res&&res.data?res.data:res||{
+},rows=rowsFromResponse(payload);
+return!rows.length&&payload.rowsByName&&(rows=payload.rowsByName[text(rec.name)]||payload.rowsByName[normalizeRelatedText(rec.name)]||[]),renderPetitionerCaseTable(caseTarget,rows),payload.authoritative||payload.fallbackAllowed===!1?rows:rows.length?rows:apiCall("apiSearchCasesLite",{
+query:text(rec.name),page:1,limit:100,cacheTtlSeconds:120
+}).then(function(defaultValue){
+renderPetitionerCaseTable(caseTarget,rowsFromResponse(defaultValue))
+})
+}).catch(function(err){
+warn("petitioner.relatedRows.load",err),apiCall("apiSearchCasesLite",{
+query:text(rec.name),page:1,limit:100,cacheTtlSeconds:120
+}).then(function(res){
+renderPetitionerCaseTable(caseTarget,rowsFromResponse(res))
+}).catch(function(defaultValueErr){
+warn("petitioner.relatedRows.defaultValueSearch",defaultValueErr)
+})
+}))
+}
+return!0
+};
+var allPetitionerRows=function(){
+var out=[];
+try{
+var rows=selectorRows("apiGetPetitioners");
+rows.length&&(out=out.concat(rows))
+}
+catch(_selectorErr){
+warn("petitioner.rows.selector",_selectorErr)
+}
+var cached=storeGet("petitioner.cachedRows",[])||[];
+Array.isArray(cached)&&(out=out.concat(cached));
+var seen={
+};
+return out.filter(function(r,idx){
+var k=petitionerRowKey(r,idx);
+return!seen[k]&&(seen[k]=!0,!0)
+})
+};
+window.deletePetitionerById=function(value){
+return window.deletePetitioner(petActionId(value))
+};
+var __petitionerPrintSummaryExport=function(){
+var summary=byId("pet-summary-view")||byId("p-petitioner"),body="",a=byId("pet-summary-content"),b=byId("pet-cases-content");
+if(a&&(body+='<table class="table table-bordered">'+safePetitionerElementHtml(a)+"</table>"),b&&(body+='<div class="mt-3">'+safePetitionerElementHtml(b)+"</div>"),!body&&summary&&(body=safePetitionerElementHtml(summary)),!body)return root.AppUi&&root.AppUi.fire&&root.AppUi.fire("ไม่พบข้อมูล","กรุณาเลือกแสดงข้อมูลก่อนพิมพ์","warning"),!1;
+body=safePetitionerPrintHtml(body);
+return root.AppPrint&&__appIsFn(root.AppPrint.printWithProfile)?root.AppPrint.printWithProfile("petitioner-detail",{
+bodyHtml:body,meta:{
+title:"ข้อมูลผู้ร้องเรียน",classification:"ข้อมูลผู้ร้องเรียน"
+}
+}):appSwalFire("พิมพ์ไม่สำเร็จ","ไม่พบ AppPrint.printWithProfile","error")
+};
+root.AppRuntime.exportGlobal("printPetitionerSummary",__petitionerPrintSummaryExport,"PetitionerPage");
+var PetitionerOwner=root.AppPetitionerOwner=root.AppPetitionerOwner||{
+};
+PetitionerOwner.__canonicalOwner="Scripts_Page_Petitioner:AppPetitionerOwner",PetitionerOwner.__productionOwnerLock=!0,PetitionerOwner.load=function(force){
+return!!root.loadPetitioners&&root.loadPetitioners(force)
+},PetitionerOwner.render=function(){
+return!!root.renderPetitionerList&&root.renderPetitionerList()
+},PetitionerOwner.open=function(){
+return!!root.openPetModal&&root.openPetModal()
+},PetitionerOwner.show=function(ctx){
+return!!root.showPetSummary&&root.showPetSummary(petActionId(ctx))
+},PetitionerOwner.edit=function(ctx){
+return!!root.editPetModal&&root.editPetModal(petActionId(ctx))
+},PetitionerOwner.deleteById=function(ctx){
+return!!root.deletePetitionerById&&root.deletePetitionerById(ctx)
+},PetitionerOwner.close=function(){
+return!!root.closePetSummary&&root.closePetSummary()
+},PetitionerOwner.print=function(){
+return!!root.printPetitionerSummary&&root.printPetitionerSummary()
+},PetitionerOwner.status=function(){
+return{
+ok:!0,owner:PetitionerOwner.__canonicalOwner,runtimeGate:"PetitionerOwner",moduleInitialized:!!root.__petitionerModuleInitialized,directBindingKept:!!root.__petitionerActionDirectBinding,uiDomChanged:!1,apiPayloadChanged:!1,businessLogicChanged:!1
+}
+},root.AppPages&&__appIsFn(root.AppPages.registerActions)&&root.AppPages.registerActions("petitioner",{
+renderPetitionerList:function(){
+return PetitionerOwner.render()
+},reloadPetitioners:function(){
+return PetitionerOwner.load(!0)
+},openPetModal:function(){
+return PetitionerOwner.open()
+},showPetSummary:function(ctx){
+return PetitionerOwner.show(ctx)
+},editPetModal:function(ctx){
+return PetitionerOwner.edit(ctx)
+},deletePetitionerById:function(ctx){
+return PetitionerOwner.deleteById(ctx)
+},closePetSummary:function(){
+return PetitionerOwner.close()
+}
+}),root.__petitionerActionDirectBinding||(root.__petitionerActionDirectBinding=!0,bindPetitionerDocOnce("click",function(ev){
+var btn=ev.target&&ev.target.closest?ev.target.closest('#p-petitioner [data-action="showPetSummary"],#p-petitioner [data-action="editPetModal"],#p-petitioner [data-action="deletePetitionerById"],#p-petitioner [data-action="closePetSummary"],#pet-summary-view [data-action="closePetSummary"],#p-petitioner [data-action="printPage"],#pet-summary-view [data-action="printPage"],#pet-summary-view [data-action="printPetitionerSummary"]'):null;
+if(btn){
+var action=btn.getAttribute("data-action")||"",id=btn.getAttribute("data-pet-id")||btn.getAttribute("data-id")||"";
+(id||/^(closePetSummary|printPage|printPetitionerSummary)$/.test(action))&&(root.AppEvents&&__appIsFn(root.AppEvents.routeAction)?root.AppEvents.routeAction(ev,{target:btn,action:action,pageId:"petitioner",key:"petitioner."+action,handler:function(){
+return"showPetSummary"===action&&root.showPetSummary?root.showPetSummary(id):"editPetModal"===action&&root.editPetModal?root.editPetModal(id):"deletePetitionerById"===action&&root.deletePetitionerById?root.deletePetitionerById(id):"closePetSummary"===action&&root.closePetSummary?root.closePetSummary():/^(printPage|printPetitionerSummary)$/.test(action)&&root.printPetitionerSummary&&root.printPetitionerSummary()
+}}):(ev.preventDefault(),ev.stopPropagation&&ev.stopPropagation(),"showPetSummary"===action&&root.showPetSummary?root.showPetSummary(id):"editPetModal"===action&&root.editPetModal?root.editPetModal(id):"deletePetitionerById"===action&&root.deletePetitionerById?root.deletePetitionerById(id):"closePetSummary"===action&&root.closePetSummary?root.closePetSummary():/^(printPage|printPetitionerSummary)$/.test(action)&&root.printPetitionerSummary&&root.printPetitionerSummary()))
+}
+},!0,"petitioner.actions.current")),root.AppPages&&__appIsFn(root.AppPages.register)&&root.AppPages.register("petitioner",{
+mount:function(){
+return Promise.resolve(!root.loadPetitioners||root.loadPetitioners(!1)).then(function(){
+return!root.renderPetitionerList||root.renderPetitionerList()
+})
+},reload:function(options){
+try{root.AppStore&&__appIsFn(root.AppStore.remove)&&root.AppStore.remove("petitioner.page");}catch(_petitionerRefreshCacheErr){warn("petitioner.reload.cacheClear",_petitionerRefreshCacheErr)}
+return Promise.resolve(!root.loadPetitioners||root.loadPetitioners(!0,options||{})).then(function(){
+return!root.renderPetitionerList||root.renderPetitionerList()
+})
+},dispose:function(){
+return!0
+}
+});
+var __petitionerCloseSummaryExport=function(){
+var main=byId("p-petitioner-main")||byId("pet-main-view"),summary=byId("pet-summary-view");
+try{
+summary&&(summary.classList.add("d-none"),summary.style&&(summary.style.display="none",summary.style.visibility="hidden"),summary.setAttribute&&summary.setAttribute("aria-hidden","true"));
+main&&(main.classList.remove("d-none"),main.style&&(main.style.display="",main.style.visibility="",main.style.opacity=""),main.removeAttribute&&main.removeAttribute("hidden"),main.setAttribute&&main.setAttribute("aria-hidden","false"));
+for(var parent=main&&main.parentElement;
+parent&&parent!==document.body;
+)parent.classList&&parent.classList.remove("d-none"),parent.style&&(parent.style.display="",parent.style.visibility=""),parent=parent.parentElement;
+__appIsFn(root.renderPetitionerList)&&root.renderPetitionerList()
+}
+catch(_petCloseErr){
+warn("petitioner.closeSummary.restore",_petCloseErr)
+}
+return window.setPrintStyle&&window.setPrintStyle("portrait",""),!0
+};
+root.closePetSummary=__petitionerCloseSummaryExport,root.printPetitionerDetailStandard=root.printPetitionerSummary||__petitionerPrintSummaryExport,root.AppPetitionerOwner&&(root.AppPetitionerOwner.close=__petitionerCloseSummaryExport,root.AppPetitionerOwner.print=root.printPetitionerDetailStandard)
+}
+function petitionerWarn(label,err,meta){
+try{
+if(Utils&&__appIsFn(Utils.warn))return Utils.warn(label,err,meta);
+if(root.AppRuntime&&__appIsFn(root.AppRuntime.recordWarning))return root.AppRuntime.recordWarning(label,err,meta);
+root.console&&__appIsFn(root.console.warn)&&root.console.warn("[PetitionerWarn] "+String(label||"petitioner"),err||"",meta||"")
+}
+catch(_petitionerWarnErr){
+"function"==typeof __appObserve&&__appObserve(_petitionerWarnErr,"ec")
+}
+return!1
+}
+function bindPetitionerDocOnce(eventName,handler,options,key){
+try{
+if(!root.AppEvents||!__appIsFn(root.AppEvents.on))throw new Error("APP_EVENTS_OWNER_REQUIRED: petitioner.bind");
+root.AppOwnerRegistry&&root.AppOwnerRegistry.consume&&root.AppOwnerRegistry.consume("AppEvents","Scripts_Page_Petitioner");
+return root.AppEvents.on(document,eventName,handler,options,key||"petitioner."+eventName)
+}
+catch(err){
+return warn("petitioner.bindDocOnce",err,{
+eventName:eventName,key:key,errorCode:"APP_EVENTS_OWNER_REQUIRED"
+}),!1
+}
+}
+function selectorRows(key){
+try{
+if(Selectors&&"function"==typeof Selectors[key]){
+var rows=Selectors[key]();
+if(Array.isArray(rows))return rows
+}
+}
+catch(_selectorRowsErr){
+"function"==typeof __appObserve&&__appObserve(_selectorRowsErr,"ec")
+}
+return[]
+}
+function rowsFromResponse(res){
+for(var cur=res,i=0;
+i<6;
+i+=1){
+if(Array.isArray(cur))return cur;
+if(!cur||"object"!=typeof cur)break;
+if(Array.isArray(cur.rows))return cur.rows;
+if(Array.isArray(cur.items))return cur.items;
+if(Array.isArray(cur.records))return cur.records;
+if(Array.isArray(cur.data))return cur.data;
+cur=cur.data||cur.payload||cur.result
+}
+return[]
+}
+function firstValue(map,keys){
+map=map||{
+};
+for(var i=0;
+i<keys.length;
+i+=1){
+var value=map[keys[i]];
+if(null!=value&&""!==text(value).trim())return text(value).trim()
+}
+return""
+}
+function formatPetitionerPhone(value){
+var F=root.AppFormat&&root.AppFormat.phone&&root.AppFormat.phone.display;
+return F?F(value):root.normalizeThaiPhoneDisplay?root.normalizeThaiPhoneDisplay(value):text(value).replace(/^'+/, "").trim()
+}
+function canonicalPetitionerAddress(map){
+map=map||{
+};
+var previousAddress=firstValue(map,["address","fullAddress","ที่อยู่"]);
+var parsed={
+addressLine:"",subDistrict:"",district:"",province:"",postalCode:""
+};
+try{
+parsed=Utils.parseThaiAddress?Utils.parseThaiAddress(previousAddress):(root.AppCoreLocation&&root.AppCoreLocation.normalize?root.AppCoreLocation.normalize(map):parsed)||parsed
+}
+catch(_parseErr){
+warn("petitioner.address.parse",_parseErr)
+}
+var directLine=firstValue(map,["addressLine","line1","homeAddress","location","สถานที่","บ้านเลขที่ / ถนน / หมู่บ้าน","บ้านเลขที่ถนนหมู่บ้าน"]);
+var directSubDistrict=firstValue(map,["subDistrict","subdistrict","tambon","ตำบล","ตำบล/แขวง","แขวง"]);
+var directDistrict=firstValue(map,["district","amphoe","amphur","อำเภอ","อำเภอ/เขต","เขต"]);
+var directProvince=firstValue(map,["province","จังหวัด"]);
+var directPostalCode=firstValue(map,["postalCode","postcode","postCode","zipCode","zip","รหัสไปรษณีย์","รหัสไปรษณี","รหัสไปรษณีย"]);
+if(directLine&&previousAddress&&directLine===previousAddress&&!directSubDistrict&&!directDistrict&&!directPostalCode)directLine="";
+var out={
+addressLine:directLine||parsed.addressLine||"",subDistrict:directSubDistrict||parsed.subDistrict||"",district:directDistrict||parsed.district||"",province:directProvince||parsed.province||"",postalCode:directPostalCode||parsed.postalCode||""
+};
+try{
+out.address=Utils.composeThaiAddress?Utils.composeThaiAddress(out):(root.AppCoreLocation&&root.AppCoreLocation.compose?root.AppCoreLocation.compose(out):[out.addressLine,out.subDistrict,out.district,out.province,out.postalCode].filter(Boolean).join(" "))
+}
+catch(_composeErr){
+out.address=[out.addressLine,out.subDistrict,out.district,out.province,out.postalCode].filter(Boolean).join(" ")
+}
+if(!out.address)out.address=previousAddress||"";
+return out
+}
+function petitionerPayload(map){
+map=map||{
+};
+var addr=canonicalPetitionerAddress(map),out={
+petId:text(map.petId||map.id||"").trim(),name:text(map.name||"").trim(),phone:formatPetitionerPhone(map.phone),addressLine:addr.addressLine,subDistrict:addr.subDistrict,district:addr.district,province:addr.province,postalCode:addr.postalCode,address:addr.address,location:addr.address,__authTransportOwner:"AppApiMiddlewarePipeline"
+};
+return out
+}
+function unwrapPetitionerSaveResponse(res){
+var cur=res&&void 0!==res.data?res.data:res;
+return cur&&void 0!==cur.data&&(cur=cur.data),cur&&"object"==typeof cur?cur:{
+}
+}
+function upsertPetitionerLocalRow(row){
+(row=canonicalPetitionerAddress(row||{
+})&&Object.assign({
+},row||{
+},canonicalPetitionerAddress(row||{
+}))).phone=formatPetitionerPhone(row.phone||"");
+var rows=storeGet("petitioner.cachedRows",[]);
+rows=Array.isArray(rows)?rows.slice():[];
+for(var key=text(row.petId||row.id||row.recordId||row.name||"").trim(),idx=-1,i=0;
+i<rows.length;
+i+=1){
+var r=rows[i]||{
+},rk=text(r.petId||r.id||r.recordId||r.name||"").trim();
+if(key&&rk===key){
+idx=i;
+break
+}
+}
+if(idx>=0?rows[idx]=Object.assign({
+},rows[idx]||{
+},row):rows.push(row),storeSet("petitioner.cachedRows",rows),root.AppSelectors&&__appIsFn(root.AppSelectors.set))try{
+root.AppSelectors.set("apiGetPetitioners",rows)
+}
+catch(_selectorSetErr){
+warn("petitioner.save.selectorSet",_selectorSetErr)
+}
+return rows
+}
+function apiSavePetitionerRecord(payload){
+var savePayload=petitionerPayload(payload);savePayload.actionMethod="apiSavePetitioner",savePayload.forceFresh=!0,savePayload.noCache=!0,savePayload.bypassCache=!0;
+return apiCall("apiSavePetitioner",savePayload).then(function(res){
+var saved=unwrapPetitionerSaveResponse(res);
+return saved.petId&&!savePayload.petId&&(savePayload.petId=saved.petId),upsertPetitionerLocalRow(savePayload),__appIsFn(root.renderPetitionerList)&&root.renderPetitionerList(),!root.Swal||appSwalFire("สำเร็จ","บันทึกข้อมูลผู้ร้องเรียนแล้ว","success")
+}).catch(function(err){
+if(root.Swal)return appSwalFire("ผิดพลาด",String(err&&err.message?err.message:err),"error");
+throw err
+})
+}
+function normalizeRelatedText(value){
+return text(value).replace(/\s+/g," ").trim().toLowerCase()
+}
+function casePetitionerHaystack(row){
+return normalizeRelatedText([(row=row||{
+}).petitioners,row.petitionerName,row.petitioner,row.proposer,row.proposedBy,row.motionProposer,row.requester,row.complainant,row["ผู้ร้อง"],row["ผู้ร้องเรียน"],row["ผู้เสนอ"],row["ผู้เสนอญัตติ"],row["ผู้เสนอญัตติ/ผู้ร้อง"],row.title,row.caseTitle,row.subject,row.considerationTitle,row.caseConsiderationTitle,row["ชื่อเรื่อง"],row["ชื่อเรื่องพิจารณา"],row["ชื่อเรื่องพิจารณา (ถ้ามี)"],row["เรื่องพิจารณา"],row.recNo,row.receiveNo,row.caseNum].join(" "))
+}
+function refreshRelatedCountsIfNeeded(list,relatedCounts){
+var hasAny;
+if(!root.__petitionerRelatedCountsLoading&&!(relatedCounts&&Object.keys(relatedCounts).length>0)){
+var names=(Array.isArray(list)?list:[]).map(function(r){
+return text(r&&(r.name||r.petitionerName||r.fullName)).trim()
+}).filter(Boolean).slice(0,25);
+names.length&&(root.__petitionerRelatedCountsLoading=!0,root.setTimeout(function(){
+apiCall("apiGetPetitionerRelatedCounts",{
+names:names,limit:25,includeRows:!1,source:"petitioner-page-fast-related-current"
+}).then(function(res){
+var payload=res&&res.data?res.data:res||{
+};
+payload&&payload.counts&&storeSet("petitioner.relatedCounts",payload.counts||{
+}),root.__petitionerRelatedCountsLoading=!1,__appIsFn(root.renderPetitionerList)&&root.renderPetitionerList()
+}).catch(function(err){
+warn("petitioner.relatedCounts.load",err),root.__petitionerRelatedCountsLoading=!1
+})
+},900))
+}
+}
+function installPetitionerSystemFooterBridge(){
+if(root.__PETITIONER_SYSTEM_FOOTER_BRIDGE_FINAL__)return;
+root.__PETITIONER_SYSTEM_FOOTER_BRIDGE_FINAL__=!0;
+document.addEventListener("click",function(ev){
+var btn=ev&&ev.target&&ev.target.closest?ev.target.closest("#pet-pagination button[data-page],#pet-pagination button[data-petitioner-page]"):null;
+if(!btn||btn.disabled||"true"===btn.getAttribute("aria-disabled"))return;
+var page=Math.max(1,Number(btn.getAttribute("data-petitioner-page")||btn.getAttribute("data-page")||1)||1);
+root.AppEvents&&__appIsFn(root.AppEvents.consume)?root.AppEvents.consume(ev,{key:"petitioner.footer.page"}):(ev.preventDefault&&ev.preventDefault(),ev.stopPropagation&&ev.stopPropagation());
+__petitionerChangePageImpl(page,btn,ev);
+},true);
+document.addEventListener("change",function(ev){
+var sel=ev&&ev.target&&ev.target.closest?ev.target.closest("#pet-pagination .app-table-page-size"):null;
+if(!sel)return;
+petitionerPageState.pageSize=Math.max(1,Number(sel.value||petitionerPageState.pageSize||25)||25);
+petitionerPageState.currentPage=1;
+root.AppEvents&&__appIsFn(root.AppEvents.consume)?root.AppEvents.consume(ev,{key:"petitioner.footer.size"}):(ev.preventDefault&&ev.preventDefault(),ev.stopPropagation&&ev.stopPropagation());
+__appIsFn(root.loadPetitioners)&&root.loadPetitioners(!1);
+},true);
+}
+function __petitionerChangePageImpl(page,source){
+petitionerPageState.currentPage=Math.max(1,Number(page||1)||1);
+try{
+var pager=source&&source.closest?source.closest(".app-table-pager"):null,sizeEl=pager&&pager.querySelector?pager.querySelector(".app-table-page-size"):null;
+sizeEl&&(petitionerPageState.pageSize=Math.max(1,Number(sizeEl.value||petitionerPageState.pageSize||25)||25))
+}
+catch(_sizeErr){
+"function"==typeof __appObserve&&__appObserve(_sizeErr,"ec")
+}
+__appIsFn(root.loadPetitioners)&&root.loadPetitioners(!1)
+}
+function removePetitionerAutoPagers(){
+try{
+var scope=byId("p-petitioner")||document,tbody=byId("pet-table-res"),table=tbody&&tbody.closest?tbody.closest("table"):null;
+table&&(table.setAttribute("data-app-pager","off"),table.setAttribute("data-app-local-dom-paging","off"),table.classList.add("no-app-pager")),Array.prototype.slice.call(scope.querySelectorAll(".app-table-pager[data-table-pager-for]")).forEach(function(el){
+!el||!el.parentNode||el.closest&&el.closest("#pet-pagination")||el.parentNode.removeChild(el)
+});
+var host=byId("pet-pagination");
+host&&Array.prototype.slice.call(host.querySelectorAll(".app-table-pager")).slice(0,-1).forEach(function(el){
+el&&el.parentNode&&el.parentNode.removeChild(el)
+})
+}
+catch(_e){
+"function"==typeof __appObserve&&__appObserve(_e,"ec")
+}
+}
+function renderPetitionerPagination(totalRows){
+var host=byId("pet-pagination");
+if(!host)return null;
+installPetitionerSystemFooterBridge();
+removePetitionerAutoPagers();
+totalRows=Math.max(0,Number(totalRows||0)||0);
+var pageSize=Math.max(1,Number(petitionerPageState.pageSize||25)||25),pages=Math.max(1,Math.ceil(totalRows/pageSize)||1);
+petitionerPageState.currentPage=Math.min(Math.max(1,Number(petitionerPageState.currentPage||1)||1),pages);
+var footerOpts={
+total:totalRows,pageSize:pageSize,page:petitionerPageState.currentPage,action:"petitionerChangePage",kind:"pet-pagination",sizeClass:"app-standard-page-size",dataName:"data-pager-kind",serverPaged:true,localDomPaging:false
+};
+try{
+host.textContent="";
+host.style.display="";
+host.removeAttribute&&host.removeAttribute("aria-hidden");
+host.classList&&host.classList.add("app-table-footer","no-print");
+host.setAttribute&&host.setAttribute("data-app-footer-owner","PetitionerPage.system-footer");
+host.setAttribute&&host.setAttribute("data-app-footer-action","petitionerChangePage");
+var rendered=root.AppTable&&__appIsFn(root.AppTable.footer)?root.AppTable.footer(host,footerOpts):root.AppTablePager&&__appIsFn(root.AppTablePager.renderStandardFooter)?root.AppTablePager.renderStandardFooter(host,footerOpts):null;
+Array.prototype.slice.call(host.querySelectorAll("button[data-page]")).forEach(function(btn){
+btn.setAttribute("data-petitioner-page",btn.getAttribute("data-page")||"1");
+btn.setAttribute("data-page-callback","petitionerChangePage")
+});
+return rendered||host;
+}
+catch(_petitionerStdFooterErr){
+return warn("petitioner.systemFooter.render",_petitionerStdFooterErr,footerOpts),null
+}
+}
+function petitionerResponseEnvelope(res){
+var outer=res&&typeof res==="object"?res:{};
+var payload=outer&&outer.data&&typeof outer.data==="object"&&!Array.isArray(outer.data)?outer.data:outer;
+if(Array.isArray(outer.data))payload=Object.assign({},outer,{rows:outer.data});
+if(payload&&payload.data&&typeof payload.data==="object"&&!Array.isArray(payload.data)&&!Array.isArray(payload.rows))payload=Object.assign({},payload,payload.data);
+return payload||{};
+}
+function petitionerRowsFromResponse(res){
+var payload=petitionerResponseEnvelope(res);
+return Array.isArray(payload)?payload:payload&&Array.isArray(payload.rows)?payload.rows:payload&&Array.isArray(payload.items)?payload.items:payload&&Array.isArray(payload.records)?payload.records:payload&&Array.isArray(payload.list)?payload.list:payload&&payload.data?petitionerRowsFromResponse(payload.data):payload&&payload.result?petitionerRowsFromResponse(payload.result):[]
+}
+function __petitionerRenderListImpl(){
+var q=text(val("pet-search-input")).toLowerCase().trim(),cachedRows=storeGet("petitioner.cachedRows",[]),list=petitionerPageState.serverPaged?cachedRows:selectorRows("apiGetPetitioners");
+list.length||(list=cachedRows),list=Array.isArray(list)?list:[];
+if(petitionerPageState.lastQuery!==q){
+petitionerPageState.currentPage=1;
+petitionerPageState.lastQuery=q;
+clearTimeout(root.__petitionerSearchTimer||0);
+root.__petitionerSearchTimer=setTimeout(function(){__appIsFn(root.loadPetitioners)&&root.loadPetitioners(!1)},280);
+}
+var start=(petitionerPageState.currentPage-1)*petitionerPageState.pageSize,rows=list.map(function(r,idx){
+var addr=canonicalPetitionerAddress(r),key=petitionerRowKey(r,start+idx);
+return Object.assign({},r||{},{seq:start+idx+1,petId:text(r.petId||r.id||r.recordId||key||""),id:text(r.id||r.petId||r.recordId||key||""),__sourceKey:key,name:text(r.name||""),phone:text(r.phone||""),addressLine:addr.addressLine,subDistrict:addr.subDistrict,district:addr.district,province:addr.province,postalCode:addr.postalCode,address:addr.address,relatedCount:Number(r.relatedCount||0)||0})
+});
+renderPetitionerRows(byId("pet-table-res"),rows),renderPetitionerPagination(petitionerPageState.totalRecords||rows.length),petitionerPageState.relatedCountsIncluded||refreshRelatedCountsIfNeeded(rows,storeGet("petitioner.relatedCounts",{}))
+}
+function petitionerFormHtml(record){
+record=record||{
+};
+var parsed=canonicalPetitionerAddress(record);
+return'<div class="text-start petitioner-popup-form">'+'<label class="small fw-bold">ชื่อ-สกุล</label><input id="swal-pet-name" class="form-control mb-2" value="'+esc(record.name||'')+'">'+'<label class="small fw-bold">เบอร์โทรศัพท์</label><input id="swal-pet-phone" class="form-control mb-2" value="'+esc(formatPetitionerPhone(record.phone||record.tel||record.mobile||record['เบอร์โทรศัพท์']||''))+'">'+'<div class="row g-2">'+'<div class="col-12"><label class="small fw-bold">บ้านเลขที่ / ถนน / หมู่บ้าน</label><input id="swal-pet-address-line" class="form-control" value="'+esc(parsed.addressLine||'')+'"></div>'+'<div class="col-md-6"><label class="small fw-bold">ตำบล / แขวง</label><select id="swal-pet-subdistrict" class="form-select"><option value="">-- เลือกตำบล/แขวง --</option></select></div>'+'<div class="col-md-6"><label class="small fw-bold">อำเภอ / เขต</label><select id="swal-pet-district" class="form-select"><option value="">-- เลือกอำเภอ/เขต --</option></select></div>'+'<div class="col-md-6"><label class="small fw-bold">จังหวัด</label><select id="swal-pet-province" class="form-select"><option value="">-- เลือกจังหวัด --</option></select></div>'+'<div class="col-md-6"><label class="small fw-bold">รหัสไปรษณีย์</label><input id="swal-pet-postcode" class="form-control" maxlength="5" inputmode="numeric" value="'+esc(parsed.postalCode||'')+'" placeholder="อัตโนมัติ"></div>'+'<div class="col-12"><label class="small fw-bold">ที่อยู่</label><div id="swal-pet-address-preview" class="form-control bg-light small" style="min-height:38px">'+esc(parsed.address||'-')+'</div></div>'+'</div>'+'</div>'
+}
+function renderPetitionerRows(target,rows){
+if(target){
+if(clearDomNode(target),!(rows=Array.isArray(rows)?rows:[]).length){
+if(root.AppPageKit&&root.AppPageKit.setTableState)return root.AppPageKit.setTableState(target,6,"ไม่พบข้อมูล","text-center p-4 text-muted"),void 0;
+var tr=document.createElement("tr"),td=document.createElement("td");
+return td.colSpan=6,td.className="text-center p-4 text-muted",td.textContent="ไม่พบข้อมูล",tr.appendChild(td),target.appendChild(tr),void 0
+}
+rows.forEach(function(r,index){
+var tr=document.createElement("tr");
+appendTextCell(tr,r.seq||index+1,"text-center"),appendTextCell(tr,r.name,"fw-bold text-primary"),appendTextCell(tr,formatPetitionerPhone(r.phone)||"-","text-center");
+var tdAddress=document.createElement("td");
+tdAddress.className="text-wrap",tdAddress.style.minWidth="260px",tdAddress.textContent=text(r.address||r.addressLine||"-"),tr.appendChild(tdAddress);
+var tdCount=document.createElement("td");
+tdCount.className="text-center";
+var badge=document.createElement("span");
+badge.className="badge bg-secondary",badge.style.fontSize="13px",badge.textContent=text(r.relatedCount||0)+" เรื่อง",tdCount.appendChild(badge),tr.appendChild(tdCount);
+var tdAct=document.createElement("td");
+tdAct.className="text-center no-print",[["showPetSummary","btn-info text-white","fas fa-file-alt"],["editPetModal","btn-warning","fas fa-edit"],["deletePetitionerById","btn-danger","fas fa-trash"]].forEach(function(meta,idx){
+var btn=document.createElement("button");
+btn.className="btn btn-sm "+meta[1]+(idx<2?" me-1":""),btn.setAttribute("data-action",meta[0]);
+var rowId=text(r.__sourceKey||petitionerRowKey(r,index));
+btn.setAttribute("data-pet-id",rowId),btn.setAttribute("data-id",rowId);
+try{
+btn.setAttribute("data-record-json",JSON.stringify(r||{
+}))
+}
+catch(_json){
+typeof __appObserve==="function"&&__appObserve(_json,"c6.SPT:708")
+}
+var icon=document.createElement("i");
+icon.className=meta[2],btn.appendChild(icon),tdAct.appendChild(btn)
+}),tr.appendChild(tdAct),target.appendChild(tr)
+})
+}
+function appendTextCell(tr,value,className){
+var td=document.createElement("td");
+return className&&(td.className=className),td.textContent=text(value||"-"),tr.appendChild(td),td
+}
+}
+function renderPetitionerCaseTable(target,rows){
+if(target){
+clearDomNode(target),rows=Array.isArray(rows)?rows:[];
+var heading=document.createElement("div");
+if(heading.className="fw-bold text-navy mb-2",heading.textContent="เรื่องที่เกี่ยวข้อง ("+rows.length+" เรื่อง)",target.appendChild(heading),!rows.length){
+var empty=document.createElement("div");
+return empty.className="text-muted",empty.textContent="ไม่พบเรื่องร้องเรียนที่เชื่อมโยง",target.appendChild(empty),void 0
+}
+var table=document.createElement("table");
+table.className="table table-bordered table-sm align-middle";
+var thead=document.createElement("thead"),headRow=document.createElement("tr");
+["เลขรับ","วันที่รับ","ชื่อเรื่อง","สถานะ"].forEach(function(label){
+var th=document.createElement("th");
+th.textContent=label,headRow.appendChild(th)
+}),thead.appendChild(headRow),table.appendChild(thead);
+var tbody=document.createElement("tbody");
+rows.forEach(function(row){
+var tr=document.createElement("tr");
+[petitionerReceiveNo(row),petitionerReceiveDate(row),text(row.title||row.caseTitle||"-"),text(row.status||"-")].forEach(function(value){
+var td=document.createElement("td");
+td.textContent=value,tr.appendChild(td)
+}),tbody.appendChild(tr)
+}),table.appendChild(tbody),target.appendChild(table)
+}
+function petitionerReceiveNo(row){
+if(root.resolveCaseReceiveNo)try{
+var n=root.resolveCaseReceiveNo(row);
+if(n)return n
+}
+catch(_e){
+warn("petitioner.receiveNo.resolve",_e)
+}
+return text(row.receiveNo||row.recNo||row.receiveNumber||row.caseNo||row.caseNum||"-")
+}
+function petitionerReceiveDate(row){
+var raw=row.recDateText||row.receiveDateText||row.receivedDateText||row.dateReceivedText||row.recDate||row.receiveDate||row.receivedDate||row.dateReceived||row.receiveAt||row.receivedAt||row["วันที่รับเรื่อง"]||row["วันที่รับ"]||row.createdAt||row.offerDate||"";
+if(root.fmtThaiDate)try{
+return root.fmtThaiDate(raw)||"-"
+}
+catch(_e){
+warn("petitioner.receiveDate.format",_e)
+}
+return text(raw||"-")
+}
+}
+function renderPetitionerSummaryTable(target,rec){
+if(target){
+clearDomNode(target);
+var addr=canonicalPetitionerAddress(rec||{
+}),table=document.createElement("table");
+table.className="table table-bordered",[["ชื่อ-สกุล",rec.name],["เบอร์โทรศัพท์",formatPetitionerPhone(rec.phone||rec.tel||rec.mobile||rec["เบอร์โทรศัพท์"]||"")||"-"],["ที่อยู่",addr.address||"-"]].forEach(function(pair){
+var tr=document.createElement("tr"),th=document.createElement("th");
+th.width="25%",th.className="bg-light",th.textContent=pair[0];
+var td=document.createElement("td");
+td.textContent=text(pair[1]),tr.appendChild(th),tr.appendChild(td),table.appendChild(tr)
+}),target.appendChild(table)
+}
+}
+function syncPetitionerAddressPreview(){
+var composed=canonicalPetitionerAddress({
+addressLine:val("swal-pet-address-line"),subDistrict:val("swal-pet-subdistrict"),district:val("swal-pet-district"),province:val("swal-pet-province"),postalCode:val("swal-pet-postcode")||val("swal-pet-postalCode")
+});
+var preview=byId("swal-pet-address-preview");
+preview&&(preview.textContent=composed.address||"-");
+return composed
+}
+function bindPetitionerThaiAddress(record){
+var parsed=canonicalPetitionerAddress(record||{
+}),populate=root.populateThaiAddressSelectors||Utils.populateThaiAddressSelectors||root.ScriptsUtils&&root.ScriptsUtils.populateThaiAddressSelectors,loader=__appIsFn(root.ensureThailandLocationsLoaded)?root.ensureThailandLocationsLoaded(true).catch(function(err){
+warn("petitioner.location.load",err);
+return false
+}):Promise.resolve(true);
+return loader.then(function(){
+if(__appIsFn(populate))populate({
+province:"swal-pet-province",district:"swal-pet-district",subDistrict:"swal-pet-subdistrict",postalCode:"swal-pet-postcode",initial:parsed,onChange:syncPetitionerAddressPreview
+});
+["swal-pet-address-line","swal-pet-postcode"].forEach(function(id){
+var el=byId(id);
+if(el&&el.dataset.boundPetitionerAddress!=="1"){
+el.dataset.boundPetitionerAddress="1";
+el.addEventListener("input",syncPetitionerAddressPreview);
+el.addEventListener("change",syncPetitionerAddressPreview)
+}
+});
+["swal-pet-province","swal-pet-district","swal-pet-subdistrict"].forEach(function(id){
+var el=byId(id);
+if(el&&el.dataset.boundPetitionerSelect!=="1"){
+el.dataset.boundPetitionerSelect="1";
+el.addEventListener("change",syncPetitionerAddressPreview)
+}
+});
+var post=byId("swal-pet-postcode");
+post&&parsed.postalCode&&!post.value&&(post.value=parsed.postalCode);
+return syncPetitionerAddressPreview()
+})
+}
+function petitionerPrompt(title,record){
+record=record||{
+};
+return appSwalFire({
+title:title,html:petitionerFormHtml(record),showCancelButton:!0,confirmButtonText:"บันทึก",cancelButtonText:"ยกเลิก",didOpen:function(){
+bindPetitionerThaiAddress(record||{
+})
+},preConfirm:function(){
+var composed=syncPetitionerAddressPreview(),payload=petitionerPayload({
+petId:record.petId||"",name:val("swal-pet-name"),phone:val("swal-pet-phone"),addressLine:composed.addressLine,subDistrict:composed.subDistrict,district:composed.district,province:composed.province,postalCode:composed.postalCode,address:composed.address
+});
+return payload.name?payload:(Swal.showValidationMessage("กรุณากรอกชื่อ-สกุล"),!1)
+}
+})
+}
+function petitionerRowKey(row,idx){
+return text((row=row||{
+}).petId||row.id||row.recordId||row._id||row.uuid||row.name||"row-"+String(idx||0)).trim()
+}
+function findPetitionerRecord(id){
+id=text(id);
+for(var rows=allPetitionerRows(),i=0;
+i<rows.length;
+i++){
+var row=rows[i]||{
+};
+if(text(row.petId)===id||text(row.id)===id||text(row.recordId)===id||text(row._id)===id||petitionerRowKey(row,i)===id||text(row.name)===id||text(row.phone)===id||formatPetitionerPhone(row.phone)===id)return row
+}
+return null
+}
+function petActionId(value){
+var btn=null,src=value;
+try{
+src&&src.detail&&(src=src.detail),src&&src.element?src=src.element:src&&src.el?src=src.el:src&&src.button?src=src.button:src&&src.currentTarget?src=src.currentTarget:src&&src.delegateTarget?src=src.delegateTarget:src&&src.source?src=src.source:src&&src.node&&(src=src.node)
+}
+catch(_ctxErr){
+warn("petitioner.action.context",_ctxErr)
+}
+src&&src.target&&src.target.closest?btn=src.target.closest("[data-pet-id],[data-id]"):src&&src.closest?btn=src.closest("[data-pet-id],[data-id]"):src&&src.getAttribute&&(btn=src);
+var id=btn&&(btn.getAttribute("data-pet-id")||btn.getAttribute("data-id")||"");
+if(id)return id;
+var tr=btn&&btn.closest?btn.closest("tr"):null;
+if(tr&&tr.rowIndex>0){
+var rows=allPetitionerRows(),idx=tr.rowIndex-1;
+if(rows[idx])return petitionerRowKey(rows[idx],idx)
+}
+return value&&"object"==typeof value?"":String(null==value?"":value)
+}
+function safePetitionerElementHtml(node){
+try{
+if(!node)return"";
+var clone=node.cloneNode(!0);
+return Array.prototype.slice.call(clone.querySelectorAll?clone.querySelectorAll("script,iframe,object,embed,link,meta,base,.no-print,[data-no-print]"):[]).forEach(function(n){
+n&&n.parentNode&&n.parentNode.removeChild(n)
+}),clone.outerHTML||""
+}
+catch(_e){
+return node&&(node.textContent||"")||""
+}
+}
+function safePetitionerPrintHtml(html){
+try{
+if(root.AppSafeHtml&&__appIsFn(root.AppSafeHtml.sanitizeHtml))return root.AppSafeHtml.sanitizeHtml(html)
+throw new Error("APP_SAFE_HTML_OWNER_REQUIRED")
+}catch(_e){warn("petitioner.print.sanitizeHtml",_e);return root.AppSafeHtml&&root.AppSafeHtml.escapeHtml?root.AppSafeHtml.escapeHtml(text(html)):text(html)}
+}
+}
+();
+</script>
