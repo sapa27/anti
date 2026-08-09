@@ -6,7 +6,9 @@
 
   var config = root.APP_GITHUB_CONFIG || {};
   var pending = Object.create(null);
+  var postPending = Object.create(null);
   var sequence = 0;
+  var postSequence = 0;
   var iframe = null;
   var readyPromise = null;
   var nonce = "";
@@ -15,8 +17,8 @@
   var bridgeOrigin = "";
   var bridgeLoadState = "idle";
   var bridgeLastError = "";
-  var EXPECTED_BRIDGE_VERSION = "r243-github-pages-message-channel";
-  var FRONTEND_TRANSPORT_VERSION = "r244-github-router-local-assets";
+  var EXPECTED_BRIDGE_VERSION = "r246-github-pages-bridge";
+  var FRONTEND_TRANSPORT_VERSION = "r246-github-postmessage-fast-shell";
   var localAssetCache = Object.create(null);
   var localAssetInflight = Object.create(null);
   var transportMetrics = {
@@ -26,7 +28,11 @@
     localAssetHits: 0,
     localAssetNetworkLoads: 0,
     localAssetFallbacks: 0,
-    errors: 0
+    errors: 0,
+    postCalls: 0,
+    postResults: 0,
+    postTimeouts: 0,
+    bridgeFallbackCalls: 0
   };
 
   var DIRECT_BRIDGE_FUNCTIONS = Object.freeze({
@@ -138,16 +144,19 @@
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS เป็น r243+ และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS เป็น r246+ และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
-      }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 20000)));
+      }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 10000)));
       function cleanupReadyListener() { root.removeEventListener("message", onReady, false); }
       function fail(data) {
         root.clearTimeout(timeout);
         cleanupReadyListener();
         readyPromise = null;
+        var requested = text(data && data.requestedOrigin || "");
+        var configured = data && Array.isArray(data.configuredOrigins) ? data.configuredOrigins.join(", ") : "";
         bridgeLastError = text(data && (data.message || data.code) || "GAS_BRIDGE_ERROR");
+        if (requested || configured) bridgeLastError += " — requested: " + (requested || root.location.origin) + "; configured: " + (configured || "(ไม่มีค่า)");
         transportMetrics.errors += 1;
         reject(createError({ message: bridgeLastError, code: text(data && data.code || "GAS_BRIDGE_ERROR") }));
       }
@@ -162,7 +171,8 @@
         }
         var transferredPort = event.ports && event.ports[0] || null;
         if (data.channel === "message-port" && !transferredPort) {
-          return fail({ code: "GAS_BRIDGE_PORT_MISSING", message: "GAS Bridge READY แล้วแต่ไม่ได้รับ MessagePort" });
+          bridgeLastError = "GAS_BRIDGE_PORT_MISSING_WAITING_FALLBACK";
+          return;
         }
         if (transferredPort) attachPort(transferredPort);
         bridgeChannel = text(data.channel || (transferredPort ? "message-port" : "window-postmessage"));
@@ -337,6 +347,87 @@
     });
   }
 
+  function appendHiddenField(form, name, value) {
+    var input = doc.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = text(value);
+    form.appendChild(input);
+    return input;
+  }
+  function cleanupPostRequest(id, error) {
+    var rec = postPending[id];
+    if (!rec) return;
+    delete postPending[id];
+    if (rec.timer) root.clearTimeout(rec.timer);
+    try { if (rec.form && rec.form.parentNode) rec.form.parentNode.removeChild(rec.form); } catch (_formCleanup) {}
+    try { if (rec.iframe && rec.iframe.parentNode) rec.iframe.parentNode.removeChild(rec.iframe); } catch (_frameCleanup) {}
+    if (error) rec.reject(error);
+  }
+  function handlePostResult(event) {
+    var data = event && event.data || {};
+    if (data.type !== "GAS_POST_RESULT" || !trustedBridgeOrigin(event.origin)) return;
+    var id = text(data.id);
+    var rec = postPending[id];
+    if (!rec || data.nonce !== rec.nonce) return;
+    delete postPending[id];
+    if (rec.timer) root.clearTimeout(rec.timer);
+    try { if (rec.form && rec.form.parentNode) rec.form.parentNode.removeChild(rec.form); } catch (_formCleanup) {}
+    try { if (rec.iframe && rec.iframe.parentNode) rec.iframe.parentNode.removeChild(rec.iframe); } catch (_frameCleanup) {}
+    transportMetrics.postResults += 1;
+    if (data.ok) rec.resolve(data.result);
+    else {
+      transportMetrics.errors += 1;
+      rec.reject(createError(data.error, "GAS_POST_REQUEST_FAILED"));
+    }
+  }
+  root.addEventListener("message", handlePostResult, false);
+  function postRun(fn, args, options) {
+    options = options || {};
+    var gas = normalizeGasUrl(config.GAS_WEB_APP_URL);
+    if (!gas) return Promise.reject(createError({ message: "กรุณากำหนด GAS_WEB_APP_URL ใน github-config.js", code: "GITHUB_GAS_URL_NOT_CONFIGURED" }));
+    var requestNonce = randomNonce();
+    var id = "ghp-" + Date.now().toString(36) + "-" + (++postSequence).toString(36);
+    var timeoutMs = Math.max(10000, Number(options.timeoutMs || config.REQUEST_TIMEOUT_MS || 90000));
+    var argsJson = "{}";
+    try { argsJson = JSON.stringify(args == null ? {} : args); }
+    catch (jsonError) { return Promise.reject(createError({ message: "ไม่สามารถแปลง API payload เป็น JSON ได้", code: "GITHUB_POST_PAYLOAD_SERIALIZE_FAILED" })); }
+    transportMetrics.postCalls += 1;
+    return new Promise(function (resolve, reject) {
+      var frameName = "app_gas_post_" + id.replace(/[^A-Za-z0-9_]/g, "_");
+      var iframe = doc.createElement("iframe");
+      iframe.name = frameName;
+      iframe.title = "GAS API POST " + id;
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.setAttribute("referrerpolicy", "no-referrer");
+      iframe.style.cssText = "position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0;opacity:0;pointer-events:none";
+      var form = doc.createElement("form");
+      form.method = "POST";
+      form.action = gas;
+      form.target = frameName;
+      form.acceptCharset = "UTF-8";
+      form.style.display = "none";
+      appendHiddenField(form, "mode", "github-api-post");
+      appendHiddenField(form, "parentOrigin", root.location.origin);
+      appendHiddenField(form, "nonce", requestNonce);
+      appendHiddenField(form, "id", id);
+      appendHiddenField(form, "fn", text(fn));
+      appendHiddenField(form, "args", argsJson);
+      var timer = root.setTimeout(function () {
+        transportMetrics.postTimeouts += 1;
+        cleanupPostRequest(id, createError({ message: "GAS POST request timeout: " + fn, code: "GAS_POST_REQUEST_TIMEOUT" }));
+      }, timeoutMs);
+      postPending[id] = { resolve: resolve, reject: reject, timer: timer, iframe: iframe, form: form, nonce: requestNonce, fn: text(fn) };
+      try {
+        (doc.body || doc.documentElement).appendChild(iframe);
+        (doc.body || doc.documentElement).appendChild(form);
+        form.submit();
+      } catch (error) {
+        cleanupPostRequest(id, error);
+      }
+    });
+  }
+
   function normalizeBridgeInvocation(fn, args) {
     fn = text(fn).trim();
     args = args == null ? {} : args;
@@ -359,18 +450,23 @@
       return Promise.resolve(localAttempt).then(function (localResponse) {
         if (localResponse) return localResponse;
         var invocationAfterFallback = normalizeBridgeInvocation(fn, args);
-        return bridgeRun(invocationAfterFallback.fn, invocationAfterFallback.args, options);
+        return postRun(invocationAfterFallback.fn, invocationAfterFallback.args, options);
       });
     }
     var invocation = normalizeBridgeInvocation(fn, args);
-    return bridgeRun(invocation.fn, invocation.args, options);
+    if (text(config.API_TRANSPORT_MODE || "post-message").toLowerCase() === "bridge") {
+      transportMetrics.bridgeFallbackCalls += 1;
+      return bridgeRun(invocation.fn, invocation.args, options);
+    }
+    return postRun(invocation.fn, invocation.args, options);
   }
 
   root.AppTransport = root.AppTransport || {};
   root.AppTransport.run = run;
-  root.AppTransport.mode = "github-pages-gas-router-bridge";
+  root.AppTransport.mode = "github-pages-gas-router-postmessage";
   root.AppTransport.resetBridge = function () {
     Object.keys(pending).forEach(function (id) { cleanupPending(id, createError({ message: "Bridge reset", code: "GAS_BRIDGE_RESET" })); });
+    Object.keys(postPending).forEach(function (id) { cleanupPostRequest(id, createError({ message: "POST transport reset", code: "GAS_POST_RESET" })); });
     closeBridgePort();
     if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
     iframe = null;
@@ -387,12 +483,14 @@
   };
   root.AppTransport.status = function () {
     return {
-      ok: bridgeLoadState === "ready",
+      ok: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       mode: root.AppTransport.mode,
       routingMode: "apiRouter-single-entry",
+      apiTransportMode: text(config.API_TRANSPORT_MODE || "post-message"),
       configured: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       parentOrigin: root.location.origin,
-      pending: Object.keys(pending).length,
+      pending: Object.keys(pending).length + Object.keys(postPending).length,
+      postPending: Object.keys(postPending).length,
       bridgeLoadState: bridgeLoadState,
       bridgeLastError: bridgeLastError,
       bridgeChannel: bridgeChannel,

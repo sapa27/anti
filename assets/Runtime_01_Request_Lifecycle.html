@@ -257,7 +257,7 @@
   function ensureRequestId(payload) { var current = text(payload && payload.requestId); if (current) return current; sequence += 1; return "m14-" + now().toString(36) + "-" + sequence.toString(36); }
   function transientError(err) {
     var code = text(err && (err.code || err.errorCode || err.name)).toUpperCase(), msg = text(err && (err.message || err.error) || err).toUpperCase();
-    return /GOOGLE_SCRIPT_RUN_(?:TIMEOUT|FAILED)|GAS_DIRECT_(?:TIMEOUT|FAILED|EMPTY_RESPONSE)|NETWORK(?:_ERROR)?|FAILED TO FETCH|LOAD FAILED|SCRIPT ERROR|RATE[_ -]?LIMIT|TOO MANY REQUESTS|429/.test(code + " " + msg);
+    return /GOOGLE_SCRIPT_RUN_(?:TIMEOUT|FAILED)|GAS_DIRECT_(?:TIMEOUT|FAILED|EMPTY_RESPONSE)|GAS_BRIDGE(?:_(?:REQUEST|READY))?_TIMEOUT|NETWORK(?:_ERROR)?|FAILED TO FETCH|LOAD FAILED|SCRIPT ERROR|RATE[_ -]?LIMIT|TOO MANY REQUESTS|429/.test(code + " " + msg);
   }
   function retryPolicy(ctx, write) {
     if (write) return { retries: 0, delayMs: 0 };
