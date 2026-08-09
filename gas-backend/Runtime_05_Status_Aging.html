@@ -1,0 +1,63 @@
+<!-- M12 r236: extracted from Scripts_Core_Runtime.html; canonical deferred owner: Runtime_05_Status_Aging -->
+<script id="app-status-aging-owner-current">
+(function (root) {
+    "use strict";
+    if (!root || root.__APP_STATUS_AGING_OWNER_CURRENT__)
+        return;
+    root.__APP_STATUS_AGING_OWNER_CURRENT__ = true;
+    function clean(v) { return String(v == null ? "" : v).replace(/[\u00A0\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").trim(); }
+    function parse(v) {
+        if (v == null || v === "")
+            return null;
+        if (Object.prototype.toString.call(v) === "[object Date]" && !isNaN(v.getTime()))
+            return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+        var s = clean(v), m, d;
+        if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) {
+            var y = +m[1];
+            y > 2400 && (y -= 543);
+            d = new Date(y, +m[2] - 1, +m[3]);
+            return isNaN(d.getTime()) ? null : d;
+        }
+        if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/))) {
+            var y2 = +m[3];
+            y2 < 100 && (y2 += 2500);
+            y2 > 2400 && (y2 -= 543);
+            d = new Date(y2, +m[2] - 1, +m[1]);
+            return isNaN(d.getTime()) ? null : d;
+        }
+        d = new Date(s);
+        return isNaN(d.getTime()) ? null : new Date(d.getFullYear() > 2400 ? d.getFullYear() - 543 : d.getFullYear(), d.getMonth(), d.getDate());
+    }
+    function holiday(d) {
+        try {
+            var y = d.getFullYear(), md = String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"), a = root.AppStore && root.AppStore.get ? root.AppStore.get("app.config.thaiHolidayKeys", []) : [];
+            return Array.isArray(a) && (a.indexOf(y + "-" + md) > -1 || a.indexOf(md) > -1);
+        }
+        catch (e) {
+            return false;
+        }
+    }
+    function days(a, b) {
+        a = parse(a);
+        b = parse(b) || new Date;
+        if (!a)
+            return 0;
+        a.setHours(0, 0, 0, 0);
+        b.setHours(0, 0, 0, 0);
+        var n = 0, d = new Date(a);
+        for (d.setDate(d.getDate() + 1); d <= b; d.setDate(d.getDate() + 1)) {
+            var w = d.getDay();
+            w !== 0 && w !== 6 && !holiday(d) && n++;
+        }
+        return n;
+    }
+    function done(v, type) { var s = clean(v); return !!s && (type === "refund" && /คืนเงินแล้ว|คืนแล้ว|ไม่มีการยืมเงิน|เรียบร้อย|แล้ว|success|completed|done/i.test(s) || type === "tracking" && /ตอบรับแล้ว|ได้รับแล้ว|ตอบกลับแล้ว|เสร็จสิ้น|เรียบร้อย|แล้ว|success|completed|done/i.test(s) || /รายงานแล้ว|ดำเนินการแล้ว|เสร็จสิ้น|เรียบร้อย|แล้ว|success|completed|done/i.test(s) && !/ยังไม่|ไม่แล้ว|รอ/i.test(s)); }
+    function resolve(row, type, opt) { row = row || {}; opt = opt || {}; type = clean(type || "general"); var status = clean(opt.status || row.status || row.letterStatus || row.refundStatus || row.reportStatus || row.สถานะ || "-"), complete = opt.completed != null ? !!opt.completed : done(status, type), start = opt.startDate || row.startDate || row.endDate || row.activityDate || row.date || row.sentDate || row.letterDate || row.dueDate || row.วันที่ || "", end = complete ? opt.completedDate || row.refundDate || row.reportDate || row.receivedDate || row.replyDate || row.updatedAt || new Date : opt.endDate || new Date, n = Number(opt.days != null ? opt.days : days(start, end)) || 0, over = n > Number(opt.thresholdDays || 15) && !complete; return { status: status, days: n, completed: complete, overdue: over, badgeClass: complete ? "bg-success" : over ? "bg-danger" : "bg-warning text-dark", textClass: over ? "text-danger fw-bold" : "text-muted", thresholdDays: Number(opt.thresholdDays || 15) }; }
+    function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c; }); }
+    function html(row, type, opt) { var x = resolve(row, type, opt || {}), label = clean(opt && opt.label || x.status || "-"); return '<div class="app-status-aging" data-aging-status="' + esc(type || "general") + '"><span class="badge ' + x.badgeClass + '">' + esc(label) + '</span><div class="' + x.textClass + 'small mt-1">' + x.days + 'วันทำการ</div></div>'; }
+    var api = { owner: "Runtime_05_Status_Aging:AppStatusAging:current", thresholdDays: 15, parseDate: parse, businessDaysSince: days, isCompletedStatus: done, resolve: resolve, html: html, statusAgingHtml: function (row, type) { row = row || {}; var status = type === "report" ? row.reportStatus : type === "refund" ? row.refundStatus : row.status || row.letterStatus; return html(row, type, { status: status, startDate: row.entryType === "การประชุมคณะกรรมาธิการ" || row.entryType === "การประชุมคณะอนุกรรมาธิการ" ? row.activityDate || row.startDate : row.endDate || row.activityDate || row.startDate, completedDate: type === "report" ? row.reportDate : type === "refund" ? row.refundDate : row.receivedDate || row.replyDate, days: type === "report" ? (row.reportStatusFrozenDays != null ? row.reportStatusFrozenDays : row.reportAgingDays) : type === "refund" ? (row.refundStatusFrozenDays != null ? row.refundStatusFrozenDays : row.refundAgingDays) : null, label: status || "-", thresholdDays: 15 }); } };
+    root.AppStatusAging = api;
+    root.ScriptsUtils = root.ScriptsUtils || {};
+    root.ScriptsUtils.statusAging = api;
+})(window);
+</script>

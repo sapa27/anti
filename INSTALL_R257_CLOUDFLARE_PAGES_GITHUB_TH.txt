@@ -1,0 +1,99 @@
+V18 r257 — Cloudflare Pages via GitHub + GAS Backend
+=====================================================
+
+สถาปัตยกรรม Production
+- GitHub = เก็บ source และเป็น trigger ให้ Cloudflare build เท่านั้น
+- gas-backend/ = canonical application source จุดเดียว
+- Cloudflare Pages = frontend host
+- functions/api/gas.js = same-origin Pages Function proxy เพียงจุดเดียว
+- GAS Web App = backend/business/data owner
+- dist/ = generated build output ห้ามแก้และไม่ต้อง commit
+- ไม่มี GitHub Pages iframe / postMessage / hidden-form transport ใน production path
+
+ไฟล์สำคัญ
+- gas-backend/                  Canonical GAS + UI source
+- cloudflare/cloudflare-transport.js
+- cloudflare/_headers
+- functions/api/gas.js         Cloudflare Pages Function
+- tools/build_cloudflare_pages.py
+- CANONICAL_SOURCE_POLICY.json
+
+1) ตั้ง GAS
+-----------
+1. อัปเดตไฟล์ใน gas-backend/ เข้า Apps Script จาก r257
+2. Project Settings > Script Properties เพิ่ม:
+   CLOUDFLARE_PROXY_SECRET = ค่าสุ่มอย่างน้อย 32 ตัวอักษร
+3. Deploy > Manage deployments > Edit > New version
+4. Execute as: Me
+5. Who has access: Anyone
+6. Deploy โดยใช้ deployment เดิมถ้าต้องการรักษา /exec URL เดิม
+
+2) อัปโหลด source ขึ้น GitHub
+-----------------------------
+ก่อนอัปโหลด ให้ลบไฟล์ deployment ของ GitHub Pages รุ่นเดิมออกจาก repository: index.html, github-config.js, github-transport.js, assets/, github-pages/
+จากนั้นอัปโหลดทั้ง repository ชุด r257 ขึ้น GitHub branch main
+ไม่ต้องสร้างหรืออัปโหลด dist/ เพราะ Cloudflare จะสร้างเองทุก build
+
+3) เชื่อม GitHub กับ Cloudflare Pages
+------------------------------------
+Cloudflare Dashboard > Workers & Pages > Create > Pages > Connect to Git
+เลือก GitHub repository และ branch main
+
+Build command:
+  python3 tools/build_cloudflare_pages.py
+
+Build output directory:
+  dist
+
+Root directory:
+  /   (repository root)
+
+4) ตั้ง Cloudflare Variables and Secrets
+----------------------------------------
+Cloudflare Pages > Settings > Variables and Secrets
+Production:
+- GAS_WEB_APP_URL = URL GAS Web App ที่ลงท้าย /exec
+- GAS_PROXY_SECRET = Secret ค่าเดียวกับ CLOUDFLARE_PROXY_SECRET ใน GAS
+
+Preview:
+- ถ้าต้องการให้ preview ใช้งาน backend production ให้ตั้ง 2 ค่านี้เหมือน production
+- ถ้าไม่ต้องการ ให้เว้นไว้เพื่อป้องกัน preview เรียกข้อมูลจริง
+
+5) Deploy
+---------
+เมื่อ push เข้า main Cloudflare Pages จะ build/deploy อัตโนมัติ
+build จะสร้าง:
+- dist/index.html จาก gas-backend/Index.html
+- dist/assets/* จาก canonical GAS frontend files 15 ไฟล์
+- dist/cloudflare-transport.js
+- dist/_headers
+
+ตรวจ build locally ได้ด้วย:
+  python3 tools/build_cloudflare_pages.py
+  python3 tools/build_cloudflare_pages.py --check
+
+6) ตรวจหลัง Deploy
+-------------------
+เปิด:
+  https://<project>.pages.dev/api/gas
+
+ต้องได้ JSON ลักษณะ:
+  {"ok":true,"service":"cloudflare-gas-proxy","release":"r257","gasConfigured":true,"secretConfigured":true}
+
+จากนั้นเปิด:
+  https://<project>.pages.dev/#/login
+
+Console:
+  APP_CLOUDFLARE_CONFIG.LOCAL_ASSET_VERSION
+ต้องได้ r257
+
+  AppTransport.status()
+ต้องเห็น mode = cloudflare-pages-same-origin-proxy
+
+Security
+--------
+- GAS_PROXY_SECRET ห้าม commit ลง GitHub
+- CLOUDFLARE_PROXY_SECRET ต้องตรงกับ GAS_PROXY_SECRET
+- Browser ไม่เห็น GAS URL และไม่เห็น proxy secret
+- Browser เรียกเฉพาะ same-origin /api/gas
+- Pages Function เป็นผู้ forward request ไป GAS server-to-server
