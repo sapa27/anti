@@ -33,7 +33,10 @@
     postResults: 0,
     postTimeouts: 0,
     bridgeFallbackCalls: 0,
-    opaquePostResults: 0
+    opaquePostResults: 0,
+    authBridgeFirstCalls: 0,
+    authBridgeReadyFailures: 0,
+    authPostFallbackCalls: 0
   };
 
   var DIRECT_BRIDGE_FUNCTIONS = Object.freeze({
@@ -43,6 +46,12 @@
     apiSessionCheck: true,
     apiLogout: true,
     getDeferredInclude: true
+  });
+  var AUTH_BRIDGE_FUNCTIONS = Object.freeze({
+    apiLogin: true,
+    apiSessionResume: true,
+    apiSessionCheck: true,
+    apiLogout: true
   });
 
   var LOCAL_BUNDLES = Object.freeze({
@@ -145,7 +154,7 @@
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r253 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r255 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
       }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 10000)));
@@ -343,7 +352,7 @@
       return response;
     }).catch(function (error) {
       transportMetrics.localAssetFallbacks += 1;
-      if (root.console && console.warn) console.warn("[r253] local asset fallback to GAS", req.name, error && error.message || error);
+      if (root.console && console.warn) console.warn("[r255] local asset fallback to GAS", req.name, error && error.message || error);
       return null;
     });
   }
@@ -448,6 +457,39 @@
     return { fn: "apiRouter", args: { method: fn, payload: args }, routed: true, originalFn: fn };
   }
 
+  function authBridgeCanFallback(error) {
+    var code = text(error && error.code || "");
+    return code === "GAS_BRIDGE_READY_TIMEOUT" ||
+      code === "GAS_BRIDGE_ERROR" ||
+      code === "GAS_BRIDGE_VERSION_MISMATCH" ||
+      code === "GAS_BRIDGE_WINDOW_UNAVAILABLE";
+  }
+  function optionsWithTimeout(options, timeoutMs) {
+    var out = {};
+    Object.keys(options || {}).forEach(function (key) { out[key] = options[key]; });
+    out.timeoutMs = Math.max(10000, Number(timeoutMs || out.timeoutMs || config.REQUEST_TIMEOUT_MS || 90000));
+    return out;
+  }
+  function authBridgeFirstRun(invocation, options) {
+    transportMetrics.authBridgeFirstCalls += 1;
+    return bridgeRun(invocation.fn, invocation.args, options).catch(function (bridgeError) {
+      if (!authBridgeCanFallback(bridgeError)) throw bridgeError;
+      transportMetrics.authBridgeReadyFailures += 1;
+      transportMetrics.authPostFallbackCalls += 1;
+      if (root.console && console.warn) console.warn("[r255] auth bridge unavailable; fallback to POST before API call", bridgeError && bridgeError.code || "", bridgeError && bridgeError.message || bridgeError);
+      var fallbackTimeout = Number(config.AUTH_POST_FALLBACK_TIMEOUT_MS || 15000);
+      return postRun(invocation.fn, invocation.args, optionsWithTimeout(options, fallbackTimeout)).catch(function (postError) {
+        var message = "ไม่สามารถเชื่อมต่อ GAS สำหรับเข้าสู่ระบบได้" +
+          " — Bridge: " + text(bridgeError && bridgeError.message || bridgeError) +
+          " — POST: " + text(postError && postError.message || postError) +
+          " — ตรวจ Deploy GAS Web App ให้เป็นเวอร์ชันล่าสุด, Execute as Me และอนุญาต Anyone/anonymous";
+        var combined = createError({ message: message, code: "GAS_AUTH_TRANSPORT_UNAVAILABLE" });
+        combined.bridgeError = bridgeError;
+        combined.postError = postError;
+        throw combined;
+      });
+    });
+  }
   function run(fn, args, options) {
     transportMetrics.calls += 1;
     var localAttempt = tryLocalDeferred(fn, args);
@@ -459,6 +501,10 @@
       });
     }
     var invocation = normalizeBridgeInvocation(fn, args);
+    var authMode = text(config.AUTH_TRANSPORT_MODE || "bridge-first").toLowerCase();
+    if (AUTH_BRIDGE_FUNCTIONS[invocation.fn] && authMode === "bridge-first") {
+      return authBridgeFirstRun(invocation, options);
+    }
     if (text(config.API_TRANSPORT_MODE || "post-message").toLowerCase() === "bridge") {
       transportMetrics.bridgeFallbackCalls += 1;
       return bridgeRun(invocation.fn, invocation.args, options);
@@ -468,7 +514,10 @@
 
   root.AppTransport = root.AppTransport || {};
   root.AppTransport.run = run;
-  root.AppTransport.mode = "github-pages-gas-router-postmessage";
+  root.AppTransport.mode = "github-pages-gas-router-hybrid";
+  root.AppTransport.warmAuthBridge = function () {
+    return ensureBridge().then(function () { return true; }, function () { return false; });
+  };
   root.AppTransport.resetBridge = function () {
     Object.keys(pending).forEach(function (id) { cleanupPending(id, createError({ message: "Bridge reset", code: "GAS_BRIDGE_RESET" })); });
     Object.keys(postPending).forEach(function (id) { cleanupPostRequest(id, createError({ message: "POST transport reset", code: "GAS_POST_RESET" })); });
@@ -486,12 +535,18 @@
     localAssetInflight = Object.create(null);
     return true;
   };
+  root.setTimeout(function () {
+    if (text(config.AUTH_TRANSPORT_MODE || "bridge-first").toLowerCase() === "bridge-first") {
+      root.AppTransport.warmAuthBridge();
+    }
+  }, 0);
   root.AppTransport.status = function () {
     return {
       ok: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       mode: root.AppTransport.mode,
       routingMode: "apiRouter-single-entry",
       apiTransportMode: text(config.API_TRANSPORT_MODE || "post-message"),
+      authTransportMode: text(config.AUTH_TRANSPORT_MODE || "bridge-first"),
       configured: !!normalizeGasUrl(config.GAS_WEB_APP_URL),
       parentOrigin: root.location.origin,
       pending: Object.keys(pending).length + Object.keys(postPending).length,
