@@ -2,9 +2,9 @@
 <script id="app-meeting-shared-fragment-owner-p3" data-app-fragment="meeting-common">
 (function (root) {
     "use strict";
-    if (!root || root.__APP_MEETING_SHARED_FRAGMENT_OWNER_P3__)
+    if (!root || root.__APP_MEETING_SHARED_FRAGMENT_OWNER_CURRENT__)
         return;
-    root.__APP_MEETING_SHARED_FRAGMENT_OWNER_P3__ = true;
+    root.__APP_MEETING_SHARED_FRAGMENT_OWNER_CURRENT__ = true;
     var owner = "meeting";
     root.AppMeetingEventOwner = root.AppMeetingEventOwner || { owner: owner, bind: function (entries) {
             if (!root.AppEvents || typeof root.AppEvents.bindMap !== "function")
@@ -656,14 +656,14 @@
           __appIsFn(meetingRoot.AppPageController.registerModule) &&
           meetingRoot.AppPageController.registerModule("Meeting", {
             owner: "Scripts_Page_Meeting.html",
-            phase: "Phase2",
+            phase: "current",
             apiOwner: "AppPageKit.apiRunner",
             eventOwner: "meeting-single-owner-current",
             historyOwner: "CommitteeMeetingSystem",
           });
-      } catch (_meetingPhase2RegisterErr) {
+      } catch (_meetingRegisterErr) {
         "function" == typeof __appObserve &&
-          __appObserve(_meetingPhase2RegisterErr, "Meeting.phase2.register");
+          __appObserve(_meetingRegisterErr, "Meeting.phase2.register");
       }
       var meetingSetHtml = meetingKit.setHtml,
         meetingClearElement = meetingKit.clearNode,
@@ -2649,7 +2649,6 @@
             meetingStoreGet("phase1.contract", null) ||
             meetingStoreGet("data.contract.phase1SingleSourceContract", null) ||
             meetingStoreGet("app.config.phase1SingleSourceContract", null) ||
-            window.__PHASE1_SINGLE_SOURCE_CONTRACT__ ||
             null
           );
         } catch (_contractErr) {
@@ -2710,7 +2709,7 @@
             selectedSubcommittee.id = selectedSubcommittee.name;
         }
         var payload = {
-          __phase2MeetingHistorySinglePath: !0,
+          __meetingHistorySinglePath: !0,
           __meetingSaveOwner: "phase2.meetingHistory.singleSavePath",
           actionMethod: "apiSaveMeetingLog",
           saveTarget: "meetingHistory",
@@ -11527,12 +11526,12 @@
 
 <script id="committee-meeting-agenda-upfront-gas-owner-r150" data-app-fragment="committee">
 (function(root,doc){"use strict";
-if(!root||!doc||root.__COMMITTEE_MEETING_AGENDA_UPFRONT_OWNER_R55__)return;
-root.__COMMITTEE_MEETING_AGENDA_UPFRONT_OWNER_R55__="committee-meeting-agenda-upfront-gas-owner-r150";
+if(!root||!doc||root.__COMMITTEE_MEETING_AGENDA_UPFRONT_OWNER_CURRENT__)return;
+root.__COMMITTEE_MEETING_AGENDA_UPFRONT_OWNER_CURRENT__="committee-meeting-agenda-upfront-gas-owner-r150";
 var OWNER="Index:committee-meeting-agenda-upfront-gas-owner-r150";
 var PREFIX="committee-agenda-";
 var SELECTOR='.accordion-button[data-bs-target^="#committee-agenda-"],.accordion-button[aria-controls^="committee-agenda-"],[data-committee-agenda-toggle^="#committee-agenda-"],[data-agenda-toggle^="#committee-agenda-"]';
-function txt(v){return v==null?"":String(v)}
+function txt(v){return root.AppRuntime&&root.AppRuntime.text?root.AppRuntime.text(v)+"":(v==null?"":String(v))}
 function qa(sel,ctx){try{return Array.prototype.slice.call((ctx||doc).querySelectorAll(sel))}catch(_){return[]}}
 function q(sel,ctx){try{return(ctx||doc).querySelector(sel)}catch(_){return null}}
 function isPanel(panel){return !!(panel&&panel.id&&txt(panel.id).indexOf(PREFIX)===0)}

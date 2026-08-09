@@ -3939,13 +3939,13 @@
         ),
       };
     }
-    function detailLetterIdentityP184(row){
+    function detailLetterIdentityCurrent(row){
       row=obj(row);var id=clean(row.letterId||row.id||row.recordId||row.rowId||"");
       if(id)return "id:"+id;
       return ["key",normalizeCaseSequenceKey(pick(row,["caseNum","caseNo","runningNo","ลำดับเรื่อง"])),clean(row.letterNo||row.bookNo||""),clean(row.letterDate||row.date||""),clean(row.subject||row.issue||""),clean(row.agency||"")].join("|")
     }
-    function dedupeDetailLettersP184(rows){
-      var map={},order=[];arr(rows).forEach(function(row){var key=detailLetterIdentityP184(row);if(!key)return;var current=map[key];if(!current){map[key]=row;order.push(key);return}map[key]=mergeNonEmpty(current,row)});return order.map(function(key){return map[key]})
+    function dedupeDetailLettersCurrent(rows){
+      var map={},order=[];arr(rows).forEach(function(row){var key=detailLetterIdentityCurrent(row);if(!key)return;var current=map[key];if(!current){map[key]=row;order.push(key);return}map[key]=mergeNonEmpty(current,row)});return order.map(function(key){return map[key]})
     }
     function strictCaseRows(rows, caseNum, caseId) {
       var relation = root.AppCaseRelation || window.AppCaseRelation,
@@ -4001,7 +4001,7 @@
               "",
           );
           bundle.history = strictCaseRows(bundle.history, caseNum, bundleCaseId);
-          bundle.letters = dedupeDetailLettersP184(strictCaseRows(bundle.letters, caseNum, bundleCaseId));
+          bundle.letters = dedupeDetailLettersCurrent(strictCaseRows(bundle.letters, caseNum, bundleCaseId));
           if (
             !bundle.case ||
             normalizeCaseSequenceKey(bundle.case.caseNum) !==
@@ -4011,8 +4011,8 @@
           var missingHistory=!bundle.history.length;
           var historyFallback=missingHistory&&reportTrackCacheFallbackAllowed(payload)?api("apiGetMeetingHistory",Object.assign(reportTrackNextCacheFallbackPayload(payload,"history-empty"),{source:"search-detail-history-empty-fallback-current"})).then(function(historyRes){bundle.history=strictCaseRows(rowsFromAny(historyRes),caseNum,bundleCaseId);return bundle}).catch(function(historyErr){reportTrackWarn("reportTrack.detail.historyEmptyFallback.current",historyErr,{caseNum:caseNum});return bundle}):Promise.resolve(bundle);
           return historyFallback.then(function(resolvedBundle){
-            resolvedBundle.letters=dedupeDetailLettersP184(resolvedBundle.letters);
-            return options.forEdit===!0?resolvedBundle:enrichBundleLetterDetails(resolvedBundle,caseNum,localCaseRow).then(function(enriched){enriched.letters=dedupeDetailLettersP184(enriched.letters);return enriched})
+            resolvedBundle.letters=dedupeDetailLettersCurrent(resolvedBundle.letters);
+            return options.forEdit===!0?resolvedBundle:enrichBundleLetterDetails(resolvedBundle,caseNum,localCaseRow).then(function(enriched){enriched.letters=dedupeDetailLettersCurrent(enriched.letters);return enriched})
           });
         })
         .catch(function (err) {
@@ -4559,7 +4559,7 @@
           var key = letterDetailIdentity(row);
           if (!key || !used[key]) out.push(row);
         });
-        bundle.letters = dedupeDetailLettersP184(out);
+        bundle.letters = dedupeDetailLettersCurrent(out);
         return bundle;
       }
       var payload = identityPayload();
@@ -5010,8 +5010,8 @@
       }
     }
     function printSelectionDialog(opts) {
-      root.__REPORT_TRACK_PRINT_SELECTION_OWNER_R10__ =
-        "report-track-print-selection-confirm-owner-r10";
+      root.__REPORT_TRACK_PRINT_SELECTION_OWNER_CURRENT__ =
+        "report-track-print-selection-confirm-owner-current";
       var items = arr((opts = obj(opts)).items);
       return items.length
         ? new Promise(function (resolve) {
@@ -5593,9 +5593,6 @@
       );
     }
     function dateOnly(v) {
-      return parseReportTrackDateCanonical(v);
-    }
-    function parseDateLocal(v) {
       return parseReportTrackDateCanonical(v);
     }
     function isReceivedStatus(status) {
@@ -6244,7 +6241,7 @@
     "use strict";
     if (root && !root.__APP_PRINT_ENGINE_SINGLE_OWNER__) {
         root.__APP_PRINT_ENGINE_SINGLE_OWNER__ = !0;
-        var doc = root.document, t = "SCR:AppPrint.FinalOwner", e = "phase5-print-final-owner-production-current", r = "คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร", n = "เอกสารสำหรับพิมพ์", a = ["summary-view", "pet-summary-view", "ps-print-view", "p-search", "p-report", "p-track", "p-petitioner", "p-personnel", "p-budget", "p-meeting", "p-dash"], i = { "meeting-case-detail": "รายละเอียดเรื่องพิจารณา", "petitioner-detail": "ข้อมูลผู้ร้องเรียน", "personnel-report": "รายงานบุคลากร", "budget-summary": "รายงานสรุปค่าใช้จ่ายงบประมาณ", "track-summary": "รายงานการติดตามหนังสือ", report: "รายงานสรุปเรื่องพิจารณา", "people-history": "ประวัติการดำรงตำแหน่ง", ai: "รายงานจากผู้ช่วย AI", default: n }, p = { "summary-view": "รายละเอียดเรื่องพิจารณา", "pet-summary-view": "ข้อมูลผู้ร้องเรียน", "ps-print-view": "รายงานบุคลากร", "p-search": "ค้นหาเรื่องพิจารณา", "p-report": "รายงานสรุปเรื่องพิจารณา", "p-track": "รายงานการติดตามหนังสือ", "p-petitioner": "ข้อมูลผู้ร้องเรียน", "p-personnel": "รายงานบุคลากร", "p-budget": "ระบบบริหารงบประมาณ", "p-meeting": "จัดการเรื่องพิจารณา", "p-dash": "Dashboard" }, o = { printPage: 1, printReportPdf: 1, printTrack: 1, printBudgetSummary: 1, printTypeSummary: 1, printPersonnelReportMenu: 1, printSalaryReportOnly: 1, printWorkloadReport: 1, printBudgetImportRecord: 1, searchPrintCase: 1 }, d = { ok: !0, phase: "Phase5", stamp: e, owner: t, engine: "AppPrint.printWithProfile", pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1, compatFacade: "AppPrintProfile delegates only" }, l = root.AppPageKit && root.AppPageKit.moduleKit ? root.AppPageKit.moduleKit("Print.Engine") : root.AppPageKit || {}, s = l && l.text || function (t) { return String(null == t ? "" : t); }, c = l && l.trim || function (t) { return s(t).replace(/\s+/g, " ").trim(); }, u = l && l.byId || function (t) { return t && doc && doc.getElementById ? doc.getElementById(t) : null; }, f = l && (l.esc || l.escapeHtml) || function (t) { return String(null == t ? "" : t).replace(/[&<>"']/g, function (t) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[t]; }); }, warn = function (e, r) {
+        var doc = root.document, t = "SCR:AppPrint.FinalOwner", e = "print-final-owner-production-current-r251", r = "คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร", n = "เอกสารสำหรับพิมพ์", a = ["summary-view", "pet-summary-view", "ps-print-view", "p-search", "p-report", "p-track", "p-petitioner", "p-personnel", "p-budget", "p-meeting", "p-dash"], i = { "meeting-case-detail": "รายละเอียดเรื่องพิจารณา", "petitioner-detail": "ข้อมูลผู้ร้องเรียน", "personnel-report": "รายงานบุคลากร", "budget-summary": "รายงานสรุปค่าใช้จ่ายงบประมาณ", "track-summary": "รายงานการติดตามหนังสือ", report: "รายงานสรุปเรื่องพิจารณา", "people-history": "ประวัติการดำรงตำแหน่ง", ai: "รายงานจากผู้ช่วย AI", default: n }, p = { "summary-view": "รายละเอียดเรื่องพิจารณา", "pet-summary-view": "ข้อมูลผู้ร้องเรียน", "ps-print-view": "รายงานบุคลากร", "p-search": "ค้นหาเรื่องพิจารณา", "p-report": "รายงานสรุปเรื่องพิจารณา", "p-track": "รายงานการติดตามหนังสือ", "p-petitioner": "ข้อมูลผู้ร้องเรียน", "p-personnel": "รายงานบุคลากร", "p-budget": "ระบบบริหารงบประมาณ", "p-meeting": "จัดการเรื่องพิจารณา", "p-dash": "Dashboard" }, o = { printPage: 1, printReportPdf: 1, printTrack: 1, printBudgetSummary: 1, printTypeSummary: 1, printPersonnelReportMenu: 1, printSalaryReportOnly: 1, printWorkloadReport: 1, printBudgetImportRecord: 1, searchPrintCase: 1 }, d = { ok: !0, phase: "current", stamp: e, owner: t, engine: "AppPrint.printWithProfile", pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1, compatFacade: "AppPrintProfile delegates only" }, l = root.AppPageKit && root.AppPageKit.moduleKit ? root.AppPageKit.moduleKit("Print.Engine") : root.AppPageKit || {}, s = l && l.text || function (t) { return String(null == t ? "" : t); }, c = l && l.trim || function (t) { return s(t).replace(/\s+/g, " ").trim(); }, u = l && l.byId || function (t) { return t && doc && doc.getElementById ? doc.getElementById(t) : null; }, f = l && (l.esc || l.escapeHtml) || function (t) { return String(null == t ? "" : t).replace(/[&<>"']/g, function (t) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[t]; }); }, warn = function (e, r) {
             try {
                 if (l.warn)
                     return l.warn(e, r, { owner: t });
@@ -6293,7 +6290,7 @@
         function measuredPrintWithProfile(e, r) { var n = root.AppPerformanceGate; return n && __appIsFn(n.measure) ? n.measure("printPreview", function () { return printWithProfile(e, r || {}); }, { profile: String(e || "default"), owner: t }) : printWithProfile(e, r || {}); }
         root.sanitizePrintHtml = standardizePrintHtml, root.standardizePrintBodyHtml = function (t) { return standardizePrintHtml(t || ""); }, root.ensurePrintAssets = ensureAssets, root.closeSystemInfoPrintPopups = closeSystemInfoPrintPopups, root.AppPrintStandard = { owner: t, stamp: e, organizationFull: r, printedAtLabel: "วันเดือนปีพิมพ์", snapshot: function () { return { owner: t, stamp: e, organizationFull: r, printedAtLabel: "วันเดือนปีพิมพ์", logoUrl: logoSrc(), title: n, previewMode: !0 }; } };
         var g = root.AppPrint || {};
-        Object.assign(g, { __canonicalOwner: t, __fullPrintEngine: !0, __singlePrintOwner: !0, __phase5FinalOwner: !0, contractStamp: e, contract: d, ensureAssets: ensureAssets, print: function (t, e) { return "object" == typeof t && null !== t ? measuredPrintWithProfile(t.profile || t.profileName || "default", t) : measuredPrintWithProfile(t || "default", e || {}); }, printOfficial: function (t, e) { return root.AppPrint.print(t, e); }, printWithProfile: measuredPrintWithProfile, renderPrintProfile: function renderPrintProfile(t, e, r) { return r = Object.assign({}, r || {}, { profile: t || r && r.profile || "default" }), e && e.bodyHtml && !r.bodyHtml && (r.bodyHtml = e.bodyHtml), e && e.html && !r.bodyHtml && (r.bodyHtml = e.html), e && e.title && !r.title && (r.title = e.title), r.title = titleFromProfile(r.profile, r), renderStandardDocument(r); }, printElement: printElement, printHtml: printHtml, buildPayload: buildPrintPayload, closeSystemInfoPopups: closeSystemInfoPrintPopups, openPreview: function (t, e) { return measuredPrintWithProfile(e && e.profile || "default", Object.assign({}, e || {}, { bodyHtml: t || "", autoPrint: !1 })); }, closePreview: closePreview, dispatch: dispatch, status: printPathStatus, getContract: function () { return Object.assign({}, d, printPathStatus()); }, getStandardHeader: function () { return root.AppPrintStandard.snapshot(); }, getPrintPathStatus: function () { return root.AppPrintActionDispatcher.status(); } }), root.AppPrint || (root.AppPrint = g);
+        Object.assign(g, { __canonicalOwner: t, __fullPrintEngine: !0, __singlePrintOwner: !0, __finalOwner: !0, contractStamp: e, contract: d, ensureAssets: ensureAssets, print: function (t, e) { return "object" == typeof t && null !== t ? measuredPrintWithProfile(t.profile || t.profileName || "default", t) : measuredPrintWithProfile(t || "default", e || {}); }, printOfficial: function (t, e) { return root.AppPrint.print(t, e); }, printWithProfile: measuredPrintWithProfile, renderPrintProfile: function renderPrintProfile(t, e, r) { return r = Object.assign({}, r || {}, { profile: t || r && r.profile || "default" }), e && e.bodyHtml && !r.bodyHtml && (r.bodyHtml = e.bodyHtml), e && e.html && !r.bodyHtml && (r.bodyHtml = e.html), e && e.title && !r.title && (r.title = e.title), r.title = titleFromProfile(r.profile, r), renderStandardDocument(r); }, printElement: printElement, printHtml: printHtml, buildPayload: buildPrintPayload, closeSystemInfoPopups: closeSystemInfoPrintPopups, openPreview: function (t, e) { return measuredPrintWithProfile(e && e.profile || "default", Object.assign({}, e || {}, { bodyHtml: t || "", autoPrint: !1 })); }, closePreview: closePreview, dispatch: dispatch, status: printPathStatus, getContract: function () { return Object.assign({}, d, printPathStatus()); }, getStandardHeader: function () { return root.AppPrintStandard.snapshot(); }, getPrintPathStatus: function () { return root.AppPrintActionDispatcher.status(); } }), root.AppPrint || (root.AppPrint = g);
         var b = root.AppPrintProfile || {};
         Object.assign(b, { owner: t, stamp: e, compatFacade: !0, print: function (t, e) { return root.AppPrint.print(t, e); }, printWithProfile: function (t, e) { return root.AppPrint.printWithProfile(t, e); }, status: printPathStatus }), root.AppPrintProfile || (root.AppPrintProfile = b);
         var v = root.AppPrintActionDispatcher || {};
@@ -6548,7 +6545,7 @@
     }
     function printWithProfile(t, e) { return printHtml(buildPrintPayload(t, e)); }
     function ensureAssets() { return Promise.resolve(!0); }
-    function printPathStatus() { return { ok: !(!root.AppPrint || !root.AppPrint.printWithProfile), phase: "Phase5", stamp: e, owner: t, singleOwner: !0, finalOwner: !0, profileOwner: "AppPrint.printWithProfile", profileGateway: "AppPrint.printWithProfile", compatFacade: "AppPrintProfile -> AppPrint.printWithProfile", profiles: Object.keys(i).length, actions: Object.keys(o).length, pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1 }; }
+    function printPathStatus() { return { ok: !(!root.AppPrint || !root.AppPrint.printWithProfile), phase: "current", stamp: e, owner: t, singleOwner: !0, finalOwner: !0, profileOwner: "AppPrint.printWithProfile", profileGateway: "AppPrint.printWithProfile", compatFacade: "AppPrintProfile -> AppPrint.printWithProfile", profiles: Object.keys(i).length, actions: Object.keys(o).length, pagePrintEngineAllowed: !1, directWindowPrintAllowed: !1 }; }
     function standardCurrent(t, e, r) {
         return printElement(function printTarget(t) {
             if (t && t.closest) {

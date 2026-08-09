@@ -224,10 +224,6 @@ function setDashboardText(t,e){
 var a=dashboardById(t);
 return a?(a.textContent=null==e?"":String(e),a):null
 }
-function dashboardHasHtml(t){
-var e=dashboardById(t);
-return!(!e||!String(e.innerHTML||"").trim())
-}
 function positiveDashboardRows(t){
 return asDashboardArray(t).filter(function(t){
 return dashboardNumber(t&&(t.count||t.total||t.value))>0
@@ -954,7 +950,7 @@ renderCharts:D
             }
     }
     var apiCall = function (method, payload) { return payload = Object.assign({ requestId: "dash-runtime-final-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) }, payload || {}), root.AppPageKit && __appIsFn(root.AppPageKit.apiRunner) ? root.AppPageKit.apiRunner(method, payload, "Dashboard", dashboardConfig("dashboardApiTimeoutMs", 3e4)) : Promise.reject(new Error("AppPageKit.apiRunner ไม่พร้อมใช้งาน")); };
-    function authText(value) { return String(value == null ? "" : value).trim(); }
+    function authText(value) { return (root.AppRuntime && root.AppRuntime.text ? root.AppRuntime.text(value) : String(value == null ? "" : value)).trim(); }
     function authStoreGet(path, fallbackValue) {
         try {
             return root.AppStore && __appIsFn(root.AppStore.get) ? root.AppStore.get(path, fallbackValue) : fallbackValue;

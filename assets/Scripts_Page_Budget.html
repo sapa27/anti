@@ -193,9 +193,9 @@
 <script id="budget-status-aging-adapter-r200">
 (function(root){
 "use strict";
-if(!root||root.__BUDGET_STATUS_AGING_ADAPTER_R200__)return;
-root.__BUDGET_STATUS_AGING_ADAPTER_R200__=!0;
-function text(value){return value==null?"":String(value)}
+if(!root||root.__BUDGET_STATUS_AGING_ADAPTER_CURRENT__)return;
+root.__BUDGET_STATUS_AGING_ADAPTER_CURRENT__=!0;
+function text(value){return root.AppRuntime&&root.AppRuntime.text?String(root.AppRuntime.text(value)):(value==null?"":String(value))}
 function esc(value){return text(value).replace(/[&<>"']/g,function(ch){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]||ch})}
 root.BudgetAgingRender=root.BudgetAgingRender||{};
 root.BudgetAgingRender.owner="Scripts_Core_Runtime:AppStatusAging/BudgetAdapter:r200";
@@ -246,8 +246,8 @@ budgetRoot.AppPageController&&__appIsFn(budgetRoot.AppPageController.registerMod
 owner:"Scripts_Page_Budget.html",phase:"Phase2",apiOwner:"AppPageKit.apiRunner",eventOwner:"budgetStaticBound/current",saveOwner:"budgetSaveActiveEntry",typeSummaryOwner:"loadBudgetTypeSummary"
 })
 }
-catch(_budgetPhase2RegisterErr){
-"function"==typeof __appObserve&&__appObserve(_budgetPhase2RegisterErr,"Budget.phase2.register")
+catch(_budgetRegisterErr){
+"function"==typeof __appObserve&&__appObserve(_budgetRegisterErr,"Budget.phase2.register")
 }
 var budgetEscapeHtml=budgetKit.esc||budgetKit.escapeHtml||function(t){
 return budgetById(t).replace(/[&<>"']/g, function(t) {
@@ -2232,7 +2232,7 @@ g+=w("ประเภทรายการ","budget-support-type",["การศ
 n&&(g+='<div class="col-12"><label class="fw-bold">หมายเหตุ</label><textarea id="budget-note" class="form-control" rows="2"></textarea></div>'),!(g+="</div>")&&n&&(g='<div class="alert alert-warning mb-0">ไม่พบแบบฟอร์มสำหรับประเภทรายการนี้ กรุณาตรวจสอบชื่อประเภทรายการ</div>');
 var htmlSetter=budgetRoot.AppDom&&(__appIsFn(budgetRoot.AppDom.renderHtml)?budgetRoot.AppDom.renderHtml:__appIsFn(budgetRoot.AppDom.setTrustedHtml)?budgetRoot.AppDom.setTrustedHtml:__appIsFn(budgetRoot.AppDom.setHtml)?budgetRoot.AppDom.setHtml:null)||(__appIsFn(budgetRoot.safeSetInnerHTML)?budgetRoot.safeSetInnerHTML:null)||(__appIsFn(budgetKit.setHtml)?budgetKit.setHtml:null);
 htmlSetter?htmlSetter(i,g,{
-trusted:!0,applyThaiDateHints:!0,moduleName:"Budget.dynamicForm.prePhase1HtmlOwner"
+trusted:!0,applyThaiDateHints:!0,moduleName:"Budget.dynamicForm.previousHtmlOwner"
 }):i.innerHTML=String(g||"");
 budgetRoot.__budgetLastRenderedEntryType=n;
 budgetRoot.__budgetRenderEntryTypeForm=renderBudgetEntryForm;
@@ -2977,7 +2977,7 @@ var o=document.createElement("div"),html='<div class="col-md-6"><label class="fw
 o.className="row g-3 mb-2 budget-support-selector-wrap";
 var supportSetter=budgetRoot.AppDom&&(__appIsFn(budgetRoot.AppDom.renderHtml)?budgetRoot.AppDom.renderHtml:__appIsFn(budgetRoot.AppDom.setTrustedHtml)?budgetRoot.AppDom.setTrustedHtml:__appIsFn(budgetRoot.AppDom.setHtml)?budgetRoot.AppDom.setHtml:null)||(__appIsFn(budgetRoot.safeSetInnerHTML)?budgetRoot.safeSetInnerHTML:null)||(__appIsFn(budgetKit.setHtml)?budgetKit.setHtml:null);
 supportSetter?supportSetter(o,html,{
-trusted:!0,moduleName:"Budget.supportSelector.prePhase1HtmlOwner"
+trusted:!0,moduleName:"Budget.supportSelector.previousHtmlOwner"
 }):o.innerHTML=html;
 a.insertBefore(o,a.firstChild)
 }

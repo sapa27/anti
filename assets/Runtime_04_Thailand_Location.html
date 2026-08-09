@@ -5,7 +5,7 @@ if(!root||root.__APP_THAI_LOCATION_SHARED_OWNER_CURRENT__)return;
 root.__APP_THAI_LOCATION_SHARED_OWNER_CURRENT__=!0;
 var OWNER="Core.AppThailandLocation.current",tree=[],inFlight=null,loadedAt=0;
 function text(v){return v==null?"":String(v).trim()}
-function isFn(v){return typeof v==="function"}
+function isFn(v){return !!(root.AppRuntime&&root.AppRuntime.isFn?root.AppRuntime.isFn(v):typeof v==="function")}
 function unwrap(v){var cur=v||{},i=0;while(cur&&typeof cur==="object"&&i++<8){if(Array.isArray(cur))return cur;if(Array.isArray(cur.rows))return cur.rows;if(Array.isArray(cur.provinces))return cur.provinces;if(cur.data&&typeof cur.data==="object"){cur=cur.data;continue}if(cur.result&&typeof cur.result==="object"){cur=cur.result;continue}if(cur.payload&&typeof cur.payload==="object"){cur=cur.payload;continue}break}return[]}
 function normalize(raw){return unwrap(raw).map(function(p){var name=text(p&& (p.name||p.province||p.label||p.value)),districts=Array.isArray(p&&p.districts)?p.districts:[];return{name:name,districts:districts.map(function(d){var dn=text(d&&(d.name||d.district||d.label||d.value)),subs=Array.isArray(d&&d.subDistricts)?d.subDistricts:Array.isArray(d&&d.subdistricts)?d.subdistricts:[];return{name:dn,subDistricts:subs.map(function(sd){return{name:text(sd&&(sd.name||sd.subDistrict||sd.subdistrict||sd.label||sd.value)),zip:text(sd&&(sd.zip||sd.postalCode||sd.postcode))}}).filter(function(sd){return!!sd.name})}}).filter(function(d){return!!d.name})}}).filter(function(p){return!!p.name})}
 function merge(next){var map={};tree.concat(next||[]).forEach(function(p){if(!p||!p.name)return;var cur=map[p.name]||(map[p.name]={name:p.name,districts:[]}),dmap={};cur.districts.forEach(function(d){dmap[d.name]=d});(p.districts||[]).forEach(function(d){var target=dmap[d.name]||(dmap[d.name]={name:d.name,subDistricts:[]});var smap={};(target.subDistricts||[]).forEach(function(sd){smap[sd.name]=sd});(d.subDistricts||[]).forEach(function(sd){smap[sd.name]=Object.assign({},smap[sd.name]||{},sd)});target.subDistricts=Object.keys(smap).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return smap[k]})});cur.districts=Object.keys(dmap).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return dmap[k]})});tree=Object.keys(map).sort(function(a,b){return a.localeCompare(b,"th")}).map(function(k){return map[k]});loadedAt=Date.now?Date.now():0;return tree}
@@ -20,7 +20,7 @@ function findProvince(name){name=text(name);return provinceRows().filter(functio
 function districtOptions(province){var p=findProvince(province);return options(p&&p.districts||[])}
 function findDistrict(province,district){var p=findProvince(province),name=text(district);return(p&&p.districts||[]).filter(function(d){return d.name===name})[0]||null}
 function subDistrictOptions(province,district){var d=findDistrict(province,district);return options(d&&d.subDistricts||[])}
-function byId(v){return v&&v.nodeType?v:doc&&doc.getElementById?doc.getElementById(String(v||"")):null}
+function byId(v){return root.AppDom&&root.AppDom.byId?root.AppDom.byId(v):(v&&v.nodeType?v:(doc&&doc.getElementById?doc.getElementById(String(v||"")):null))}
 function fill(select,items,placeholder,selected){if(!select)return;var current=text(selected||select.getAttribute("data-selected")||select.value);while(select.firstChild)select.removeChild(select.firstChild);var first=doc.createElement("option");first.value="";first.textContent=placeholder||"-- เลือก --";select.appendChild(first);(items||[]).forEach(function(item){var value=text(item.value||item.name||item),label=text(item.label||item.name||value),opt=doc.createElement("option");opt.value=value;opt.textContent=label;current===value&&(opt.selected=!0);select.appendChild(opt)});current&&(select.value=current)}
 function populate(config){config=config||{};var province=byId(config.province||config.provinceId),district=byId(config.district||config.districtId),sub=byId(config.subDistrict||config.subdistrict||config.subDistrictId),postal=byId(config.postalCode||config.zip||config.postalCodeId),initial=config.initial||{},selectedProvince=text(initial.province||province&&province.getAttribute("data-selected")||province&&province.value),selectedDistrict=text(initial.district||district&&district.getAttribute("data-selected")||district&&district.value),selectedSub=text(initial.subDistrict||initial.subdistrict||sub&&sub.getAttribute("data-selected")||sub&&sub.value),selectedZip=text(initial.postalCode||initial.zip||postal&&postal.value);
 function updatePostal(){if(!postal)return;var item=subDistrictOptions(province&&province.value,district&&district.value).filter(function(x){return x.value===text(sub&&sub.value)})[0];postal.value=text(item&&item.zip||selectedZip||postal.value);isFn(config.onChange)&&config.onChange({province:text(province&&province.value),district:text(district&&district.value),subDistrict:text(sub&&sub.value),postalCode:text(postal.value)})}
@@ -31,13 +31,13 @@ var owner={owner:OWNER,ensure:ensure,populate:populate,getTree:function(){return
 root.AppThailandLocation=owner;root.ensureThailandLocationsLoaded=ensure;root.populateThaiAddressSelectors=populate;root.getThailandProvinceNames=provinceNames;root.getThailandProvinceOptions=provinceOptions;root.getThailandDistrictOptions=districtOptions;root.getThailandSubDistrictOptions=subDistrictOptions;root.ScriptsUtils=root.ScriptsUtils||{};root.ScriptsUtils.populateThaiAddressSelectors=populate;root.ScriptsUtils.getThailandProvinceNames=provinceNames;root.ScriptsUtils.getThailandProvinceOptions=provinceOptions;root.ScriptsUtils.getThailandDistrictOptions=districtOptions;root.ScriptsUtils.getThailandSubDistrictOptions=subDistrictOptions;
 })(window,document);
 </script>
-<script id="app-core-location-owner-p1">
+<script id="app-core-location-owner-current">
 (function (root, doc) {
     "use strict";
-    if (!root || root.__APP_CORE_LOCATION_OWNER_P1__)
+    if (!root || root.__APP_CORE_LOCATION_OWNER_CURRENT__)
         return;
-    root.__APP_CORE_LOCATION_OWNER_P1__ = true;
-    function text(v) { return v == null ? "" : String(v); }
+    root.__APP_CORE_LOCATION_OWNER_CURRENT__ = true;
+    function text(v) { return root.AppRuntime && root.AppRuntime.text ? root.AppRuntime.text(v).toString() : (v == null ? "" : String(v)); }
     function clean(v) { return text(v).replace(/[\u00A0\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").trim(); }
     function first(o, keys) {
         o = o || {};

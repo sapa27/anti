@@ -1,13 +1,13 @@
 <!-- M12 r236: extracted from Scripts_Core_Runtime.html; canonical deferred owner: Runtime_09_QA_Regression -->
-<script id="app-automated-regression-r215">
+<script id="app-automated-regression-current">
 (function (root, doc) {
   "use strict";
-  if (!root || root.__APP_AUTOMATED_REGRESSION_R215__) return;
-  root.__APP_AUTOMATED_REGRESSION_R215__ = true;
+  if (!root || root.__APP_AUTOMATED_REGRESSION_CURRENT__) return;
+  root.__APP_AUTOMATED_REGRESSION_CURRENT__ = true;
 
-  var STAMP = "p2-automated-regression-browser-2026-07-30-r215";
-  var OWNER = "Scripts_Core_Runtime.AppRegression";
-  var STORAGE_KEY = "commission.regression.browser.r215";
+  var STAMP = "automated-regression-browser-current-r251";
+  var OWNER = "Runtime_09_QA_Regression.AppRegression";
+  var STORAGE_KEY = "commission.regression.browser.current";
   var lastResult = null;
   var inFlight = null;
   var scheduled = false;
@@ -15,8 +15,8 @@
   var MIN_INTERVAL_MS = 1200;
 
   function text(value) { return value == null ? "" : String(value).trim(); }
-  function isFn(value) { return typeof value === "function"; }
-  function nowIso() { return new Date().toISOString(); }
+  function isFn(value) { return root.AppRuntime && root.AppRuntime.isFn ? root.AppRuntime.isFn(value) === true : typeof value === "function"; }
+  function nowIso() { return String(root.AppRuntime && root.AppRuntime.nowIso ? root.AppRuntime.nowIso() : new Date().toISOString()); }
   function safeDetail(value, depth) {
     depth = Number(depth || 0) || 0;
     if (depth > 3) return "[depth-limited]";
@@ -116,10 +116,10 @@
       record(rows, "runtime", "missing-dependency-fail-fast", function () {
         if (!root.AppRuntimeModules || !isFn(root.AppRuntimeModules.requirePageKit)) return false;
         try {
-          root.AppRuntimeModules.requirePageKit("Regression.Negative", { required: ["__missingRegressionDependencyR215"] });
+          root.AppRuntimeModules.requirePageKit("Regression.Negative", { required: ["__missingRegressionDependencyCurrent"] });
           return false;
         } catch (err) {
-          return /__missingRegressionDependencyR215|incomplete|required/i.test(text(err && err.message || err));
+          return /__missingRegressionDependencyCurrent|incomplete|required/i.test(text(err && err.message || err));
         }
       });
       record(rows, "permission", "permission-matrix-owner", function () {

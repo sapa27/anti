@@ -1,8 +1,8 @@
 <!-- M14 — canonical request lifecycle owner. Loaded inside bundle:appCore after Scripts_Core_Runtime. -->
-<script id="app-request-lifecycle-m14-r238">
+<script id="app-request-lifecycle-current">
 (function (root, doc) {
   "use strict";
-  if (!root || !doc || root.__APP_REQUEST_LIFECYCLE_M14_R238__) return;
+  if (!root || !doc || root.__APP_REQUEST_LIFECYCLE_CURRENT__) return;
 
   var OWNER = "Runtime_01_Request_Lifecycle.AppRequestLifecycle";
   var STAMP = "m14-request-lifecycle-consolidation-2026-08-07-r238";
@@ -11,7 +11,7 @@
   var EVENT_NAME = "app:data:mutated";
   var pipeline = root.AppApiMiddlewarePipeline;
   if (!pipeline || typeof pipeline.run !== "function") {
-    throw new Error("APP_API_PIPELINE_REQUIRED_FOR_M14");
+    throw new Error("APP_API_PIPELINE_REQUIRED_CURRENT");
   }
 
   var baseRun = pipeline.run;
@@ -40,8 +40,8 @@
     ignoredDuplicateRefresh: 0
   };
 
-  function text(value) { return value == null ? "" : String(value); }
-  function isFn(value) { return typeof value === "function"; }
+  function text(value) { return root.AppRuntime && root.AppRuntime.text ? root.AppRuntime.text(value) : (value == null ? "" : String(value)); }
+  function isFn(value) { return Boolean(root.AppRuntime && root.AppRuntime.isFn ? root.AppRuntime.isFn(value) : typeof value === "function"); }
   function now() { return Date.now ? Date.now() : (new Date()).getTime(); }
   function warn(label, error, detail) {
     try {
@@ -242,7 +242,7 @@
   root.AppMutationCoordinator = mutationApi;
   root.AppMutationRefresh = Object.freeze({ owner: OWNER, stamp: STAMP, thinAdapter: true, canonical: "AppRequestLifecycle.mutation", clearCaches: clearPageCaches, refreshActive: scheduleMutationRefresh, install: function () { return true; }, status: mutationStatus });
   root.AppWriteRefreshBroker = Object.freeze({ owner: OWNER, retired: true, thinAdapter: true, canonical: "AppRequestLifecycle.mutation", stamp: "retired-by-AppRequestLifecycle", status: mutationStatus });
-  root.__APP_MUTATION_COORDINATOR_F0_R228__ = true;
+  root.__APP_MUTATION_COORDINATOR_CURRENT__ = true;
   if (root.AppPages) root.AppPages.__writeRefreshBrokerStamp = "retired-by-AppRequestLifecycle";
 
   /* -------------------- Request lifecycle orchestration -------------------- */
@@ -383,12 +383,12 @@
   pipeline.performanceStatus = status;
   pipeline.requestLifecycleStatus = status;
   pipeline.__m14RequestLifecycle = true;
-  pipeline.__f4PerformanceConsolidationR232 = true;
+  pipeline.__performanceConsolidationCurrent = true;
   pipeline.__f4PerformanceOwner = OWNER;
   pipeline.__f4PerformanceStamp = STAMP;
   root.AppRequestLifecycle = Object.freeze({ owner: OWNER, stamp: STAMP, run: runLifecycle, apiRunner: apiRunner, module: moduleApi, cancelLane: cancelLane, classifyError: classifyError, loadingStatus: loadingStatus, cache: cacheApi, mutation: mutationApi, dataContract: root.AppDataContractOwner, status: status });
-  root.__APP_PERFORMANCE_CONSOLIDATION_F4_R232__ = true;
-  root.__APP_REQUEST_LIFECYCLE_M14_R238__ = true;
+  root.__APP_PERFORMANCE_CONSOLIDATION_CURRENT__ = true;
+  root.__APP_REQUEST_LIFECYCLE_CURRENT__ = true;
   try {
     if (root.AppOwnerRegistry && isFn(root.AppOwnerRegistry.promote)) ["AppRequestLifecycle", "AppClientCacheOwner", "AppMutationCoordinator", "AppDataContractOwner"].forEach(function (name) { root.AppOwnerRegistry.promote(name, OWNER); });
   } catch (err) { warn("requestLifecycle.ownerRegistry", err); }
