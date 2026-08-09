@@ -1,0 +1,73 @@
+{
+  "version": "r255",
+  "generated": true,
+  "generatedFromCanonicalOnly": true,
+  "canonicalRoot": "gas-backend",
+  "generatedRoot": "github-pages/assets",
+  "canonicalHostShell": "gas-backend/Index.html",
+  "canonicalHostShellSha256": "b4ff78ce3c95f55b34b6415efd8b49a683e19af6d3d700a2a31e6d2712089c34",
+  "generatedHostShell": "github-pages/index.html",
+  "generatedHostShellSha256": "1be0a0721b23f92bdaebffdff868b5e00ea5ad8c26e3c06c839c975bbb04e975",
+  "files": {
+    "Runtime_01_Request_Lifecycle.html": {
+      "sha256": "8beb2679eddb74d45979c4df62dd9c9d0d46975781fbea183e3906ddec242eb1",
+      "bytes": 27015
+    },
+    "Runtime_02_Date_Time.html": {
+      "sha256": "b83f14f1205de95fd0537558fb1446bce21decc58ff1a9dfbde3aa2426a7e0b5",
+      "bytes": 24262
+    },
+    "Runtime_03_Table_UI.html": {
+      "sha256": "e6e884b7138321657ec1f43931ff6904fde2be9b2f386736d6ce6acd0725595c",
+      "bytes": 25122
+    },
+    "Runtime_04_Thailand_Location.html": {
+      "sha256": "2d77ecf26b41e94145b865a56af25f3ccf491540c1899aabe9e871a64430d901",
+      "bytes": 14431
+    },
+    "Runtime_05_Status_Aging.html": {
+      "sha256": "ae14f8df4273521bce2f5e1d462081acd6c888a552c679420c8e233b72c8dca7",
+      "bytes": 5847
+    },
+    "Runtime_08_AI_Bridge.html": {
+      "sha256": "b92a81831b9c2a295759f1dd020267af1ba6f4767f574e2f2bb7ab1f3cec407f",
+      "bytes": 43441
+    },
+    "Runtime_09_QA_Regression.html": {
+      "sha256": "6264b42415680ee0edc2a802315729bcf1cf93dff97f622f47cc4658da7e313c",
+      "bytes": 14148
+    },
+    "Scripts_Core_Runtime.html": {
+      "sha256": "d6479d166e1f2695db63f687e4e14d028e53640da78598fe52ccb104756f60df",
+      "bytes": 246168
+    },
+    "Scripts_Page_Admin.html": {
+      "sha256": "0f1d318124e868ee0e86fe3b14b11ad13415936e4f510fd35edfe525ad61e23a",
+      "bytes": 55739
+    },
+    "Scripts_Page_Budget.html": {
+      "sha256": "e4fcedaf19eef01c0ce8d66044b6a7216bfca4ece4d97b117fe7751850353762",
+      "bytes": 170141
+    },
+    "Scripts_Page_Dashboard.html": {
+      "sha256": "e9bb64c0d2ed51bfb02b1ba3346ea56f0acadd87177a6c39a35404e81545bdbc",
+      "bytes": 94184
+    },
+    "Scripts_Page_Meeting.html": {
+      "sha256": "ae6853478ccdcca4213c2fd26fa2c25f259a99b59ae72628f1379cbfdbce66d7",
+      "bytes": 440268
+    },
+    "Scripts_Page_People.html": {
+      "sha256": "6ec31a100e457d3945e45e9fe7254bde07bc834a76c45d1fc857c25c77603d4c",
+      "bytes": 170526
+    },
+    "Scripts_Page_Petitioner.html": {
+      "sha256": "20c5cc94163e47048ca8833e5f116d0dd398ba32e6cddba6d0f835b6ca3e00cb",
+      "bytes": 46550
+    },
+    "Scripts_Page_ReportTrack.html": {
+      "sha256": "4a837ec3cdd74e877401f1c00b455b31e64f80c76d3b84e1771f858b60c22843",
+      "bytes": 265824
+    }
+  }
+}
