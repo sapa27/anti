@@ -17,8 +17,8 @@
   var bridgeOrigin = "";
   var bridgeLoadState = "idle";
   var bridgeLastError = "";
-  var EXPECTED_BRIDGE_VERSION = "r246-github-pages-bridge";
-  var FRONTEND_TRANSPORT_VERSION = "r246-github-postmessage-fast-shell";
+  var EXPECTED_BRIDGE_VERSION = "github-pages-bridge-v1";
+  var FRONTEND_TRANSPORT_VERSION = "github-postmessage-v1-nav-lifecycle";
   var localAssetCache = Object.create(null);
   var localAssetInflight = Object.create(null);
   var transportMetrics = {
@@ -32,7 +32,8 @@
     postCalls: 0,
     postResults: 0,
     postTimeouts: 0,
-    bridgeFallbackCalls: 0
+    bridgeFallbackCalls: 0,
+    opaquePostResults: 0
   };
 
   var DIRECT_BRIDGE_FUNCTIONS = Object.freeze({
@@ -144,7 +145,7 @@
         var state = bridgeLoadState;
         readyPromise = null;
         var hint = state === "loaded-no-ready"
-          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS เป็น r246+ และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
+          ? "Bridge iframe โหลดแล้วแต่ช่องสื่อสารจาก GAS sandbox ไม่เชื่อมต่อ: ตรวจว่า GAS deploy จาก canonical r251 และ GITHUB_PAGES_ORIGIN ตรงกับ location.origin"
           : "Bridge iframe เปิดไม่สำเร็จ: ตรวจสิทธิ Web App (Anyone), URL /exec และ Deployment ล่าสุด";
         reject(createError({ message: "GAS Bridge ไม่ตอบสนอง — " + hint, code: "GAS_BRIDGE_READY_TIMEOUT" }));
       }, Math.max(5000, Number(config.BRIDGE_TIMEOUT_MS || 10000)));
@@ -342,7 +343,7 @@
       return response;
     }).catch(function (error) {
       transportMetrics.localAssetFallbacks += 1;
-      if (root.console && console.warn) console.warn("[r244] local asset fallback to GAS", req.name, error && error.message || error);
+      if (root.console && console.warn) console.warn("[r251] local asset fallback to GAS", req.name, error && error.message || error);
       return null;
     });
   }
@@ -366,10 +367,14 @@
   }
   function handlePostResult(event) {
     var data = event && event.data || {};
-    if (data.type !== "GAS_POST_RESULT" || !trustedBridgeOrigin(event.origin)) return;
+    if (data.type !== "GAS_POST_RESULT") return;
     var id = text(data.id);
     var rec = postPending[id];
     if (!rec || data.nonce !== rec.nonce) return;
+    var trusted = trustedBridgeOrigin(event.origin);
+    var opaqueAppsScriptSandbox = event.origin === "null" && data.transportVersion === "github-postmessage-v1";
+    if (!trusted && !opaqueAppsScriptSandbox) return;
+    if (opaqueAppsScriptSandbox) transportMetrics.opaquePostResults += 1;
     delete postPending[id];
     if (rec.timer) root.clearTimeout(rec.timer);
     try { if (rec.form && rec.form.parentNode) rec.form.parentNode.removeChild(rec.form); } catch (_formCleanup) {}
