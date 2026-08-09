@@ -1,6 +1,6 @@
 /* GitHub Pages frontend configuration. */
 window.APP_GITHUB_CONFIG = Object.freeze({
-  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxufAfgbBgxCa62UwR2fY57NCRGHgj9TqFUwrdtGaBQwW0RJY0BzRq2KZ_pEsglNK_x/exec",
+  GAS_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxMG8kSR8Yl2m4FaCK-zOmUnDMeaf2of8ReSC-p270V5cRkMmcx2rIBlsvEyCAjourp/exec",
   STATIC_LOGO_URL: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg",
   BRIDGE_MODE: "github-bridge",
   BRIDGE_TIMEOUT_MS: 10000,
