@@ -1,5 +1,5 @@
 // ใส่ ID ของ Google Sheet ฐานข้อมูลหลัก
-const SPREADSHEET_ID = "1L6BSCGO2nZa6utJ7wsSjxbPJWRv3jSNMIPbIcdAlhJw";
+const SPREADSHEET_ID = "1I-z9uiyaK_sD20DEl0KVmeQXtXhKFmd30hDV5RdIEVnYX5OvScpb-0H0";
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
