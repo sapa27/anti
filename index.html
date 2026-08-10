@@ -2,841 +2,856 @@
 <html lang="th">
 <head>
   <base target="_top">
-  <meta charset="UTF-8">
+  <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบตรวจสอบสถานะเรื่องพิจารณา</title>
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --navy-900: #071a33;
-      --navy-800: #0b2747;
-      --navy-700: #103a65;
-      --gold-500: #c5a028;
-      --gold-400: #e4bd43;
-      --gold-100: #fff6db;
-      --surface: #ffffff;
-      --surface-soft: #f7fafc;
-      --text: #1f2937;
-      --muted: #667085;
-      --border: rgba(15, 23, 42, 0.10);
-      --shadow-sm: 0 10px 30px rgba(10, 35, 66, 0.08);
-      --shadow-md: 0 20px 55px rgba(10, 35, 66, 0.15);
-      --radius-lg: 24px;
-      --radius-md: 18px;
-      --radius-sm: 14px;
+      --color-navy-950: #001e3c;
+      --color-navy-900: #00284d;
+      --color-navy-800: #003765;
+      --color-gold-600: #c5a028;
+      --color-gold-400: #ffca2c;
+      --color-gold-text: #8f6f10;
+      --color-surface: #ffffff;
+      --color-canvas: #f4f7f9;
+      --color-canvas-soft: #eef3f7;
+      --color-text: #243244;
+      --color-muted: #64748b;
+      --color-border: #dce4ec;
+      --shadow-card: 0 12px 34px rgba(0, 30, 60, 0.09);
+      --shadow-card-hover: 0 18px 42px rgba(0, 30, 60, 0.14);
+      --focus-ring: 0 0 0 4px rgba(197, 160, 40, 0.2);
+      --radius-card: 16px;
+      --transition-fast: 180ms ease;
     }
 
-    * {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
     }
 
-    html,
-    body {
-      min-height: 100%;
-      margin: 0;
+    html {
+      height: 100%;
+      scroll-behavior: smooth;
+      background: var(--color-canvas);
     }
 
     body {
+      min-height: 100%;
+      margin: 0;
       font-family: 'Sarabun', sans-serif;
-      color: var(--text);
+      color: var(--color-text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(197, 160, 40, 0.08), transparent 24rem),
+        radial-gradient(circle at 88% 22%, rgba(0, 55, 101, 0.06), transparent 28rem),
+        linear-gradient(180deg, #f8fafc 0%, var(--color-canvas) 42%, var(--color-canvas-soft) 100%);
       display: flex;
       flex-direction: column;
-      background:
-        radial-gradient(circle at top left, rgba(197, 160, 40, 0.18), transparent 28rem),
-        radial-gradient(circle at top right, rgba(16, 58, 101, 0.18), transparent 32rem),
-        linear-gradient(180deg, #f7fafc 0%, #eef4f8 100%);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    input {
+      font: inherit;
     }
 
     .content-wrapper {
       flex: 1 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .content-wrapper::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(11, 39, 71, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(11, 39, 71, 0.035) 1px, transparent 1px);
-      background-size: 34px 34px;
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 75%);
-    }
-
-    .hero-shell {
-      position: relative;
-      background:
-        linear-gradient(135deg, rgba(7, 26, 51, 0.98) 0%, rgba(13, 48, 84, 0.98) 58%, rgba(7, 26, 51, 0.98) 100%);
-      color: #ffffff;
-      border-bottom: 5px solid var(--gold-500);
-      box-shadow: 0 18px 50px rgba(7, 26, 51, 0.20);
-      overflow: hidden;
-    }
-
-    .hero-shell::before,
-    .hero-shell::after {
-      content: '';
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(228, 189, 67, 0.14);
-      pointer-events: none;
-    }
-
-    .hero-shell::before {
-      width: 320px;
-      height: 320px;
-      top: -170px;
-      right: -90px;
-    }
-
-    .hero-shell::after {
-      width: 210px;
-      height: 210px;
-      left: -90px;
-      bottom: -120px;
-      background: rgba(255, 255, 255, 0.08);
     }
 
     .header-bar {
       position: relative;
-      z-index: 1;
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 30px 16px 34px;
+      isolation: isolate;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, var(--color-navy-950) 0%, var(--color-navy-900) 56%, var(--color-navy-800) 100%);
+      color: white;
+      padding: 27px 15px 25px;
+      border-bottom: 5px solid var(--color-gold-600);
+      box-shadow: 0 10px 30px rgba(0, 30, 60, 0.16);
       text-align: center;
     }
 
-    .emblem-wrap {
-      width: 86px;
-      height: 86px;
-      margin: 0 auto 14px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.20);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 16px 35px rgba(0, 0, 0, 0.18);
-      backdrop-filter: blur(14px);
+    .header-bar::before,
+    .header-bar::after {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      border-radius: 999px;
+      pointer-events: none;
     }
 
-    .emblem-wrap img {
-      width: 62px;
-      height: 62px;
-      object-fit: contain;
+    .header-bar::before {
+      width: 260px;
+      height: 260px;
+      top: -175px;
+      left: calc(50% - 360px);
+      background: rgba(255, 202, 44, 0.09);
+      border: 1px solid rgba(255, 202, 44, 0.12);
+    }
+
+    .header-bar::after {
+      width: 360px;
+      height: 360px;
+      right: -190px;
+      bottom: -290px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .header-bar img {
+      position: relative;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.24));
+      transition: transform var(--transition-fast);
     }
 
     .header-title {
-      font-weight: 800;
-      font-size: clamp(23px, 4vw, 34px);
-      line-height: 1.25;
-      margin: 0 0 8px;
-      color: #ffe08a;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-size: clamp(23px, 2.2vw, 28px);
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+      margin-bottom: 6px;
+      color: var(--color-gold-400);
+      text-wrap: balance;
     }
 
     .header-sub {
-      font-weight: 400;
-      font-size: clamp(14px, 2.2vw, 17px);
+      max-width: 880px;
+      margin: 0 auto;
+      font-weight: 300;
+      font-size: 16px;
       line-height: 1.6;
-      opacity: 0.92;
-      max-width: 820px;
-      margin: 0 auto;
+      color: rgba(255, 255, 255, 0.9);
+      text-wrap: balance;
     }
 
-    .page-container {
-      position: relative;
-      z-index: 1;
-      width: min(100%, 980px);
-      margin: 0 auto;
-      padding: 0 18px 26px;
+
+    .header-home-link {
+      position: absolute;
+      z-index: 3;
+      top: 18px;
+      right: 18px;
+      min-height: 42px;
+      padding: 8px 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0, 20, 45, 0.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition:
+        transform var(--transition-fast),
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
     }
 
+    .header-home-link svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header-home-link:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring), 0 6px 18px rgba(0, 20, 45, 0.18);
+    }
 
     .dashboard-wrap {
-      position: relative;
-      z-index: 1;
-      margin: -24px auto 28px;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
+      max-width: 980px;
+      margin: 32px auto 0;
     }
 
     .dashboard-card {
       position: relative;
       overflow: hidden;
-      min-height: 126px;
-      padding: 18px;
-      border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid rgba(255, 255, 255, 0.78);
-      box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(16px);
-    }
-
-    .dashboard-card::before {
-      content: '';
-      position: absolute;
-      width: 96px;
-      height: 96px;
-      border-radius: 999px;
-      right: -32px;
-      top: -38px;
-      background: rgba(197, 160, 40, 0.13);
-    }
-
-    .dashboard-card-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 14px;
-      display: inline-flex;
+      height: 100%;
+      min-height: 120px;
+      padding: 19px 16px 18px;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      box-shadow: 0 10px 18px rgba(16, 58, 101, 0.16);
-      margin-bottom: 12px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(220, 228, 236, 0.95);
+      border-left: 5px solid var(--color-gold-600);
+      border-radius: var(--radius-card);
+      box-shadow: 0 8px 25px rgba(0, 30, 60, 0.07);
+      transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        border-color var(--transition-fast);
+    }
+
+    .dashboard-card::after {
+      content: '';
+      position: absolute;
+      right: -24px;
+      top: -28px;
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: rgba(197, 160, 40, 0.06);
+      pointer-events: none;
     }
 
     .dashboard-label {
       position: relative;
       z-index: 1;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-      min-height: 36px;
-      font-weight: 700;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5b70;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.45;
+      text-align: center;
     }
 
     .dashboard-number {
       position: relative;
       z-index: 1;
-      color: var(--navy-900);
-      font-size: 32px;
-      font-weight: 800;
+      color: var(--color-navy-950);
+      font-size: 35px;
+      font-weight: 700;
       line-height: 1;
-      margin-top: 8px;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
     }
 
+    #dashboard-cards[aria-busy='true'] .dashboard-number {
+      width: 58px;
+      height: 34px;
+      color: transparent;
+      border-radius: 9px;
+      background: linear-gradient(90deg, #edf1f5 25%, #f8fafc 42%, #edf1f5 60%);
+      background-size: 240% 100%;
+      animation: loading-shimmer 1.25s linear infinite;
+    }
 
     .search-card {
-      margin: 0 auto 28px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.78);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      padding: 26px;
-      backdrop-filter: blur(18px);
+      width: min(100%, 860px);
+      max-width: 860px;
+      margin: 36px auto;
+      padding: 38px 40px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(220, 228, 236, 0.92);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
     }
 
-    .search-card-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 18px;
-      text-align: left;
-    }
-
-    .search-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      box-shadow: 0 14px 24px rgba(16, 58, 101, 0.22);
-      flex: 0 0 auto;
-    }
-
-    .search-title {
-      margin: 0;
-      color: var(--navy-900);
+    .search-card h5 {
+      color: var(--color-navy-950);
       font-size: 20px;
-      font-weight: 800;
-    }
-
-    .search-hint {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .search-card .input-group {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      width: 100%;
-      align-items: stretch;
+      line-height: 1.4;
+      letter-spacing: 0.005em;
     }
 
     .search-input {
       height: 58px;
-      width: 100%;
-      min-width: 0;
-      border-radius: 17px !important;
-      border: 1px solid rgba(15, 23, 42, 0.14);
-      background: #ffffff;
-      color: var(--navy-900);
       font-size: 17px;
-      padding: 0 18px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      color: var(--color-text);
+      border: 1.5px solid var(--color-border);
+      border-radius: 11px;
+      background: #fbfcfd;
+      transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background-color var(--transition-fast);
+    }
+
+    .search-input::placeholder {
+      color: #8b98a8;
+      opacity: 1;
+    }
+
+    .search-input:hover {
+      border-color: #bac7d4;
+      background: #ffffff;
     }
 
     .search-input:focus {
-      border-color: var(--gold-500);
-      box-shadow: 0 0 0 4px rgba(197, 160, 40, 0.16);
+      color: var(--color-text);
+      background: #ffffff;
+      border-color: var(--color-gold-600);
+      box-shadow: var(--focus-ring);
       outline: none;
-      transform: translateY(-1px);
     }
 
     .btn-search {
-      min-width: 164px;
+      position: relative;
       height: 58px;
-      border-radius: 17px !important;
-      border: none;
-      color: #ffffff;
+      overflow: hidden;
       font-size: 17px;
-      font-weight: 800;
-      padding: 0 22px !important;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
-      box-shadow: 0 15px 26px rgba(7, 26, 51, 0.22);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      white-space: nowrap;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--color-navy-950), var(--color-navy-800));
+      box-shadow: 0 8px 18px rgba(0, 30, 60, 0.18);
+      color: white;
+      transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        color var(--transition-fast),
+        filter var(--transition-fast);
+    }
+
+    .btn-search::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.13) 45%, transparent 70%);
+      transform: translateX(-120%);
+      transition: transform 420ms ease;
+      pointer-events: none;
     }
 
     .btn-search:hover:not(:disabled) {
       transform: translateY(-2px);
-      filter: brightness(1.04);
-      box-shadow: 0 20px 34px rgba(7, 26, 51, 0.28);
-      color: #ffe08a;
+      box-shadow: 0 11px 23px rgba(0, 30, 60, 0.28);
+      color: var(--color-gold-400);
+      filter: saturate(1.05);
+    }
+
+    .btn-search:hover:not(:disabled)::after {
+      transform: translateX(120%);
+    }
+
+    .btn-search:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(0, 30, 60, 0.18), 0 10px 22px rgba(0, 30, 60, 0.22);
+    }
+
+    .btn-search:active:not(:disabled) {
+      transform: translateY(0);
     }
 
     .btn-search:disabled {
-      opacity: 0.72;
+      opacity: 0.78;
       cursor: wait;
-      transform: none;
+      box-shadow: none;
     }
 
-    .quick-note {
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      color: #5a4a17;
-      background: var(--gold-100);
-      border: 1px solid rgba(197, 160, 40, 0.22);
-      font-size: 13px;
-      line-height: 1.55;
-      text-align: left;
+    .btn-search[aria-busy='true']::before {
+      content: '';
+      width: 17px;
+      height: 17px;
+      margin-right: 9px;
+      display: inline-block;
+      vertical-align: -3px;
+      border: 2px solid rgba(255, 255, 255, 0.36);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: loading-spin 700ms linear infinite;
     }
 
     .result-card {
+      max-width: 740px;
       margin: 0 auto 42px;
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
       overflow: hidden;
       display: none;
+      background: rgba(255, 255, 255, 0.99);
+      border: 1px solid rgba(220, 228, 236, 0.95);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      scroll-margin-top: 20px;
+      animation: result-enter 260ms ease-out;
     }
 
     .result-header {
-      padding: 18px 22px;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
-      font-weight: 800;
+      position: relative;
+      padding: 16px 21px;
+      background: linear-gradient(180deg, #fbfcfd 0%, #f5f8fa 100%);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-navy-950);
+      font-weight: 700;
       font-size: 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      letter-spacing: 0.005em;
     }
 
-    .result-header i {
-      color: #ffe08a;
+    .result-header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--color-gold-600);
     }
 
     .result-body {
-      padding: 22px;
+      padding: 26px;
     }
 
-    .info-table {
-      margin: 0;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      background: #ffffff;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .info-table table {
-      margin: 0;
-    }
-
-    .info-table th {
-      width: 35%;
-      background: #f8fafc;
-      color: #475467;
-      font-weight: 700;
-      border-color: rgba(15, 23, 42, 0.08);
-      padding: 14px 16px;
-      vertical-align: top;
-    }
-
-    .info-table td {
-      border-color: rgba(15, 23, 42, 0.08);
-      padding: 14px 16px;
-      vertical-align: top;
-    }
-
-    .rec-no-text {
-      color: var(--navy-700);
-      font-weight: 800;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 15px;
-      font-weight: 800;
-      line-height: 1.3;
-      color: #5a4310;
-      background: linear-gradient(135deg, #fff4cf, #ffe6a1);
-      border: 1px solid rgba(197, 160, 40, 0.25);
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin: 24px 0 12px;
-      color: var(--navy-900);
-    }
-
-    .section-title h6 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .meeting-count-pill {
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--navy-800);
-      background: #eef6ff;
-      border: 1px solid rgba(16, 58, 101, 0.12);
-      white-space: nowrap;
-      font-weight: 700;
-    }
-
-    .meeting-table-wrap {
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-      background: #ffffff;
-    }
-
-    .meeting-table {
-      margin: 0;
+    .result-body .table {
+      --bs-table-bg: transparent;
+      margin-bottom: 0;
+      border-color: var(--color-border);
       vertical-align: middle;
     }
 
-    .meeting-table thead th {
-      background: linear-gradient(180deg, #f8fafc, #eef3f7);
-      color: var(--navy-900);
-      font-weight: 800;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
-      padding: 13px 16px;
+    .result-body .table > :not(caption) > * > * {
+      padding: 0.78rem 0.85rem;
+      border-color: var(--color-border);
     }
 
-    .meeting-table tbody td {
-      padding: 14px 16px;
-      border-color: rgba(15, 23, 42, 0.07);
-    }
-
-    .meeting-table tbody tr:hover {
-      background: #fbfdff;
-    }
-
-    .round-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 46px;
-      min-height: 34px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      color: #ffffff;
-      background: linear-gradient(135deg, var(--navy-800), var(--navy-700));
-      font-weight: 800;
-      box-shadow: 0 8px 16px rgba(16, 58, 101, 0.18);
-    }
-
-    .date-text {
-      color: #344054;
+    .result-body .table th {
+      width: 35%;
+      color: #4d5b6e;
       font-weight: 600;
+      background: #f7f9fb;
     }
 
-    .meeting-note {
-      display: flex;
-      gap: 9px;
-      align-items: flex-start;
-      margin-top: 13px;
-      padding: 13px 14px;
-      border-radius: 16px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #6a4b05;
-      background: #fff8e5;
-      border: 1px solid rgba(197, 160, 40, 0.20);
+    .result-body .table td {
+      color: #27364a;
+      background: #ffffff;
     }
 
-    .meeting-note a {
-      color: var(--navy-700);
-      font-weight: 800;
-      text-decoration: underline;
+    .result-body .table-hover > tbody > tr:hover > * {
+      --bs-table-accent-bg: rgba(0, 55, 101, 0.035);
+      color: inherit;
+    }
+
+    .status-text {
+      color: var(--color-gold-text);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .result-body .table th,
+    .result-body .table td {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .result-body a {
+      color: var(--color-navy-800);
+      font-weight: 600;
       text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      transition: color var(--transition-fast);
     }
 
-    .empty-state {
-      border: 1px dashed rgba(15, 23, 42, 0.18);
-      border-radius: var(--radius-md);
-      background: #f8fafc;
-      padding: 22px;
-      text-align: center;
-      color: #667085;
-      font-size: 14px;
+    .result-body a:hover {
+      color: var(--color-gold-text);
     }
 
-    .empty-state i {
-      display: block;
-      margin-bottom: 10px;
-      color: var(--gold-500);
-      font-size: 24px;
+    .result-body .text-primary {
+      color: var(--color-navy-800) !important;
+    }
+
+    .result-body .alert-secondary {
+      color: #536174;
+      background: #f5f7f9;
+      border-color: var(--color-border);
+      border-radius: 10px;
     }
 
     .public-footer {
-      position: relative;
-      flex-shrink: 0;
-      background: linear-gradient(135deg, var(--navy-900), var(--navy-800));
-      color: rgba(255, 255, 255, 0.76);
-      text-align: center;
-      padding: 24px 15px;
-      font-size: 14px;
-      line-height: 1.8;
-      border-top: 3px solid var(--gold-500);
       width: 100%;
-      margin-top: 16px;
+      margin-top: 42px;
+      padding: 26px 15px 24px;
+      color: rgba(255, 255, 255, 0.74);
+      background: linear-gradient(135deg, var(--color-navy-950), var(--color-navy-900));
+      border-top: 3px solid var(--color-gold-600);
+      box-shadow: 0 -8px 24px rgba(0, 30, 60, 0.08);
+      font-size: 14px;
+      line-height: 1.85;
+      text-align: center;
     }
 
     .public-footer strong {
-      color: #ffe08a;
-      font-weight: 800;
+      color: var(--color-gold-400);
+      font-weight: 600;
     }
 
-
     .public-footer-user-count {
-      max-width: 980px;
+      max-width: 1180px;
       margin: 12px auto 0;
-      padding: 0 6px;
-      text-align: right;
+      padding: 0 5px;
       color: rgba(255, 255, 255, 0.88);
       font-size: 13px;
       line-height: 1.4;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
     .public-footer-user-count span {
-      color: #ffe08a;
-      font-weight: 800;
+      color: var(--color-gold-400);
+      font-weight: 700;
     }
 
+    .search-card .input-group {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: stretch;
+    }
 
-    /* =========================================================
-       PC SEARCH LAYOUT FIX
-       - Expands only the search section on desktop
-       - Keeps dashboard/result width and mobile behavior intact
-       ========================================================= */
-    @media (min-width: 992px) {
-      .search-card {
-        width: min(1120px, calc(100vw - 48px));
-        max-width: none;
-        margin-left: 50%;
-        margin-right: 0;
-        transform: translateX(-50%);
-        padding: 30px 34px;
+    .search-card .search-input {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding-left: 17px;
+      padding-right: 17px;
+      border-radius: 11px !important;
+    }
+
+    .search-card .btn-search {
+      min-width: 165px;
+      margin: 0 !important;
+      padding-left: 22px !important;
+      padding-right: 22px !important;
+      border-radius: 11px !important;
+      white-space: nowrap;
+    }
+
+    .swal2-popup.app-alert {
+      border: 1px solid var(--color-border);
+      border-radius: 18px;
+      box-shadow: 0 22px 70px rgba(0, 30, 60, 0.22);
+      font-family: 'Sarabun', sans-serif;
+    }
+
+    .swal2-popup.app-alert .swal2-title {
+      color: var(--color-navy-950);
+      font-size: 22px;
+    }
+
+    .swal2-popup.app-alert .swal2-html-container {
+      color: #526174;
+      line-height: 1.65;
+    }
+
+    .swal2-confirm.app-alert-confirm {
+      min-width: 118px;
+      padding: 10px 22px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--color-navy-950), var(--color-navy-800));
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 7px 17px rgba(0, 30, 60, 0.2);
+    }
+
+    @keyframes loading-shimmer {
+      to { background-position-x: -140%; }
+    }
+
+    @keyframes loading-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes result-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .dashboard-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(197, 160, 40, 0.35);
+        box-shadow: var(--shadow-card-hover);
       }
 
-      .search-card-header {
-        margin-bottom: 20px;
+      .header-bar img:hover {
+        transform: translateY(-1px) scale(1.015);
       }
 
-      .search-card .input-group {
-        grid-template-columns: minmax(0, 1fr) 210px;
-        gap: 14px;
-      }
 
-      .search-input {
-        height: 62px;
-        font-size: 18px;
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-
-      .btn-search {
-        width: 210px;
-        min-width: 210px;
-        height: 62px;
-        font-size: 17px;
-        padding-left: 24px !important;
-        padding-right: 24px !important;
-      }
-
-      .quick-note {
-        margin-top: 16px;
+      .header-home-link:hover {
+        color: #ffffff;
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.17);
+        border-color: rgba(255, 202, 44, 0.72);
+        box-shadow: 0 10px 24px rgba(0, 20, 45, 0.24);
       }
     }
 
     @media (max-width: 767.98px) {
       .header-bar {
-        padding: 22px 14px 46px;
+        padding: 21px 14px 20px;
       }
 
-      .emblem-wrap {
-        width: 74px;
-        height: 74px;
-        border-radius: 22px;
+      .header-bar img {
+        width: 58px;
+        margin-bottom: 10px !important;
       }
 
-      .emblem-wrap img {
-        width: 54px;
-        height: 54px;
+      .header-title {
+        font-size: 20px;
+        line-height: 1.35;
       }
 
-      .page-container {
+      .header-sub {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+
+      .header-home-link {
+        top: 11px;
+        right: 11px;
+        min-height: 38px;
+        padding: 7px 12px;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .header-home-link svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: none;
         padding-left: 12px;
         padding-right: 12px;
       }
 
-
-
-      .dashboard-wrap {
-        margin-top: -28px;
-        margin-bottom: 18px;
+      .dashboard-wrap,
+      .search-card,
+      .result-card {
+        width: 100%;
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
       }
 
-      .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+      .dashboard-wrap {
+        margin-top: 19px;
       }
 
       .dashboard-card {
-        min-height: 112px;
-        padding: 14px;
-        border-radius: 20px;
-      }
-
-      .dashboard-card-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 13px;
-        margin-bottom: 9px;
+        min-height: 108px;
+        padding: 15px 8px;
+        border-left-width: 4px;
+        border-radius: 14px;
       }
 
       .dashboard-label {
-        min-height: 32px;
-        font-size: 12px;
+        min-height: 38px;
+        font-size: 13px;
+        line-height: 1.35;
       }
 
       .dashboard-number {
-        font-size: 28px;
+        font-size: 30px;
+      }
+
+      #dashboard-cards[aria-busy='true'] .dashboard-number {
+        width: 50px;
+        height: 29px;
       }
 
       .search-card {
-        margin-top: 0;
-        padding: 18px;
-        border-radius: 22px;
+        margin-top: 23px;
+        margin-bottom: 25px;
+        padding: 25px 16px;
+        border-radius: 15px;
       }
 
-      .search-card-header {
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .search-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 16px;
-      }
-
-      .search-title {
+      .search-card h5 {
         font-size: 18px;
       }
 
       .search-card .input-group {
+        width: 100%;
+        display: grid;
         grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
       }
 
-      .search-input,
-      .btn-search {
+      .search-card .search-input,
+      .search-card .btn-search {
         width: 100% !important;
         min-width: 0;
         height: 54px;
+        margin: 0 !important;
+        border-radius: 10px !important;
+      }
+
+      .search-card .search-input {
+        display: block;
+        flex: none;
+        padding: 0 14px;
+        font-size: 16px;
+        line-height: 1.4;
+      }
+
+      .search-card .btn-search {
+        display: block;
+        min-width: 0;
+        padding: 0 16px !important;
         font-size: 16px;
       }
 
+      .result-card {
+        border-radius: 15px;
+      }
+
       .result-header {
-        padding: 16px 18px;
+        padding: 15px 18px;
+        font-size: 17px;
       }
 
       .result-body {
-        padding: 16px;
+        padding: 18px 14px;
       }
 
-      .info-table th,
-      .info-table td {
-        padding: 12px;
-        font-size: 14px;
+      .result-body .table > :not(caption) > * > * {
+        padding: 0.7rem 0.68rem;
       }
 
-      .info-table th {
+      .result-body .table th {
         width: 40%;
+        font-size: 14px;
+        vertical-align: top;
       }
 
-      .section-title {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .meeting-table thead th,
-      .meeting-table tbody td {
-        padding: 12px 10px;
+      .result-body .table td {
         font-size: 14px;
       }
 
-      .round-pill {
-        min-width: 40px;
-        min-height: 31px;
-        padding: 5px 10px;
+      .status-text {
+        font-size: 16px;
       }
 
       .public-footer {
+        padding: 21px 14px;
         font-size: 12px;
-        padding: 20px 14px;
+      }
+
+      .public-footer-user-count {
+        margin-top: 10px;
+        padding: 0;
       }
     }
 
     @media (max-width: 359.98px) {
-      .page-container {
+      .container {
         padding-left: 8px;
         padding-right: 8px;
       }
 
-      .dashboard-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .search-card,
-      .result-body {
+      .search-card {
         padding-left: 12px;
         padding-right: 12px;
+      }
+
+      .dashboard-card {
+        min-height: 101px;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
       *,
       *::before,
       *::after {
         scroll-behavior: auto !important;
-        transition: none !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
 </head>
 <body>
-  <div class="content-wrapper">
-    <section class="hero-shell">
-      <div class="header-bar">
-        <div class="emblem-wrap" aria-hidden="true">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" alt="">
-        </div>
-        <h1 class="header-title">ระบบตรวจสอบสถานะเรื่องพิจารณา</h1>
-        <p class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</p>
-      </div>
-    </section>
+  <div class="content-wrapper" role="main">
+    <div class="header-bar" role="banner">
+      <a class="header-home-link" href="https://www.parliament.go.th/view/623/%E0%B8%AB%E0%B8%99%E0%B9%89%E0%B8%B2%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%81/TH-TH" aria-label="กลับไปยังหน้าหลักเว็บไซต์รัฐสภา">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3 11.5 12 4l9 7.5"></path>
+          <path d="M5.5 10.5V20h13v-9.5"></path>
+          <path d="M9.5 20v-6h5v6"></path>
+        </svg>
+        <span>หน้าหลัก</span>
+      </a>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3" alt="ตรารัฐสภา">
+      <div class="header-title" role="heading" aria-level="1">ระบบตรวจสอบสถานะเรื่องร้องเรียน</div>
+      <div class="header-sub">คณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ สภาผู้แทนราษฎร</div>
+    </div>
 
-    <main class="page-container">
-
-      <section class="dashboard-wrap" aria-label="สรุปสถานะเรื่องพิจารณา">
-        <div class="dashboard-grid">
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-folder-open"></i></div>
-            <div class="dashboard-label">เรื่องร้องเรียนทั้งหมด</div>
-            <div class="dashboard-number" id="dash-total">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-plus"></i></div>
-            <div class="dashboard-label">เรื่องเข้าใหม่</div>
-            <div class="dashboard-number" id="dash-new">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div class="dashboard-label">อยู่ระหว่างการพิจารณา</div>
-            <div class="dashboard-number" id="dash-in-progress">-</div>
-          </article>
-          <article class="dashboard-card">
-            <div class="dashboard-card-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="dashboard-label">พิจารณาเสร็จแล้ว</div>
-            <div class="dashboard-number" id="dash-completed">-</div>
-          </article>
-        </div>
-      </section>
-
-      <section class="search-card" aria-labelledby="search-title">
-        <div class="search-card-header">
-          <div class="search-icon" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></div>
-          <div>
-            <h2 class="search-title" id="search-title">ค้นหาด้วยเลขรับเรื่อง</h2>
-            <p class="search-hint">กรอกเลขรับเรื่องเพื่อตรวจสอบสถานะและครั้งประชุมที่เกี่ยวข้อง</p>
+    <div class="container">
+      <div class="dashboard-wrap">
+        <div class="row g-3" id="dashboard-cards" role="status" aria-live="polite" aria-busy="true" aria-label="สรุปสถานะเรื่องร้องเรียน">
+          <div class="col-6 col-md-4 col-lg">
+            <div class="dashboard-card">
+              <div class="dashboard-label">เรื่องร้องเรียนทั้งหมด</div>
+              <div class="dashboard-number" id="dash-total">-</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg">
+            <div class="dashboard-card">
+              <div class="dashboard-label">เรื่องเข้าใหม่</div>
+              <div class="dashboard-number" id="dash-new">-</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg">
+            <div class="dashboard-card">
+              <div class="dashboard-label">อยู่ระหว่างการพิจารณา</div>
+              <div class="dashboard-number" id="dash-in-progress">-</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg">
+            <div class="dashboard-card">
+              <div class="dashboard-label">พิจารณาเสร็จแล้ว</div>
+              <div class="dashboard-number" id="dash-completed">-</div>
+            </div>
           </div>
         </div>
-        <div class="input-group">
-          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." onkeypress="handleEnter(event)" autocomplete="off" inputmode="text" aria-label="เลขรับเรื่อง">
-          <button class="btn btn-search" id="btn-search" onclick="doSearch()"><i class="fa-solid fa-search me-2"></i>ค้นหาข้อมูล</button>
-        </div>
-        <div class="quick-note">
-          <i class="fa-solid fa-circle-info mt-1" aria-hidden="true"></i>
-          <span>ระบบจะแสดงข้อมูลตามฐานข้อมูลของคณะกรรมาธิการ และแสดงผลการพิจารณาเฉพาะ “ครั้งที่” และ “วันที่ประชุม”</span>
-        </div>
-      </section>
+      </div>
 
-      <section class="result-card" id="result-card" aria-live="polite">
-        <div class="result-header"><i class="fa-solid fa-file-lines"></i>ข้อมูลเรื่องพิจารณา</div>
-        <div class="result-body" id="result-content"></div>
-      </section>
-    </main>
+      <div class="search-card text-center" role="search" aria-labelledby="search-heading">
+        <h5 class="fw-bold mb-3 mb-md-4 text-navy" id="search-heading">ค้นหาด้วยเลขรับเรื่อง</h5>
+        <form class="input-group" id="search-form" novalidate>
+          <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." maxlength="80" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-label="เลขรับเรื่อง">
+          <button type="submit" class="btn btn-search px-4" id="btn-search" aria-busy="false">ค้นหาข้อมูล</button>
+        </form>
+      </div>
+<div class="result-card" id="result-card" role="region" aria-labelledby="result-heading" aria-hidden="true" aria-busy="false">
+        <div class="result-header" id="result-heading">ข้อมูลเรื่องพิจารณา</div>
+        <div class="result-body" id="result-content" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </div>
   </div>
 
   <footer class="public-footer">
@@ -849,17 +864,149 @@
   </footer>
 
   <script>
-    // ใส่ URL ของ Google Apps Script Web App ล่าสุดที่ลงท้ายด้วย /exec
-    const API_URL = "https://script.google.com/macros/s/AKfycbym496efdTZhGhTKQtP8OPGd4_zhTDawq_IIgLypeFCkQQ7EggCPGqMH98ubiDVCZJO3w/exec";
+    const APP_CONFIG = Object.freeze({
+      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbyhRxwTPZcyYOXSKaM56gS_g3YzKPg6_16i7Koprc7U9Z1KISOTo4zXa1a9-JNtKGoHxQ/exec',
+      apiVersion: '1',
+      requestTimeoutMs: 30000
+    });
+
+    const PublicApiTransport = (() => {
+      let requestSequence = 0;
+
+      function getConfiguredUrl() {
+        const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
+        const isPlaceholder = !url || /YOUR_|PLACEHOLDER|DEPLOYMENT_EXEC_URL/i.test(url);
+        const isGasExecUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/i.test(url);
+        if (isPlaceholder || !isGasExecUrl) {
+          throw new Error('ยังไม่ได้กำหนด GAS Web App URL ที่ถูกต้องใน APP_CONFIG.gasWebAppUrl');
+        }
+        return url;
+      }
+
+      function buildUrl(action, params, callbackName) {
+        const url = new URL(getConfiguredUrl());
+        url.searchParams.set('action', action);
+        url.searchParams.set('callback', callbackName);
+        url.searchParams.set('v', APP_CONFIG.apiVersion);
+        url.searchParams.set('_', String(Date.now()));
+
+        Object.keys(params || {}).forEach(key => {
+          const value = params[key];
+          if (value !== undefined && value !== null && value !== '') {
+            url.searchParams.set(key, String(value));
+          }
+        });
+        return url.toString();
+      }
+
+      function request(action, params) {
+        return new Promise((resolve, reject) => {
+          const callbackName = '__externalLookupJsonp_' + Date.now() + '_' + (++requestSequence);
+          const script = document.createElement('script');
+          let settled = false;
+          let timeoutId = null;
+
+          function cleanup() {
+            if (timeoutId !== null) {
+              clearTimeout(timeoutId);
+            }
+            script.onerror = null;
+            if (script.parentNode) {
+              script.parentNode.removeChild(script);
+            }
+            try {
+              delete window[callbackName];
+            } catch (error) {
+              window[callbackName] = undefined;
+            }
+          }
+
+          function finish(handler, value) {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            handler(value);
+          }
+
+          window[callbackName] = payload => {
+            if (!payload || typeof payload !== 'object') {
+              finish(reject, new Error('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง'));
+              return;
+            }
+            if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
+              finish(reject, new Error('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน'));
+              return;
+            }
+            finish(resolve, payload);
+          };
+
+          script.async = true;
+          script.src = buildUrl(action, params || {}, callbackName);
+          script.onerror = () => {
+            finish(reject, new Error('ไม่สามารถเชื่อมต่อ GAS Web App ได้'));
+          };
+
+          timeoutId = window.setTimeout(() => {
+            finish(reject, new Error('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด'));
+          }, APP_CONFIG.requestTimeoutMs);
+
+          document.head.appendChild(script);
+        });
+      }
+
+      return Object.freeze({
+        dashboard(visitorId, clientToken) {
+          return request('dashboard', { visitorId, clientToken });
+        },
+        search(recNo, clientToken) {
+          return request('search', { recNo, clientToken });
+        }
+      });
+    })();
+
+    function createApiError(response, fallbackMessage) {
+      const error = new Error(
+        response && response.msg
+          ? String(response.msg)
+          : String(fallbackMessage || 'ไม่สามารถดำเนินการได้')
+      );
+      error.code = response && response.code ? String(response.code) : 'REQUEST_FAILED';
+      error.requestId = response && response.requestId ? String(response.requestId) : '';
+      error.retryAfterSeconds = Number(response && response.retryAfterSeconds) || 0;
+      return error;
+    }
+
+    function formatErrorMessage(error) {
+      const base = error && error.message ? String(error.message) : 'ไม่สามารถดำเนินการได้';
+      const retry = error && Number(error.retryAfterSeconds) > 0
+        ? `\nกรุณาลองใหม่หลังประมาณ ${Math.ceil(Number(error.retryAfterSeconds))} วินาที`
+        : '';
+      const reference = error && error.requestId
+        ? `\nรหัสอ้างอิง: ${String(error.requestId)}`
+        : '';
+      return base + retry + reference;
+    }
+
+    function validateRecNoInput(value) {
+      const recNo = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      if (!recNo || recNo.length > 80 || /[\u0000-\u001F\u007F<>`"'\\]/.test(recNo)) {
+        return '';
+      }
+      return recNo;
+    }
 
     function showAlert(title, msg, icon) {
       if (typeof Swal !== 'undefined') {
         Swal.fire({
-          title: title,
-          text: msg,
-          icon: icon,
+          title,
+          html: escapeHtml(msg).replace(/\n/g, '<br>'),
+          icon,
           confirmButtonText: 'ตกลง',
-          confirmButtonColor: '#0b2747'
+          buttonsStyling: false,
+          customClass: {
+            popup: 'app-alert',
+            confirmButton: 'app-alert-confirm'
+          }
         });
       } else {
         alert(title + ': ' + msg);
@@ -875,37 +1022,11 @@
         .replace(/'/g, '&#39;');
     }
 
-    function cleanDisplayValue(value) {
-      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-      return text === '-' ? '' : text;
-    }
-
-    function handleEnter(e) {
-      if (e.key === 'Enter') {
-        doSearch();
-      }
-    }
-
-    function setLoading(isLoading, originalText) {
-      const btn = document.getElementById('btn-search');
-      if (!btn) return '';
-      if (isLoading) {
-        const currentText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังค้นหา...';
-        btn.disabled = true;
-        return currentText;
-      }
-      btn.innerHTML = originalText || '<i class="fa-solid fa-search me-2"></i>ค้นหาข้อมูล';
-      btn.disabled = false;
-      return '';
-    }
-
-
     function setText(id, value) {
       const el = document.getElementById(id);
-      if (!el) return;
-      const n = Number(value);
-      el.textContent = Number.isFinite(n) ? n.toLocaleString('th-TH') : (value == null || value === '' ? '0' : String(value));
+      if (el) {
+        el.textContent = value == null || value === '' ? '0' : String(value);
+      }
     }
 
     function getVisitorId() {
@@ -924,131 +1045,158 @@
       }
     }
 
-    async function loadDashboard() {
+    async function registerVisitInBackground() {
       try {
         const visitorId = getVisitorId();
-        const url = `${API_URL}?action=dashboard&visitorId=${encodeURIComponent(visitorId)}`;
-        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
-        const result = await response.json();
-        if (!response.ok || !result || !result.ok) {
-          throw new Error(result && result.msg ? result.msg : 'โหลด Dashboard ไม่สำเร็จ');
+        const response = await PublicApiTransport.dashboard(visitorId, visitorId);
+        if (!response.ok) return;
+        const counts = response.data && response.data.counts ? response.data.counts : {};
+        setText('dash-users', counts.users || 0);
+      } catch (error) {
+        console.warn('usage registration failed');
+      }
+    }
+
+    async function loadDashboard() {
+      try {
+        // Render the dashboard first. Visitor registration runs separately and never blocks first paint.
+        const response = await PublicApiTransport.dashboard('', getVisitorId());
+        if (!response.ok) {
+          throw createApiError(response, 'ไม่สามารถโหลดข้อมูล Dashboard ได้');
         }
-        const data = result.data && result.data.counts ? result.data : (result.counts ? result : {});
-        const counts = data.counts || {};
+        const dashboard = response.data || {};
+        const counts = dashboard.counts || {};
         setText('dash-total', counts.total || 0);
         setText('dash-new', counts.new || 0);
         setText('dash-in-progress', counts.inProgress || 0);
         setText('dash-completed', counts.completed || 0);
         setText('dash-users', counts.users || 0);
+        const dashboardCards = document.getElementById('dashboard-cards');
+        if (dashboardCards) {
+          dashboardCards.setAttribute('aria-busy', 'false');
+          dashboardCards.dataset.dataState = response.degraded ? 'stale' : 'live';
+          dashboardCards.title = response.degraded
+            ? `${response.msg || 'แสดงข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว'}${response.requestId ? ` (รหัสอ้างอิง: ${response.requestId})` : ''}`
+            : '';
+        }
+        window.setTimeout(registerVisitInBackground, 0);
       } catch (error) {
-        setText('dash-total', 0);
-        setText('dash-new', 0);
-        setText('dash-in-progress', 0);
-        setText('dash-completed', 0);
-        setText('dash-users', 0);
-        console.warn('dashboard load failed', error);
+        setText('dash-total', '-');
+        setText('dash-new', '-');
+        setText('dash-in-progress', '-');
+        setText('dash-completed', '-');
+        setText('dash-users', '-');
+        const dashboardCards = document.getElementById('dashboard-cards');
+        if (dashboardCards) {
+          dashboardCards.setAttribute('aria-busy', 'false');
+          dashboardCards.dataset.dataState = 'error';
+          dashboardCards.title = formatErrorMessage(error);
+        }
+        console.warn('dashboard load failed');
       }
     }
 
     async function doSearch() {
-      const input = document.getElementById('recNo');
-      const recNo = input ? input.value.trim() : '';
-      if (!recNo) {
-        showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
-        if (input) input.focus();
-        return;
-      }
-
-      const originalText = setLoading(true);
-      document.getElementById('result-card').style.display = 'none';
-
+      const btn = document.getElementById('btn-search');
+      const originalText = btn.textContent;
       try {
-        const url = `${API_URL}?action=search&recNo=${encodeURIComponent(recNo)}`;
-        const response = await fetch(url, { method: 'GET', cache: 'no-store' });
-        const res = await response.json();
-        setLoading(false, originalText);
-
-        if (!response.ok || !res || (!res.found && !res.ok)) {
-          showAlert('ไม่พบข้อมูล', res && res.msg ? res.msg : 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
+        const recNo = validateRecNoInput(document.getElementById('recNo').value);
+        if (!recNo) {
+          showAlert('แจ้งเตือน', 'กรุณากรอกเลขรับเรื่องที่ต้องการค้นหา', 'warning');
           return;
         }
 
-        const targetData = (res.data && res.data.case) ? res.data.case : (res.data || res);
-        renderResult(targetData || {});
+        btn.textContent = 'กำลังค้นหา...';
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        const resultCard = document.getElementById('result-card');
+        resultCard.style.display = 'none';
+        resultCard.setAttribute('aria-hidden', 'true');
+        resultCard.setAttribute('aria-busy', 'true');
+
+        const response = await PublicApiTransport.search(recNo, getVisitorId());
+        if (!response.ok) {
+          throw createApiError(response, 'ไม่สามารถค้นหาข้อมูลได้');
+        }
+        if (!response.found) {
+          showAlert('ไม่พบข้อมูล', response.msg || 'ไม่มีเลขรับเรื่องดังกล่าว', 'error');
+          return;
+        }
+        renderResult(response.data || {});
+        if (resultCard) {
+          resultCard.dataset.dataState = response.degraded ? 'stale' : 'live';
+          resultCard.title = response.degraded
+            ? `${response.msg || 'แสดงข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว'}${response.requestId ? ` (รหัสอ้างอิง: ${response.requestId})` : ''}`
+            : '';
+        }
       } catch (error) {
-        setLoading(false, originalText);
-        showAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + (error && error.message ? error.message : error), 'error');
+        showAlert('ข้อผิดพลาด', formatErrorMessage(error), 'error');
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+        btn.setAttribute('aria-busy', 'false');
+        const resultCard = document.getElementById('result-card');
+        if (resultCard) {
+          resultCard.setAttribute('aria-busy', 'false');
+        }
       }
     }
 
-    function getStatusIcon(statusGroup) {
-      if (statusGroup === 'new') return 'fa-circle-plus';
-      if (statusGroup === 'inProgress') return 'fa-clock';
-      if (statusGroup === 'completed') return 'fa-circle-check';
-      return 'fa-circle-info';
-    }
+    function isCommitteeMeeting(item) {
+      item = item || {};
+      const typeText = String(item.committeeType || item.meetingType || item.committeeKind || '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+      const subcommitteeName = String(item.subcommitteeName || item.meetingGroup || '').trim();
 
-    function uniqueVisibleMeetings(meetings) {
-      const out = [];
-      const seen = {};
-      (Array.isArray(meetings) ? meetings : []).forEach(item => {
-        const round = cleanDisplayValue(item && item.round);
-        const date = cleanDisplayValue(item && item.date);
-        if (!round && !date) return;
-        const key = round + '|' + normalizeDateKeyForDisplay(date);
-        if (seen[key]) return;
-        seen[key] = true;
-        out.push({ round: round, date: date });
-      });
-      return out;
+      return !(
+        subcommitteeName
+        || typeText.includes('อนุกรรมาธิการ')
+        || typeText.includes('subcommittee')
+        || typeText.includes('sub-committee')
+      );
     }
 
     function renderResult(data) {
       const resultCard = document.getElementById('result-card');
       resultCard.style.display = 'block';
+      resultCard.setAttribute('aria-hidden', 'false');
 
       const recNo = escapeHtml(data.recNo || '');
       const recDate = escapeHtml(toThaiDate(data.recDate));
-      const displayStatus = escapeHtml(data.displayStatus || data.normalizedStatus || data.originalStatus || '');
-      const title = escapeHtml(data.caseTitle || '');
-      const normalizedStatus = String(data.normalizedStatus || data.originalStatus || '');
-      const statusGroup = String(data.statusGroup || '');
-      const meetings = uniqueVisibleMeetings(data.meetings);
-
+      const displayStatus = escapeHtml(data.displayStatus || data.status || data.originalStatus || '');
+      const title = escapeHtml(data.caseTitle || data.title || '');
+      const status = String(data.originalStatus || data.status || '');
+      const meetings = (Array.isArray(data.meetings) ? data.meetings : [])
+        .filter(isCommitteeMeeting)
+        .filter(hasMeetingDisplayData);
       let html = `
-        <div class="info-table">
-          <table class="table table-bordered mb-0">
-            <tr><th>เลขรับเรื่อง</th><td class="rec-no-text">${recNo}</td></tr>
-            <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
-            <tr><th>สถานะ</th><td><span class="status-badge"><i class="fa-solid ${getStatusIcon(statusGroup)}"></i>${displayStatus}</span></td></tr>
+        <table class="table table-bordered mb-0">
+          <tr><th>เลขรับเรื่อง</th><td class="fw-bold text-primary">${recNo}</td></tr>
+          <tr><th>วันที่รับเรื่อง</th><td>${recDate}</td></tr>
+          <tr><th>สถานะ</th><td class="status-text">${displayStatus}</td></tr>
       `;
 
-      const showMeeting = normalizedStatus === 'กมธ. พิจารณา'
-        || normalizedStatus === 'ส่งหน่วยงาน'
-        || normalizedStatus === 'จัดทำรายงาน'
+      const showMeeting = status === 'กมธ. พิจารณา'
+        || status === 'ส่งหน่วยงาน'
+        || status === 'จัดทำรายงาน'
         || meetings.length > 0;
 
-      if (showMeeting && title && title !== 'null') {
+      if (title) {
         html += `<tr><th>ชื่อเรื่องพิจารณา</th><td>${title}</td></tr>`;
       }
-      html += '</table></div>';
+      html += '</table>';
 
       if (showMeeting) {
-        html += `
-          <div class="section-title">
-            <h6><i class="fa-solid fa-calendar-check"></i>ผลการพิจารณา</h6>
-            <span class="meeting-count-pill">${meetings.length} รายการ</span>
-          </div>
-        `;
-
+        html += '<h6 class="fw-bold mt-4 mb-3" style="color: #001e3c;">ผลการพิจารณา</h6>';
         if (meetings.length > 0) {
           html += `
-            <div class="table-responsive meeting-table-wrap">
-              <table class="table table-sm table-hover text-center meeting-table">
-                <thead>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover border text-center mb-0">
+                <thead class="table-light">
                   <tr>
-                    <th width="38%">ครั้งที่</th>
-                    <th>วันที่ประชุม</th>
+                    <th width="50%">ครั้งที่</th>
+                    <th width="50%">วันที่ประชุม</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1057,78 +1205,110 @@
           meetings.forEach(m => {
             html += `
               <tr>
-                <td><span class="round-pill">${escapeHtml(m.round)}</span></td>
-                <td class="date-text">${escapeHtml(toThaiDate(m.date))}</td>
+                <td class="fw-bold">${escapeHtml(cleanDisplayValue(m.round))}</td>
+                <td>${escapeHtml(toThaiDateOrBlank(m.date))}</td>
               </tr>
             `;
           });
 
           html += '</tbody></table></div>';
-          html += `
-            <div class="meeting-note">
-              <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
-              <span>* รายละเอียดผลการพิจารณาให้ดูได้จากบันทึกการประชุม ครั้งที่และวันเดือนปีข้างต้น
-                <a href="https://web.parliament.go.th/view/126/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener">คลิกที่นี่</a>
-              </span>
-            </div>
-          `;
         } else {
-          html += '<div class="empty-state"><i class="fa-regular fa-calendar-xmark"></i>ยังไม่มีประวัติการพิจารณา</div>';
+          html += '<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>';
         }
+
+        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener noreferrer">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี้</a></div>';
       }
 
       document.getElementById('result-content').innerHTML = html;
       setTimeout(() => {
-        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('result-card').scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
       }, 100);
     }
 
-    function normalizeDateKeyForDisplay(value) {
-      const text = String(value == null ? '' : value).trim();
-      const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (ymd) {
-        return ymd[1] + '-' + ('0' + ymd[2]).slice(-2) + '-' + ('0' + ymd[3]).slice(-2);
-      }
-      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (dmy) {
-        let year = Number(dmy[3]);
-        if (year < 100) year += 2500;
-        if (year < 2400) year += 543;
-        return year + '-' + ('0' + dmy[2]).slice(-2) + '-' + ('0' + dmy[1]).slice(-2);
-      }
-      return text;
+    function cleanDisplayValue(value) {
+      const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+      return text === '-' ? '' : text;
     }
 
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+    function hasMeetingDisplayData(item) {
+      return !!(cleanDisplayValue(item && item.round) || cleanDisplayValue(item && item.date));
+    }
+
+    function toThaiDateOrBlank(dateStr) {
+      const text = cleanDisplayValue(dateStr);
+      if (!text || text === 'null') {
+        return '';
+      }
+      const formatted = toThaiDate(text);
+      return cleanDisplayValue(formatted);
+    }
 
     function toThaiDate(dateStr) {
-      if (!dateStr || dateStr === 'null' || dateStr === '') return '-';
+      if (!dateStr || dateStr === 'null') {
+        return '-';
+      }
 
-      const text = String(dateStr).trim();
+      const raw = String(dateStr).trim();
       const months = [
-        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        'มกราคม',
+        'กุมภาพันธ์',
+        'มีนาคม',
+        'เมษายน',
+        'พฤษภาคม',
+        'มิถุนายน',
+        'กรกฎาคม',
+        'สิงหาคม',
+        'กันยายน',
+        'ตุลาคม',
+        'พฤศจิกายน',
+        'ธันวาคม'
       ];
 
-      const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dmy) {
+        const day = Number(dmy[1]);
+        const month = Number(dmy[2]);
+        let year = Number(dmy[3]);
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${day} ${months[month - 1] || ''} ${year}`;
+      }
+
+      const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
       if (ymd) {
         let year = Number(ymd[1]);
-        if (year < 2400) year += 543;
-        return `${Number(ymd[3])} ${months[Number(ymd[2]) - 1] || ''} ${year}`;
+        const month = Number(ymd[2]);
+        const day = Number(ymd[3]);
+        if (year < 2400) {
+          year += 543;
+        }
+        return `${day} ${months[month - 1] || ''} ${year}`;
       }
 
-      const dmy = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if (dmy) {
-        let year = Number(dmy[3]);
-        if (year < 100) year += 2500;
-        if (year < 2400) year += 543;
-        return `${Number(dmy[1])} ${months[Number(dmy[2]) - 1] || ''} ${year}`;
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) {
+        return raw;
       }
 
-      const date = new Date(text);
-      if (isNaN(date.getTime())) return text;
       return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
     }
+
+    function initializeUi() {
+      const searchForm = document.getElementById('search-form');
+      if (searchForm) {
+        searchForm.addEventListener('submit', event => {
+          event.preventDefault();
+          doSearch();
+        });
+      }
+      loadDashboard();
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeUi);
   </script>
 </body>
 </html>
