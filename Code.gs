@@ -1,6 +1,8 @@
 // Google Sheet ฐานข้อมูลหลัก
 const SPREADSHEET_ID = "1iz9PYJHey4Zhry5DHEE1AQK-jco0cDcWe4PdFFwRG9U";
 const PUBLIC_API_VERSION = '1';
+const PUBLIC_JSONP_CALLBACK_MAX_LENGTH = 128;
+const PUBLIC_REC_NO_MAX_LENGTH = 80;
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
@@ -27,6 +29,24 @@ function doGet(e) {
   }
 
   const requestId = createRequestId_();
+  const callbackName = cleanText_(params.callback);
+
+  // Reject malformed callback before touching Spreadsheet.
+  if (!isValidJsonpCallback_(callbackName)) {
+    return jsonpResponse_(callbackName, makeApiEnvelope_(false, requestId, {
+      code: 'INVALID_CALLBACK',
+      msg: 'รูปแบบ callback ไม่ถูกต้อง'
+    }));
+  }
+
+  const requestedVersion = cleanText_(params.v);
+  if (requestedVersion !== PUBLIC_API_VERSION) {
+    return jsonpResponse_(callbackName, makeApiEnvelope_(false, requestId, {
+      code: 'API_VERSION_MISMATCH',
+      msg: 'เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน',
+      expectedVersion: PUBLIC_API_VERSION
+    }));
+  }
 
   try {
     let payload;
@@ -46,10 +66,10 @@ function doGet(e) {
         break;
     }
 
-    return jsonpResponse_(params.callback, payload);
+    return jsonpResponse_(callbackName, payload);
   } catch (error) {
     console.error('[PUBLIC_API][' + requestId + '] ' + (error && error.stack ? error.stack : error));
-    return jsonpResponse_(params.callback, makeApiEnvelope_(false, requestId, {
+    return jsonpResponse_(callbackName, makeApiEnvelope_(false, requestId, {
       code: 'INTERNAL_ERROR',
       msg: 'ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง'
     }));
@@ -107,7 +127,7 @@ function apiDashboard_(params, requestId) {
 function apiSearch_(params, requestId) {
   const recNo = cleanText_(params.recNo);
 
-  if (!recNo || recNo.length > 80) {
+  if (!isValidRecNoInput_(recNo)) {
     return makeApiEnvelope_(false, requestId, {
       code: 'INVALID_REC_NO',
       msg: 'เลขรับเรื่องไม่ถูกต้อง'
@@ -172,7 +192,17 @@ function jsonpResponse_(callback, payload) {
 }
 
 function isValidJsonpCallback_(value) {
-  return /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(cleanText_(value));
+  const callbackName = cleanText_(value);
+  return callbackName.length > 0
+    && callbackName.length <= PUBLIC_JSONP_CALLBACK_MAX_LENGTH
+    && /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callbackName);
+}
+
+function isValidRecNoInput_(value) {
+  const recNo = cleanText_(value);
+  return recNo.length > 0
+    && recNo.length <= PUBLIC_REC_NO_MAX_LENGTH
+    && !/[\u0000-\u001F\u007F<>`"'\\]/.test(recNo);
 }
 
 function createRequestId_() {
@@ -438,6 +468,129 @@ function normalizeDateKey_(value) {
   }
 
   return text;
+}
+
+/**
+ * P0-B live-contract self-test for Apps Script editor.
+ * Reads the current MainData sheet and exercises the same dashboard/search owners
+ * used by the public JSONP router. It does not create or modify spreadsheet data.
+ */
+function runP0BContractSelfTest_() {
+  const tests = [];
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheetByName('MainData');
+
+  function record_(name, passed, detail) {
+    tests.push({
+      name: name,
+      passed: Boolean(passed),
+      detail: cleanText_(detail)
+    });
+  }
+
+  if (!mainSheet) {
+    return {
+      ok: false,
+      apiVersion: PUBLIC_API_VERSION,
+      tests: [{ name: 'MainData', passed: false, detail: 'ไม่พบฐานข้อมูล MainData' }]
+    };
+  }
+
+  const dashboard = apiDashboard_({}, createRequestId_());
+  const dashboardCounts = dashboard && dashboard.data && dashboard.data.counts;
+  record_(
+    'dashboard contract',
+    dashboard && dashboard.ok === true
+      && dashboard.apiVersion === PUBLIC_API_VERSION
+      && !!dashboard.requestId
+      && dashboardCounts
+      && typeof dashboardCounts.total === 'number'
+      && typeof dashboardCounts.new === 'number'
+      && typeof dashboardCounts.inProgress === 'number'
+      && typeof dashboardCounts.completed === 'number',
+    dashboard && dashboard.ok ? 'ผ่าน' : (dashboard && dashboard.code ? dashboard.code : 'ไม่ผ่าน')
+  );
+
+  const rows = mainSheet.getDataRange().getValues();
+  let sampleRecNo = '';
+  for (let i = 1; i < rows.length; i++) {
+    const candidate = cleanText_(rows[i][3]);
+    if (isValidRecNoInput_(candidate)) {
+      sampleRecNo = candidate;
+      break;
+    }
+  }
+
+  if (sampleRecNo) {
+    const found = apiSearch_({ recNo: sampleRecNo }, createRequestId_());
+    record_(
+      'search found contract',
+      found && found.ok === true
+        && found.found === true
+        && found.apiVersion === PUBLIC_API_VERSION
+        && !!found.requestId
+        && found.data
+        && !!found.data.recNo,
+      found && found.ok ? 'ทดสอบด้วยเลขรับเรื่อง ' + sampleRecNo : (found && found.code ? found.code : 'ไม่ผ่าน')
+    );
+  } else {
+    record_('search found contract', false, 'ไม่พบเลขรับเรื่องตัวอย่างใน MainData');
+  }
+
+  const missingRecNo = 'P0B-NOT-FOUND-' + Date.now();
+  const notFound = apiSearch_({ recNo: missingRecNo }, createRequestId_());
+  record_(
+    'search not-found contract',
+    notFound && notFound.ok === true
+      && notFound.found === false
+      && notFound.apiVersion === PUBLIC_API_VERSION
+      && !!notFound.requestId,
+    notFound && notFound.msg ? notFound.msg : 'ไม่ผ่าน'
+  );
+
+  const badInput = apiSearch_({ recNo: '<script>' }, createRequestId_());
+  record_(
+    'invalid recNo contract',
+    badInput && badInput.ok === false
+      && badInput.code === 'INVALID_REC_NO'
+      && badInput.apiVersion === PUBLIC_API_VERSION
+      && !!badInput.requestId,
+    badInput && badInput.code ? badInput.code : 'ไม่ผ่าน'
+  );
+
+  const versionOutput = doGet({
+    parameter: {
+      action: 'dashboard',
+      callback: 'p0bVersionTest',
+      v: '0'
+    }
+  }).getContent();
+  record_(
+    'api version mismatch contract',
+    versionOutput.indexOf('API_VERSION_MISMATCH') >= 0
+      && versionOutput.indexOf('p0bVersionTest(') === 0,
+    versionOutput.indexOf('API_VERSION_MISMATCH') >= 0 ? 'ผ่าน' : 'ไม่ผ่าน'
+  );
+
+  const invalidCallbackOutput = doGet({
+    parameter: {
+      action: 'dashboard',
+      callback: 'bad.callback()',
+      v: PUBLIC_API_VERSION
+    }
+  }).getContent();
+  record_(
+    'invalid callback contract',
+    invalidCallbackOutput.indexOf('"code":"INVALID_CALLBACK"') >= 0,
+    invalidCallbackOutput.indexOf('"code":"INVALID_CALLBACK"') >= 0 ? 'ผ่าน' : 'ไม่ผ่าน'
+  );
+
+  return {
+    ok: tests.every(function (test) { return test.passed; }),
+    apiVersion: PUBLIC_API_VERSION,
+    sampleRecNo: sampleRecNo,
+    tests: tests
+  };
 }
 
 function getStatusContractForExternalLookup() {
