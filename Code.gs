@@ -6,6 +6,11 @@ const PUBLIC_REC_NO_MAX_LENGTH = 80;
 const DASHBOARD_CACHE_TTL_SECONDS = 60;
 const DASHBOARD_READ_COLUMN_COUNT = 9;
 const DASHBOARD_CACHE_KEY = 'dashboard:v' + PUBLIC_API_VERSION + ':' + SPREADSHEET_ID;
+const SEARCH_CASE_COLUMN_COUNT = 18;
+const SEARCH_RECNO_COLUMN = 4;
+const MEETING_CASE_ID_COLUMN = 1;
+const MEETING_DATA_START_COLUMN = 2;
+const MEETING_DATA_COLUMN_COUNT = 2;
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
@@ -190,7 +195,6 @@ function computeDashboardCounts_() {
     return { ok: true, counts: counts };
   }
 
-  // Read only A:I. Business rules use A (caseId), D (recNo), I (status).
   const data = mainSheet.getRange(2, 1, lastRow - 1, DASHBOARD_READ_COLUMN_COUNT).getValues();
 
   for (let i = 0; i < data.length; i++) {
@@ -313,45 +317,50 @@ function createRequestId_() {
   return 'REQ-' + Utilities.getUuid().replace(/-/g, '').slice(0, 16).toUpperCase();
 }
 
-function searchByRecNo(inputRecNo) {
+function searchByRecNo(inputRecNo, diagnostics) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const mainSheet = ss.getSheetByName('MainData');
     if (!mainSheet) return { found: false, msg: 'ไม่พบฐานข้อมูล' };
 
-    const data = mainSheet.getDataRange().getValues();
     const targetRecNo = normalizeRecNo_(inputRecNo);
-    let foundCase = null;
+    const rowNumber = findCaseRowByRecNo_(mainSheet, inputRecNo, diagnostics);
 
-    // ค้นหาข้อมูลจากคอลัมน์เลขรับเรื่อง (Index 3)
-    for (let i = 1; i < data.length; i++) {
-      const currentRecNo = normalizeRecNo_(data[i][3]);
-      if (currentRecNo === targetRecNo) {
-        const originalStatus = cleanText_(data[i][8]);
-        const normalizedStatus = normalizeCaseStatus_(originalStatus);
-        const statusGroup = getStatusGroup_(normalizedStatus);
-        const agencyName = cleanText_(data[i][16] || '');
-        const reason = cleanText_(data[i][17] || '');
-
-        foundCase = {
-          caseId: cleanText_(data[i][0]),
-          recNo: currentRecNo,
-          recDate: data[i][5] instanceof Date ? Utilities.formatDate(data[i][5], 'GMT+7', 'yyyy-MM-dd') : cleanText_(data[i][5]),
-          caseTitle: cleanText_(data[i][15]) || cleanText_(data[i][6]),
-          originalStatus: originalStatus,
-          normalizedStatus: normalizedStatus,
-          statusGroup: statusGroup,
-          displayStatus: makeDisplayStatus_(normalizedStatus, agencyName, reason)
-        };
-        break;
-      }
-    }
-
-    if (!foundCase) {
+    if (!rowNumber) {
       return { found: false, msg: 'ไม่มีเลขรับเรื่องดังกล่าว' };
     }
 
-    foundCase.meetings = readMeetingsByCaseId_(ss, foundCase.caseId);
+    // Fetch one matched row only. Columns A:R preserve the existing output contract.
+    const row = mainSheet.getRange(rowNumber, 1, 1, SEARCH_CASE_COLUMN_COUNT).getValues()[0];
+    const currentRecNo = normalizeRecNo_(row[3]);
+
+    if (currentRecNo !== targetRecNo) {
+      return { found: false, msg: 'ไม่มีเลขรับเรื่องดังกล่าว' };
+    }
+
+    const originalStatus = cleanText_(row[8]);
+    const normalizedStatus = normalizeCaseStatus_(originalStatus);
+    const statusGroup = getStatusGroup_(normalizedStatus);
+    const agencyName = cleanText_(row[16] || '');
+    const reason = cleanText_(row[17] || '');
+
+    const foundCase = {
+      caseId: cleanText_(row[0]),
+      recNo: currentRecNo,
+      recDate: row[5] instanceof Date ? Utilities.formatDate(row[5], 'GMT+7', 'yyyy-MM-dd') : cleanText_(row[5]),
+      caseTitle: cleanText_(row[15]) || cleanText_(row[6]),
+      originalStatus: originalStatus,
+      normalizedStatus: normalizedStatus,
+      statusGroup: statusGroup,
+      displayStatus: makeDisplayStatus_(normalizedStatus, agencyName, reason)
+    };
+
+    if (diagnostics) {
+      diagnostics.caseRowNumber = rowNumber;
+      diagnostics.caseRowCellsRead = SEARCH_CASE_COLUMN_COUNT;
+    }
+
+    foundCase.meetings = readMeetingsByCaseId_(ss, foundCase.caseId, diagnostics);
     return { found: true, data: foundCase };
 
   } catch (e) {
@@ -360,44 +369,106 @@ function searchByRecNo(inputRecNo) {
   }
 }
 
-function readMeetingsByCaseId_(ss, caseId) {
+/**
+ * Fast path: TextFinder searches only MainData column D on the server.
+ * Correctness fallback: if legacy formatting prevents an exact match, scan D only
+ * and apply the canonical normalizeRecNo_ rule used by the original implementation.
+ */
+function findCaseRowByRecNo_(mainSheet, inputRecNo, diagnostics) {
+  const lastRow = mainSheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const targetRecNo = normalizeRecNo_(inputRecNo);
+  const recNoRange = mainSheet.getRange(2, SEARCH_RECNO_COLUMN, lastRow - 1, 1);
+  const candidates = [];
+  const rawCandidate = cleanText_(inputRecNo);
+
+  [rawCandidate, targetRecNo].forEach(function (candidate) {
+    if (candidate && candidates.indexOf(candidate) < 0) {
+      candidates.push(candidate);
+    }
+  });
+
+  for (let i = 0; i < candidates.length; i++) {
+    const match = recNoRange
+      .createTextFinder(candidates[i])
+      .matchEntireCell(true)
+      .findNext();
+
+    if (match && normalizeRecNo_(match.getValue()) === targetRecNo) {
+      if (diagnostics) {
+        diagnostics.mainLookup = 'textfinder';
+        diagnostics.mainFallbackRowsScanned = 0;
+      }
+      return match.getRow();
+    }
+  }
+
+  // Legacy-safe fallback: transfer only column D, never the full MainData range.
+  const values = recNoRange.getValues();
+  if (diagnostics) {
+    diagnostics.mainLookup = 'column-fallback';
+    diagnostics.mainFallbackRowsScanned = values.length;
+  }
+
+  for (let i = 0; i < values.length; i++) {
+    if (normalizeRecNo_(values[i][0]) === targetRecNo) {
+      return i + 2;
+    }
+  }
+
+  return 0;
+}
+
+function readMeetingsByCaseId_(ss, caseId, diagnostics) {
   const meetings = [];
   const targetCaseId = cleanText_(caseId);
   const logSheet = ss.getSheetByName('MeetingLogs');
 
   if (!logSheet || !targetCaseId) {
+    if (diagnostics) diagnostics.meetingLookup = 'none';
     return meetings;
   }
 
-  const logData = logSheet.getDataRange().getValues();
-  const seen = {};
-
-  for (let j = 1; j < logData.length; j++) {
-    const rowCaseId = cleanText_(logData[j][0]);
-    if (rowCaseId !== targetCaseId) {
-      continue;
-    }
-
-    const round = cleanText_(logData[j][1]);
-    const date = logData[j][2] instanceof Date
-      ? Utilities.formatDate(logData[j][2], 'GMT+7', 'yyyy-MM-dd')
-      : cleanText_(logData[j][2]);
-
-    if (!round && !date) {
-      continue;
-    }
-
-    const key = normalizeMeetingRoundKey_(round) + '|' + normalizeDateKey_(date);
-    if (seen[key]) {
-      continue;
-    }
-    seen[key] = true;
-
-    meetings.push({
-      round: round,
-      date: date
-    });
+  const rowNumbers = findMeetingRowsByCaseId_(logSheet, targetCaseId, diagnostics);
+  if (!rowNumbers.length) {
+    return meetings;
   }
+
+  const seen = {};
+  const blocks = groupContiguousRows_(rowNumbers);
+  if (diagnostics) {
+    diagnostics.meetingMatchedRows = rowNumbers.length;
+    diagnostics.meetingReadBlocks = blocks.length;
+  }
+
+  blocks.forEach(function (block) {
+    const values = logSheet
+      .getRange(block.startRow, MEETING_DATA_START_COLUMN, block.rowCount, MEETING_DATA_COLUMN_COUNT)
+      .getValues();
+
+    for (let i = 0; i < values.length; i++) {
+      const round = cleanText_(values[i][0]);
+      const date = values[i][1] instanceof Date
+        ? Utilities.formatDate(values[i][1], 'GMT+7', 'yyyy-MM-dd')
+        : cleanText_(values[i][1]);
+
+      if (!round && !date) {
+        continue;
+      }
+
+      const key = normalizeMeetingRoundKey_(round) + '|' + normalizeDateKey_(date);
+      if (seen[key]) {
+        continue;
+      }
+      seen[key] = true;
+
+      meetings.push({
+        round: round,
+        date: date
+      });
+    }
+  });
 
   meetings.sort(function (a, b) {
     const ar = Number(String(a.round || '').replace(/[^0-9]/g, '')) || 0;
@@ -407,6 +478,89 @@ function readMeetingsByCaseId_(ss, caseId) {
   });
 
   return meetings;
+}
+
+/**
+ * Find MeetingLogs rows by caseId without loading the whole table.
+ * Exact TextFinder is the normal hot path; column-A normalization is a safe fallback.
+ */
+function findMeetingRowsByCaseId_(logSheet, targetCaseId, diagnostics) {
+  const lastRow = logSheet.getLastRow();
+  if (lastRow < 2) {
+    if (diagnostics) diagnostics.meetingLookup = 'empty';
+    return [];
+  }
+
+  const caseIdRange = logSheet.getRange(2, MEETING_CASE_ID_COLUMN, lastRow - 1, 1);
+  const matches = caseIdRange
+    .createTextFinder(targetCaseId)
+    .matchEntireCell(true)
+    .findAll();
+
+  const exactRows = (matches || [])
+    .filter(function (match) {
+      return cleanText_(match.getValue()) === targetCaseId;
+    })
+    .map(function (match) {
+      return match.getRow();
+    });
+
+  if (exactRows.length) {
+    if (diagnostics) {
+      diagnostics.meetingLookup = 'textfinder';
+      diagnostics.meetingFallbackRowsScanned = 0;
+    }
+    return uniqueSortedNumbers_(exactRows);
+  }
+
+  // Legacy-safe fallback scans only column A, not MeetingLogs.getDataRange().
+  const ids = caseIdRange.getValues();
+  const rows = [];
+  for (let i = 0; i < ids.length; i++) {
+    if (cleanText_(ids[i][0]) === targetCaseId) {
+      rows.push(i + 2);
+    }
+  }
+
+  if (diagnostics) {
+    diagnostics.meetingLookup = 'column-fallback';
+    diagnostics.meetingFallbackRowsScanned = ids.length;
+  }
+
+  return rows;
+}
+
+function groupContiguousRows_(rowNumbers) {
+  const rows = uniqueSortedNumbers_(rowNumbers);
+  const blocks = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const current = blocks.length ? blocks[blocks.length - 1] : null;
+
+    if (!current || row !== current.startRow + current.rowCount) {
+      blocks.push({ startRow: row, rowCount: 1 });
+    } else {
+      current.rowCount += 1;
+    }
+  }
+
+  return blocks;
+}
+
+function uniqueSortedNumbers_(values) {
+  const seen = {};
+  const result = [];
+
+  (values || []).forEach(function (value) {
+    const number = Number(value);
+    if (!isFinite(number) || number < 1 || seen[number]) return;
+    seen[number] = true;
+    result.push(number);
+  });
+
+  result.sort(function (a, b) { return a - b; });
+  return result;
 }
 
 function cleanText_(value) {
@@ -728,6 +882,71 @@ function runP1BDashboardHotPathSelfTest_() {
     secondRequestCacheHit: second.cacheHit === true,
     countsMatchFresh: sameCounts,
     counts: first.ok ? first.counts : null
+  };
+}
+
+/**
+ * P1-C search hot-path self-test. Read-only: finds a real sample recNo,
+ * exercises the production search path, and verifies normalization compatibility.
+ */
+function runP1CSearchHotPathSelfTest_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheetByName('MainData');
+
+  if (!mainSheet || mainSheet.getLastRow() < 2) {
+    return {
+      ok: false,
+      msg: 'ไม่พบข้อมูล MainData สำหรับทดสอบ'
+    };
+  }
+
+  const recNoValues = mainSheet
+    .getRange(2, SEARCH_RECNO_COLUMN, mainSheet.getLastRow() - 1, 1)
+    .getValues();
+  let sampleRecNo = '';
+
+  for (let i = 0; i < recNoValues.length; i++) {
+    const candidate = cleanText_(recNoValues[i][0]);
+    if (isValidRecNoInput_(candidate)) {
+      sampleRecNo = candidate;
+      break;
+    }
+  }
+
+  if (!sampleRecNo) {
+    return {
+      ok: false,
+      msg: 'ไม่พบเลขรับเรื่องตัวอย่างสำหรับทดสอบ'
+    };
+  }
+
+  const diagnostics = {};
+  const result = searchByRecNo(sampleRecNo, diagnostics);
+  const normalizedVariant = sampleRecNo.indexOf('/') >= 0
+    ? sampleRecNo.replace('/', ' - ')
+    : sampleRecNo;
+  const variantDiagnostics = {};
+  const variantResult = searchByRecNo(normalizedVariant, variantDiagnostics);
+
+  const primaryOk = result && result.found === true && result.data
+    && normalizeRecNo_(result.data.recNo) === normalizeRecNo_(sampleRecNo);
+  const variantOk = variantResult && variantResult.found === true && variantResult.data
+    && normalizeRecNo_(variantResult.data.recNo) === normalizeRecNo_(sampleRecNo);
+
+  return {
+    ok: Boolean(primaryOk && variantOk),
+    sampleRecNo: sampleRecNo,
+    normalizedVariant: normalizedVariant,
+    primaryLookup: diagnostics.mainLookup || '',
+    variantLookup: variantDiagnostics.mainLookup || '',
+    meetingLookup: diagnostics.meetingLookup || '',
+    caseRowCellsRead: diagnostics.caseRowCellsRead || 0,
+    mainFallbackRowsScanned: diagnostics.mainFallbackRowsScanned || 0,
+    meetingMatchedRows: diagnostics.meetingMatchedRows || 0,
+    meetingReadBlocks: diagnostics.meetingReadBlocks || 0,
+    meetingFallbackRowsScanned: diagnostics.meetingFallbackRowsScanned || 0,
+    meetingCount: primaryOk && Array.isArray(result.data.meetings) ? result.data.meetings.length : 0,
+    normalizedCompatibility: variantOk
   };
 }
 
