@@ -664,12 +664,18 @@
 
 
       .header-home-link {
-        top: 11px;
-        right: 11px;
+        position: static;
+        width: fit-content;
+        max-width: calc(100% - 24px);
+        margin: 0 auto 14px;
         min-height: 38px;
         padding: 7px 12px;
+        display: flex;
         gap: 6px;
         font-size: 13px;
+        line-height: 1.35;
+        white-space: normal;
+        text-align: center;
       }
 
       .header-home-link svg {
