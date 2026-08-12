@@ -955,8 +955,8 @@
       }
 
       return Object.freeze({
-        dashboard(visitorId, clientToken) {
-          return request('dashboard', { visitorId, clientToken });
+        dashboard(visitorId) {
+          return request('dashboard', { visitorId });
         },
         search(recNo, clientToken) {
           return request('search', { recNo, clientToken });
@@ -1045,22 +1045,11 @@
       }
     }
 
-    async function registerVisitInBackground() {
-      try {
-        const visitorId = getVisitorId();
-        const response = await PublicApiTransport.dashboard(visitorId, visitorId);
-        if (!response.ok) return;
-        const counts = response.data && response.data.counts ? response.data.counts : {};
-        setText('dash-users', counts.users || 0);
-      } catch (error) {
-        console.warn('usage registration failed');
-      }
-    }
-
     async function loadDashboard() {
       try {
-        // Render the dashboard first. Visitor registration runs separately and never blocks first paint.
-        const response = await PublicApiTransport.dashboard('', getVisitorId());
+        // P1-A: one dashboard request carries the visitor id; no background duplicate request.
+        const visitorId = getVisitorId();
+        const response = await PublicApiTransport.dashboard(visitorId);
         if (!response.ok) {
           throw createApiError(response, 'ไม่สามารถโหลดข้อมูล Dashboard ได้');
         }
@@ -1079,7 +1068,6 @@
             ? `${response.msg || 'แสดงข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว'}${response.requestId ? ` (รหัสอ้างอิง: ${response.requestId})` : ''}`
             : '';
         }
-        window.setTimeout(registerVisitInBackground, 0);
       } catch (error) {
         setText('dash-total', '-');
         setText('dash-new', '-');
