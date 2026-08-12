@@ -510,7 +510,7 @@
     .search-card .input-group {
       width: 100%;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 12px;
       align-items: stretch;
     }
@@ -531,6 +531,47 @@
       padding-right: 22px !important;
       border-radius: 11px !important;
       white-space: nowrap;
+    }
+
+    .search-card .btn-clear {
+      min-width: 125px;
+      height: 58px;
+      margin: 0 !important;
+      padding: 0 20px !important;
+      color: var(--color-navy-900);
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+      background: #ffffff;
+      border: 1.5px solid #b9c6d3;
+      border-radius: 11px !important;
+      box-shadow: 0 5px 14px rgba(0, 30, 60, 0.07);
+      transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .search-card .btn-clear:hover:not(:disabled) {
+      transform: translateY(-1px);
+      color: var(--color-navy-950);
+      background: #f8fafc;
+      border-color: var(--color-gold-600);
+      box-shadow: 0 8px 18px rgba(0, 30, 60, 0.11);
+    }
+
+    .search-card .btn-clear:focus-visible {
+      outline: none;
+      border-color: var(--color-gold-600);
+      box-shadow: var(--focus-ring);
+    }
+
+    .search-card .btn-clear:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .swal2-popup.app-alert {
@@ -697,7 +738,8 @@
       }
 
       .search-card .search-input,
-      .search-card .btn-search {
+      .search-card .btn-search,
+      .search-card .btn-clear {
         width: 100% !important;
         min-width: 0;
         height: 54px;
@@ -713,7 +755,8 @@
         line-height: 1.4;
       }
 
-      .search-card .btn-search {
+      .search-card .btn-search,
+      .search-card .btn-clear {
         display: block;
         min-width: 0;
         padding: 0 16px !important;
@@ -797,13 +840,13 @@
 <body>
   <div class="content-wrapper" role="main">
     <div class="header-bar" role="banner">
-      <a class="header-home-link" href="https://web.parliament.go.th/view/623/%E0%B8%AA%E0%B8%A3%E0%B8%B8%E0%B8%9B%E0%B8%9C%E0%B8%A5%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" aria-label="กลับไปยังหน้าหลักเว็บไซต์รัฐสภา">
+      <a class="header-home-link" href="https://www.parliament.go.th/view/623/%E0%B8%AB%E0%B8%99%E0%B9%89%E0%B8%B2%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%81/TH-TH" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="เปิดเว็บไซต์คณะกรรมาธิการในแท็บใหม่">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M3 11.5 12 4l9 7.5"></path>
           <path d="M5.5 10.5V20h13v-9.5"></path>
           <path d="M9.5 20v-6h5v6"></path>
         </svg>
-        <span>หน้าหลัก</span>
+        <span>เว็บไซต์คณะกรรมาธิการ</span>
       </a>
       <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Seal_of_the_Parliament_of_Thailand.svg" width="70" class="mb-3" alt="ตรารัฐสภา">
       <div class="header-title" role="heading" aria-level="1">ระบบตรวจสอบสถานะเรื่องร้องเรียน</div>
@@ -844,7 +887,8 @@
         <h5 class="fw-bold mb-3 mb-md-4 text-navy" id="search-heading">ค้นหาด้วยเลขรับเรื่อง</h5>
         <form class="input-group" id="search-form" novalidate>
           <input type="text" id="recNo" class="form-control search-input" placeholder="กรอกเลขรับเรื่อง เช่น 0001/..." maxlength="80" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-label="เลขรับเรื่อง">
-          <button type="submit" class="btn btn-search px-4" id="btn-search" aria-busy="false">ค้นหาข้อมูล</button>
+          <button type="submit" class="btn btn-search px-4" id="btn-search" aria-busy="false" aria-controls="result-card">ค้นหาข้อมูล</button>
+          <button type="button" class="btn btn-clear" id="btn-clear" aria-controls="result-card">ล้างข้อมูล</button>
         </form>
       </div>
 <div class="result-card" id="result-card" role="region" aria-labelledby="result-heading" aria-hidden="true" aria-busy="false">
@@ -1086,6 +1130,7 @@
 
     async function doSearch() {
       const btn = document.getElementById('btn-search');
+      const clearBtn = document.getElementById('btn-clear');
       const originalText = btn.textContent;
       try {
         const recNo = validateRecNoInput(document.getElementById('recNo').value);
@@ -1096,6 +1141,7 @@
 
         btn.textContent = 'กำลังค้นหา...';
         btn.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         const resultCard = document.getElementById('result-card');
         resultCard.style.display = 'none';
@@ -1122,12 +1168,41 @@
       } finally {
         btn.textContent = originalText;
         btn.disabled = false;
+        if (clearBtn) clearBtn.disabled = false;
         btn.setAttribute('aria-busy', 'false');
         const resultCard = document.getElementById('result-card');
         if (resultCard) {
           resultCard.setAttribute('aria-busy', 'false');
         }
       }
+    }
+
+    function resetSearchUi() {
+      const searchForm = document.getElementById('search-form');
+      const input = document.getElementById('recNo');
+      const resultCard = document.getElementById('result-card');
+      const resultContent = document.getElementById('result-content');
+
+      if (searchForm) searchForm.reset();
+      if (input) input.value = '';
+      if (resultContent) resultContent.replaceChildren();
+
+      if (resultCard) {
+        resultCard.style.display = 'none';
+        resultCard.setAttribute('aria-hidden', 'true');
+        resultCard.setAttribute('aria-busy', 'false');
+        delete resultCard.dataset.dataState;
+        resultCard.title = '';
+      }
+
+      const searchCard = document.querySelector('.search-card');
+      if (searchCard) {
+        searchCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      window.setTimeout(() => {
+        if (input) input.focus();
+      }, 0);
     }
 
     function isCommitteeMeeting(item) {
@@ -1293,6 +1368,11 @@
           doSearch();
         });
       }
+      const clearButton = document.getElementById('btn-clear');
+      if (clearButton) {
+        clearButton.addEventListener('click', resetSearchUi);
+      }
+
       loadDashboard();
     }
 
