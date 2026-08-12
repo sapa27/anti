@@ -1,17 +1,182 @@
-// ใส่ ID ของ Google Sheet ฐานข้อมูลหลัก
+// Google Sheet ฐานข้อมูลหลัก
 const SPREADSHEET_ID = "1iz9PYJHey4Zhry5DHEE1AQK-jco0cDcWe4PdFFwRG9U";
+const PUBLIC_API_VERSION = '1';
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
 const STATUS_GROUP_COMPLETED = 'completed';
 const STATUS_GROUP_OTHER = 'other';
 
-function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
+/**
+ * Single canonical GET entrypoint.
+ *
+ * - ไม่มี action: แสดงหน้า GAS เดิม
+ * - action=dashboard: ส่ง JSONP dashboard contract
+ * - action=search: ส่ง JSONP search contract
+ */
+function doGet(e) {
+  const params = e && e.parameter ? e.parameter : {};
+  const action = cleanText_(params.action).toLowerCase();
+
+  if (!action) {
+    return HtmlService.createTemplateFromFile('Index')
       .evaluate()
       .setTitle('สืบค้นสถานะเรื่องพิจารณา - คณะกรรมาธิการ ป.ป.ช.')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  const requestId = createRequestId_();
+
+  try {
+    let payload;
+
+    switch (action) {
+      case 'dashboard':
+        payload = apiDashboard_(params, requestId);
+        break;
+      case 'search':
+        payload = apiSearch_(params, requestId);
+        break;
+      default:
+        payload = makeApiEnvelope_(false, requestId, {
+          code: 'ACTION_NOT_SUPPORTED',
+          msg: 'ไม่รองรับคำสั่งที่ร้องขอ'
+        });
+        break;
+    }
+
+    return jsonpResponse_(params.callback, payload);
+  } catch (error) {
+    console.error('[PUBLIC_API][' + requestId + '] ' + (error && error.stack ? error.stack : error));
+    return jsonpResponse_(params.callback, makeApiEnvelope_(false, requestId, {
+      code: 'INTERNAL_ERROR',
+      msg: 'ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง'
+    }));
+  }
+}
+
+function apiDashboard_(params, requestId) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheetByName('MainData');
+
+  if (!mainSheet) {
+    return makeApiEnvelope_(false, requestId, {
+      code: 'MAIN_DATA_NOT_FOUND',
+      msg: 'ไม่พบฐานข้อมูล MainData'
+    });
+  }
+
+  const data = mainSheet.getDataRange().getValues();
+  const counts = {
+    total: 0,
+    new: 0,
+    inProgress: 0,
+    completed: 0,
+    users: 0
+  };
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const caseId = cleanText_(row[0]);
+    const recNo = normalizeRecNo_(row[3]);
+
+    if (!caseId && !recNo) {
+      continue;
+    }
+
+    counts.total += 1;
+
+    const statusGroup = getStatusGroup_(normalizeCaseStatus_(row[8]));
+    if (statusGroup === STATUS_GROUP_NEW) {
+      counts.new += 1;
+    } else if (statusGroup === STATUS_GROUP_IN_PROGRESS) {
+      counts.inProgress += 1;
+    } else if (statusGroup === STATUS_GROUP_COMPLETED) {
+      counts.completed += 1;
+    }
+  }
+
+  return makeApiEnvelope_(true, requestId, {
+    data: {
+      counts: counts
+    }
+  });
+}
+
+function apiSearch_(params, requestId) {
+  const recNo = cleanText_(params.recNo);
+
+  if (!recNo || recNo.length > 80) {
+    return makeApiEnvelope_(false, requestId, {
+      code: 'INVALID_REC_NO',
+      msg: 'เลขรับเรื่องไม่ถูกต้อง'
+    });
+  }
+
+  const result = searchByRecNo(recNo);
+
+  if (!result || !result.found) {
+    const isNotFound = result && result.msg === 'ไม่มีเลขรับเรื่องดังกล่าว';
+
+    if (isNotFound) {
+      return makeApiEnvelope_(true, requestId, {
+        found: false,
+        msg: result.msg
+      });
+    }
+
+    return makeApiEnvelope_(false, requestId, {
+      code: 'SEARCH_FAILED',
+      msg: result && result.msg ? result.msg : 'ไม่สามารถค้นหาข้อมูลได้'
+    });
+  }
+
+  return makeApiEnvelope_(true, requestId, {
+    found: true,
+    data: result.data
+  });
+}
+
+function makeApiEnvelope_(ok, requestId, extra) {
+  const payload = {
+    ok: Boolean(ok),
+    apiVersion: PUBLIC_API_VERSION,
+    requestId: requestId
+  };
+
+  Object.keys(extra || {}).forEach(function (key) {
+    payload[key] = extra[key];
+  });
+
+  return payload;
+}
+
+function jsonpResponse_(callback, payload) {
+  const callbackName = cleanText_(callback);
+
+  if (!isValidJsonpCallback_(callbackName)) {
+    const fallback = makeApiEnvelope_(false, payload && payload.requestId ? payload.requestId : createRequestId_(), {
+      code: 'INVALID_CALLBACK',
+      msg: 'รูปแบบ callback ไม่ถูกต้อง'
+    });
+
+    return ContentService
+      .createTextOutput(JSON.stringify(fallback))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService
+    .createTextOutput(callbackName + '(' + JSON.stringify(payload) + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function isValidJsonpCallback_(value) {
+  return /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(cleanText_(value));
+}
+
+function createRequestId_() {
+  return 'REQ-' + Utilities.getUuid().replace(/-/g, '').slice(0, 16).toUpperCase();
 }
 
 function searchByRecNo(inputRecNo) {
@@ -56,7 +221,8 @@ function searchByRecNo(inputRecNo) {
     return { found: true, data: foundCase };
 
   } catch (e) {
-    return { found: false, msg: e && e.message ? e.message : String(e) };
+    console.error('[searchByRecNo] ' + (e && e.stack ? e.stack : e));
+    return { found: false, msg: 'ไม่สามารถค้นหาข้อมูลได้' };
   }
 }
 
