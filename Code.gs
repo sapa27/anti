@@ -3,6 +3,9 @@ const SPREADSHEET_ID = "1iz9PYJHey4Zhry5DHEE1AQK-jco0cDcWe4PdFFwRG9U";
 const PUBLIC_API_VERSION = '1';
 const PUBLIC_JSONP_CALLBACK_MAX_LENGTH = 128;
 const PUBLIC_REC_NO_MAX_LENGTH = 80;
+const DASHBOARD_CACHE_TTL_SECONDS = 60;
+const DASHBOARD_READ_COLUMN_COUNT = 9;
+const DASHBOARD_CACHE_KEY = 'dashboard:v' + PUBLIC_API_VERSION + ':' + SPREADSHEET_ID;
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
@@ -77,17 +80,103 @@ function doGet(e) {
 }
 
 function apiDashboard_(params, requestId) {
+  const snapshot = getDashboardSnapshot_();
+
+  if (!snapshot.ok) {
+    return makeApiEnvelope_(false, requestId, {
+      code: snapshot.code || 'DASHBOARD_READ_FAILED',
+      msg: snapshot.msg || 'ไม่สามารถโหลดข้อมูล Dashboard ได้'
+    });
+  }
+
+  return makeApiEnvelope_(true, requestId, {
+    data: {
+      counts: snapshot.counts
+    },
+    meta: {
+      cacheHit: snapshot.cacheHit === true,
+      generatedAt: snapshot.generatedAt || '',
+      cacheTtlSeconds: DASHBOARD_CACHE_TTL_SECONDS
+    }
+  });
+}
+
+/**
+ * P1-B Dashboard hot path.
+ * Cache hit returns without opening Spreadsheet. Cache miss reads only A:I,
+ * which preserves the original A/D/I business rules without scanning all columns.
+ */
+function getDashboardSnapshot_() {
+  const cache = CacheService.getScriptCache();
+  const cached = readDashboardCache_(cache);
+  if (cached) {
+    return {
+      ok: true,
+      counts: cached.counts,
+      generatedAt: cached.generatedAt,
+      cacheHit: true
+    };
+  }
+
+  const fresh = computeDashboardCounts_();
+  if (!fresh.ok) {
+    return fresh;
+  }
+
+  const snapshot = {
+    counts: fresh.counts,
+    generatedAt: new Date().toISOString()
+  };
+
+  try {
+    cache.put(DASHBOARD_CACHE_KEY, JSON.stringify(snapshot), DASHBOARD_CACHE_TTL_SECONDS);
+  } catch (error) {
+    console.warn('[DashboardCache] put failed: ' + (error && error.message ? error.message : error));
+  }
+
+  return {
+    ok: true,
+    counts: snapshot.counts,
+    generatedAt: snapshot.generatedAt,
+    cacheHit: false
+  };
+}
+
+function readDashboardCache_(cache) {
+  try {
+    const raw = cache.get(DASHBOARD_CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !isDashboardCountsValid_(parsed.counts)) {
+      cache.remove(DASHBOARD_CACHE_KEY);
+      return null;
+    }
+
+    return {
+      counts: parsed.counts,
+      generatedAt: cleanText_(parsed.generatedAt)
+    };
+  } catch (error) {
+    try {
+      cache.remove(DASHBOARD_CACHE_KEY);
+    } catch (ignore) {}
+    return null;
+  }
+}
+
+function computeDashboardCounts_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const mainSheet = ss.getSheetByName('MainData');
 
   if (!mainSheet) {
-    return makeApiEnvelope_(false, requestId, {
+    return {
+      ok: false,
       code: 'MAIN_DATA_NOT_FOUND',
       msg: 'ไม่พบฐานข้อมูล MainData'
-    });
+    };
   }
 
-  const data = mainSheet.getDataRange().getValues();
   const counts = {
     total: 0,
     new: 0,
@@ -95,8 +184,16 @@ function apiDashboard_(params, requestId) {
     completed: 0,
     users: 0
   };
+  const lastRow = mainSheet.getLastRow();
 
-  for (let i = 1; i < data.length; i++) {
+  if (lastRow < 2) {
+    return { ok: true, counts: counts };
+  }
+
+  // Read only A:I. Business rules use A (caseId), D (recNo), I (status).
+  const data = mainSheet.getRange(2, 1, lastRow - 1, DASHBOARD_READ_COLUMN_COUNT).getValues();
+
+  for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const caseId = cleanText_(row[0]);
     const recNo = normalizeRecNo_(row[3]);
@@ -117,10 +214,17 @@ function apiDashboard_(params, requestId) {
     }
   }
 
-  return makeApiEnvelope_(true, requestId, {
-    data: {
-      counts: counts
-    }
+  return { ok: true, counts: counts };
+}
+
+function isDashboardCountsValid_(counts) {
+  if (!counts || typeof counts !== 'object') return false;
+
+  const keys = ['total', 'new', 'inProgress', 'completed', 'users'];
+  return keys.every(function (key) {
+    return typeof counts[key] === 'number'
+      && isFinite(counts[key])
+      && counts[key] >= 0;
   });
 }
 
@@ -590,6 +694,40 @@ function runP0BContractSelfTest_() {
     apiVersion: PUBLIC_API_VERSION,
     sampleRecNo: sampleRecNo,
     tests: tests
+  };
+}
+
+/**
+ * P1-B hot-path self-test. Read-only to Spreadsheet; it only clears/rebuilds
+ * the Script Cache entry and compares cache-hit data with a fresh computation.
+ */
+function runP1BDashboardHotPathSelfTest_() {
+  const cache = CacheService.getScriptCache();
+  cache.remove(DASHBOARD_CACHE_KEY);
+
+  const first = getDashboardSnapshot_();
+  const second = getDashboardSnapshot_();
+  const fresh = computeDashboardCounts_();
+
+  const sameCounts = first.ok && second.ok && fresh.ok
+    && JSON.stringify(first.counts) === JSON.stringify(second.counts)
+    && JSON.stringify(first.counts) === JSON.stringify(fresh.counts);
+
+  return {
+    ok: Boolean(
+      first.ok
+      && second.ok
+      && fresh.ok
+      && first.cacheHit === false
+      && second.cacheHit === true
+      && sameCounts
+    ),
+    cacheTtlSeconds: DASHBOARD_CACHE_TTL_SECONDS,
+    readColumnCount: DASHBOARD_READ_COLUMN_COUNT,
+    firstRequestCacheHit: first.cacheHit === true,
+    secondRequestCacheHit: second.cacheHit === true,
+    countsMatchFresh: sameCounts,
+    counts: first.ok ? first.counts : null
   };
 }
 
