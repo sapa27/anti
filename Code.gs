@@ -16,6 +16,7 @@ const SEARCH_RECNO_COLUMN = 4;
 const MEETING_CASE_ID_COLUMN = 1;
 const MEETING_DATA_START_COLUMN = 2;
 const MEETING_DATA_COLUMN_COUNT = 2;
+const PERFORMANCE_LOG_PREFIX = '[PERF]';
 
 const STATUS_GROUP_NEW = 'new';
 const STATUS_GROUP_IN_PROGRESS = 'inProgress';
@@ -90,25 +91,49 @@ function doGet(e) {
 }
 
 function apiDashboard_(params, requestId) {
+  const startedAt = Date.now();
   const snapshot = getDashboardSnapshot_();
+  const durationMs = elapsedMs_(startedAt);
 
   if (!snapshot.ok) {
+    logPerformance_({
+      action: 'dashboard',
+      requestId: requestId,
+      ok: false,
+      cacheHit: false,
+      durationMs: durationMs
+    });
     return makeApiEnvelope_(false, requestId, {
       code: snapshot.code || 'DASHBOARD_READ_FAILED',
-      msg: snapshot.msg || 'ไม่สามารถโหลดข้อมูล Dashboard ได้'
+      msg: snapshot.msg || 'ไม่สามารถโหลดข้อมูล Dashboard ได้',
+      meta: {
+        cacheHit: false,
+        cacheTtlSeconds: DASHBOARD_CACHE_TTL_SECONDS,
+        durationMs: durationMs
+      }
     });
   }
 
-  return makeApiEnvelope_(true, requestId, {
+  const payload = makeApiEnvelope_(true, requestId, {
     data: {
       counts: snapshot.counts
     },
     meta: {
       cacheHit: snapshot.cacheHit === true,
       generatedAt: snapshot.generatedAt || '',
-      cacheTtlSeconds: DASHBOARD_CACHE_TTL_SECONDS
+      cacheTtlSeconds: DASHBOARD_CACHE_TTL_SECONDS,
+      durationMs: durationMs
     }
   });
+
+  logPerformance_({
+    action: 'dashboard',
+    requestId: requestId,
+    ok: true,
+    cacheHit: snapshot.cacheHit === true,
+    durationMs: durationMs
+  });
+  return payload;
 }
 
 /**
@@ -238,45 +263,82 @@ function isDashboardCountsValid_(counts) {
 }
 
 function apiSearch_(params, requestId) {
+  const startedAt = Date.now();
   const recNo = cleanText_(params.recNo);
 
   if (!isValidRecNoInput_(recNo)) {
+    const invalidDurationMs = elapsedMs_(startedAt);
+    logPerformance_({
+      action: 'search',
+      requestId: requestId,
+      ok: false,
+      found: false,
+      cacheHit: false,
+      durationMs: invalidDurationMs,
+      outcome: 'invalid-input'
+    });
     return makeApiEnvelope_(false, requestId, {
       code: 'INVALID_REC_NO',
-      msg: 'เลขรับเรื่องไม่ถูกต้อง'
+      msg: 'เลขรับเรื่องไม่ถูกต้อง',
+      meta: {
+        cacheHit: false,
+        cacheTtlSeconds: SEARCH_CACHE_TTL_SECONDS,
+        durationMs: invalidDurationMs,
+        source: 'validation'
+      }
     });
   }
 
   const diagnostics = {};
   const result = searchByRecNo(recNo, diagnostics);
+  const durationMs = elapsedMs_(startedAt);
   const meta = {
     cacheHit: diagnostics.searchCacheHit === true,
-    cacheTtlSeconds: SEARCH_CACHE_TTL_SECONDS
+    cacheTtlSeconds: SEARCH_CACHE_TTL_SECONDS,
+    durationMs: durationMs,
+    source: diagnostics.searchCacheHit === true ? 'cache' : 'fresh'
   };
+  let payload;
 
   if (!result || !result.found) {
     const isNotFound = result && result.msg === 'ไม่มีเลขรับเรื่องดังกล่าว';
 
     if (isNotFound) {
-      return makeApiEnvelope_(true, requestId, {
+      payload = makeApiEnvelope_(true, requestId, {
         found: false,
         msg: result.msg,
         meta: meta
       });
+    } else {
+      payload = makeApiEnvelope_(false, requestId, {
+        code: 'SEARCH_FAILED',
+        msg: result && result.msg ? result.msg : 'ไม่สามารถค้นหาข้อมูลได้',
+        meta: meta
+      });
     }
-
-    return makeApiEnvelope_(false, requestId, {
-      code: 'SEARCH_FAILED',
-      msg: result && result.msg ? result.msg : 'ไม่สามารถค้นหาข้อมูลได้',
+  } else {
+    payload = makeApiEnvelope_(true, requestId, {
+      found: true,
+      data: result.data,
       meta: meta
     });
   }
 
-  return makeApiEnvelope_(true, requestId, {
-    found: true,
-    data: result.data,
-    meta: meta
+  logPerformance_({
+    action: 'search',
+    requestId: requestId,
+    ok: payload.ok === true,
+    found: payload.found === true,
+    cacheHit: diagnostics.searchCacheHit === true,
+    durationMs: durationMs,
+    cacheLookupMs: numberOrZero_(diagnostics.cacheLookupMs),
+    freshDurationMs: numberOrZero_(diagnostics.freshDurationMs),
+    mainLookup: cleanText_(diagnostics.mainLookup),
+    mainLookupMs: numberOrZero_(diagnostics.mainLookupMs),
+    meetingLookup: cleanText_(diagnostics.meetingLookup),
+    meetingLookupMs: numberOrZero_(diagnostics.meetingLookupMs)
   });
+  return payload;
 }
 
 function makeApiEnvelope_(ok, requestId, extra) {
@@ -330,27 +392,52 @@ function createRequestId_() {
   return 'REQ-' + Utilities.getUuid().replace(/-/g, '').slice(0, 16).toUpperCase();
 }
 
+function elapsedMs_(startedAt) {
+  const start = Number(startedAt);
+  if (!isFinite(start)) return 0;
+  return Math.max(0, Date.now() - start);
+}
+
+function numberOrZero_(value) {
+  const number = Number(value);
+  return isFinite(number) && number >= 0 ? number : 0;
+}
+
+function logPerformance_(entry) {
+  try {
+    console.log(PERFORMANCE_LOG_PREFIX + ' ' + JSON.stringify(entry || {}));
+  } catch (ignore) {}
+}
+
 function searchByRecNo(inputRecNo, diagnostics) {
   diagnostics = diagnostics || {};
+  const startedAt = Date.now();
   const normalizedRecNo = normalizeRecNo_(inputRecNo);
   const cache = CacheService.getScriptCache();
   const cacheKey = getSearchCacheKey_(normalizedRecNo);
+  const cacheStartedAt = Date.now();
 
   try {
     const cached = cache.get(cacheKey);
+    diagnostics.cacheLookupMs = elapsedMs_(cacheStartedAt);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.found === true && parsed.data
         && normalizeRecNo_(parsed.data.recNo) === normalizedRecNo) {
         diagnostics.searchCacheHit = true;
+        diagnostics.searchDurationMs = elapsedMs_(startedAt);
         return parsed;
       }
       cache.remove(cacheKey);
     }
-  } catch (ignore) {}
+  } catch (ignore) {
+    diagnostics.cacheLookupMs = elapsedMs_(cacheStartedAt);
+  }
 
   diagnostics.searchCacheHit = false;
+  const freshStartedAt = Date.now();
   const result = searchByRecNoFresh_(inputRecNo, diagnostics);
+  diagnostics.freshDurationMs = elapsedMs_(freshStartedAt);
 
   // Cache only successful hits. Not-found stays uncached so newly-added cases
   // are visible immediately without waiting for negative-cache expiry.
@@ -362,6 +449,7 @@ function searchByRecNo(inputRecNo, diagnostics) {
     }
   }
 
+  diagnostics.searchDurationMs = elapsedMs_(startedAt);
   return result;
 }
 
@@ -372,7 +460,9 @@ function searchByRecNoFresh_(inputRecNo, diagnostics) {
     if (!mainSheet) return { found: false, msg: 'ไม่พบฐานข้อมูล' };
 
     const targetRecNo = normalizeRecNo_(inputRecNo);
+    const mainLookupStartedAt = Date.now();
     const rowNumber = findCaseRowByRecNo_(mainSheet, inputRecNo, diagnostics);
+    if (diagnostics) diagnostics.mainLookupMs = elapsedMs_(mainLookupStartedAt);
 
     if (!rowNumber) {
       return { found: false, msg: 'ไม่มีเลขรับเรื่องดังกล่าว' };
@@ -407,7 +497,9 @@ function searchByRecNoFresh_(inputRecNo, diagnostics) {
       diagnostics.caseRowCellsRead = SEARCH_CASE_COLUMN_COUNT;
     }
 
+    const meetingLookupStartedAt = Date.now();
     foundCase.meetings = readMeetingsByCaseId_(ss, foundCase.caseId, diagnostics);
+    if (diagnostics) diagnostics.meetingLookupMs = elapsedMs_(meetingLookupStartedAt);
     return { found: true, data: foundCase };
 
   } catch (e) {
@@ -454,11 +546,19 @@ function invalidateSearchCacheByRecNo_(recNo) {
   }
 }
 
+function invalidateAllSearchCaches_(reason) {
+  return advanceSearchCacheGeneration_(reason, false);
+}
+
 /**
  * Canonical broad invalidation owner. Call AFTER successful MainData writes,
  * bulk imports, or any write where the affected recNo is not known.
  */
 function invalidatePublicDataCaches_(reason) {
+  return advanceSearchCacheGeneration_(reason, true);
+}
+
+function advanceSearchCacheGeneration_(reason, clearDashboard) {
   const lock = LockService.getScriptLock();
   let locked = false;
   try {
@@ -475,13 +575,14 @@ function invalidatePublicDataCaches_(reason) {
     const cache = CacheService.getScriptCache();
     try {
       cache.put(SEARCH_CACHE_GENERATION_KEY, String(generation), SEARCH_CACHE_GENERATION_TTL_SECONDS);
-      cache.remove(DASHBOARD_CACHE_KEY);
+      if (clearDashboard) cache.remove(DASHBOARD_CACHE_KEY);
     } catch (ignore) {}
 
     return {
       ok: true,
       previousGeneration: previous,
       generation: generation,
+      dashboardInvalidated: clearDashboard === true,
       reason: cleanText_(reason)
     };
   } finally {
@@ -491,6 +592,48 @@ function invalidatePublicDataCaches_(reason) {
   }
 }
 
+/**
+ * P1-E single write-path invalidation hook.
+ * Call only AFTER the real write owner reports a successful Spreadsheet write.
+ *
+ * MainData   -> invalidate Dashboard + all Search generations.
+ * MeetingLogs with recNo -> invalidate only that Search result.
+ * MeetingLogs without recNo -> invalidate all Search generations only.
+ */
+function afterPublicDataWrite_(writeInfo) {
+  const info = writeInfo || {};
+  const sheetKey = cleanText_(info.sheetName || info.source).toLowerCase();
+  const recNo = normalizeRecNo_(info.recNo);
+  const reason = cleanText_(info.reason) || (sheetKey ? sheetKey + ' write' : 'public data write');
+
+  if (sheetKey === 'meetinglogs') {
+    if (recNo) {
+      const targetedOk = invalidateSearchCacheByRecNo_(recNo);
+      return {
+        ok: targetedOk,
+        scope: 'search-record',
+        recNo: recNo,
+        reason: reason
+      };
+    }
+
+    const searchAll = invalidateAllSearchCaches_(reason);
+    searchAll.scope = 'search-all';
+    return searchAll;
+  }
+
+  if (sheetKey === 'maindata') {
+    const publicAll = invalidatePublicDataCaches_(reason);
+    publicAll.scope = 'public-all';
+    return publicAll;
+  }
+
+  return {
+    ok: false,
+    code: 'UNSUPPORTED_WRITE_SOURCE',
+    msg: 'รองรับการ invalidate หลังเขียนข้อมูลเฉพาะ MainData หรือ MeetingLogs'
+  };
+}
 
 /**
  * Fast path: TextFinder searches only MainData column D on the server.
@@ -1075,7 +1218,6 @@ function runP1CSearchHotPathSelfTest_() {
   };
 }
 
-
 /**
  * P1-D cache self-test. Spreadsheet stays read-only; cache generation is advanced
  * once to verify that a global invalidation makes the next search cold again.
@@ -1134,6 +1276,88 @@ function runP1DSearchCacheSelfTest_() {
     beforeGeneration: beforeGeneration,
     afterGeneration: afterGeneration,
     dataMatchesAfterInvalidation: sameData
+  };
+}
+
+/**
+ * P1-E self-test. No Spreadsheet data is changed; only cache entries/generation
+ * are invalidated to verify write-hook wiring and public observability metadata.
+ */
+function runP1EWriteHookAndObservabilitySelfTest_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheetByName('MainData');
+  if (!mainSheet || mainSheet.getLastRow() < 2) {
+    return { ok: false, msg: 'ไม่พบข้อมูล MainData สำหรับทดสอบ' };
+  }
+
+  const values = mainSheet
+    .getRange(2, SEARCH_RECNO_COLUMN, mainSheet.getLastRow() - 1, 1)
+    .getValues();
+  let sampleRecNo = '';
+  for (let i = 0; i < values.length; i++) {
+    const candidate = cleanText_(values[i][0]);
+    if (isValidRecNoInput_(candidate)) {
+      sampleRecNo = candidate;
+      break;
+    }
+  }
+  if (!sampleRecNo) return { ok: false, msg: 'ไม่พบเลขรับเรื่องตัวอย่างสำหรับทดสอบ' };
+
+  invalidateSearchCacheByRecNo_(sampleRecNo);
+  const firstDiagnostics = {};
+  const first = searchByRecNo(sampleRecNo, firstDiagnostics);
+  const secondDiagnostics = {};
+  const second = searchByRecNo(sampleRecNo, secondDiagnostics);
+
+  const targeted = afterPublicDataWrite_({
+    sheetName: 'MeetingLogs',
+    recNo: sampleRecNo,
+    reason: 'P1-E targeted self-test'
+  });
+  const thirdDiagnostics = {};
+  const third = searchByRecNo(sampleRecNo, thirdDiagnostics);
+
+  const generationBefore = getSearchCacheGeneration_();
+  const broad = afterPublicDataWrite_({
+    sheetName: 'MainData',
+    reason: 'P1-E broad self-test'
+  });
+  const generationAfter = getSearchCacheGeneration_();
+  const observed = apiSearch_({ recNo: sampleRecNo }, createRequestId_());
+  const observedMeta = observed && observed.meta ? observed.meta : {};
+
+  const sameData = first && second && third && observed
+    && first.found === true && second.found === true && third.found === true && observed.found === true
+    && JSON.stringify(first.data) === JSON.stringify(second.data)
+    && JSON.stringify(first.data) === JSON.stringify(third.data)
+    && JSON.stringify(first.data) === JSON.stringify(observed.data);
+
+  return {
+    ok: Boolean(
+      sameData
+      && firstDiagnostics.searchCacheHit === false
+      && secondDiagnostics.searchCacheHit === true
+      && targeted && targeted.ok === true && targeted.scope === 'search-record'
+      && thirdDiagnostics.searchCacheHit === false
+      && broad && broad.ok === true && broad.scope === 'public-all'
+      && generationAfter > generationBefore
+      && observedMeta.cacheHit === false
+      && typeof observedMeta.durationMs === 'number'
+      && observedMeta.durationMs >= 0
+      && observedMeta.source === 'fresh'
+    ),
+    sampleRecNo: sampleRecNo,
+    firstRequestCacheHit: firstDiagnostics.searchCacheHit === true,
+    secondRequestCacheHit: secondDiagnostics.searchCacheHit === true,
+    afterMeetingWriteCacheHit: thirdDiagnostics.searchCacheHit === true,
+    targetedInvalidationScope: targeted && targeted.scope ? targeted.scope : '',
+    broadInvalidationScope: broad && broad.scope ? broad.scope : '',
+    generationBefore: generationBefore,
+    generationAfter: generationAfter,
+    observedCacheHit: observedMeta.cacheHit === true,
+    observedSource: cleanText_(observedMeta.source),
+    observedDurationMs: numberOrZero_(observedMeta.durationMs),
+    dataMatches: sameData
   };
 }
 
