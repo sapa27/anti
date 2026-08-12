@@ -6,6 +6,11 @@ const PUBLIC_REC_NO_MAX_LENGTH = 80;
 const DASHBOARD_CACHE_TTL_SECONDS = 60;
 const DASHBOARD_READ_COLUMN_COUNT = 9;
 const DASHBOARD_CACHE_KEY = 'dashboard:v' + PUBLIC_API_VERSION + ':' + SPREADSHEET_ID;
+const SEARCH_CACHE_TTL_SECONDS = 60;
+const SEARCH_CACHE_KEY_PREFIX = 'search:v' + PUBLIC_API_VERSION + ':' + SPREADSHEET_ID + ':';
+const SEARCH_CACHE_GENERATION_PROPERTY = 'SEARCH_CACHE_GENERATION';
+const SEARCH_CACHE_GENERATION_KEY = 'search:cache-generation';
+const SEARCH_CACHE_GENERATION_TTL_SECONDS = 21600;
 const SEARCH_CASE_COLUMN_COUNT = 18;
 const SEARCH_RECNO_COLUMN = 4;
 const MEETING_CASE_ID_COLUMN = 1;
@@ -242,7 +247,12 @@ function apiSearch_(params, requestId) {
     });
   }
 
-  const result = searchByRecNo(recNo);
+  const diagnostics = {};
+  const result = searchByRecNo(recNo, diagnostics);
+  const meta = {
+    cacheHit: diagnostics.searchCacheHit === true,
+    cacheTtlSeconds: SEARCH_CACHE_TTL_SECONDS
+  };
 
   if (!result || !result.found) {
     const isNotFound = result && result.msg === 'ไม่มีเลขรับเรื่องดังกล่าว';
@@ -250,19 +260,22 @@ function apiSearch_(params, requestId) {
     if (isNotFound) {
       return makeApiEnvelope_(true, requestId, {
         found: false,
-        msg: result.msg
+        msg: result.msg,
+        meta: meta
       });
     }
 
     return makeApiEnvelope_(false, requestId, {
       code: 'SEARCH_FAILED',
-      msg: result && result.msg ? result.msg : 'ไม่สามารถค้นหาข้อมูลได้'
+      msg: result && result.msg ? result.msg : 'ไม่สามารถค้นหาข้อมูลได้',
+      meta: meta
     });
   }
 
   return makeApiEnvelope_(true, requestId, {
     found: true,
-    data: result.data
+    data: result.data,
+    meta: meta
   });
 }
 
@@ -318,6 +331,41 @@ function createRequestId_() {
 }
 
 function searchByRecNo(inputRecNo, diagnostics) {
+  diagnostics = diagnostics || {};
+  const normalizedRecNo = normalizeRecNo_(inputRecNo);
+  const cache = CacheService.getScriptCache();
+  const cacheKey = getSearchCacheKey_(normalizedRecNo);
+
+  try {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.found === true && parsed.data
+        && normalizeRecNo_(parsed.data.recNo) === normalizedRecNo) {
+        diagnostics.searchCacheHit = true;
+        return parsed;
+      }
+      cache.remove(cacheKey);
+    }
+  } catch (ignore) {}
+
+  diagnostics.searchCacheHit = false;
+  const result = searchByRecNoFresh_(inputRecNo, diagnostics);
+
+  // Cache only successful hits. Not-found stays uncached so newly-added cases
+  // are visible immediately without waiting for negative-cache expiry.
+  if (result && result.found === true && result.data) {
+    try {
+      cache.put(cacheKey, JSON.stringify(result), SEARCH_CACHE_TTL_SECONDS);
+    } catch (error) {
+      console.warn('[SearchCache] put failed: ' + (error && error.message ? error.message : error));
+    }
+  }
+
+  return result;
+}
+
+function searchByRecNoFresh_(inputRecNo, diagnostics) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const mainSheet = ss.getSheetByName('MainData');
@@ -330,7 +378,6 @@ function searchByRecNo(inputRecNo, diagnostics) {
       return { found: false, msg: 'ไม่มีเลขรับเรื่องดังกล่าว' };
     }
 
-    // Fetch one matched row only. Columns A:R preserve the existing output contract.
     const row = mainSheet.getRange(rowNumber, 1, 1, SEARCH_CASE_COLUMN_COUNT).getValues()[0];
     const currentRecNo = normalizeRecNo_(row[3]);
 
@@ -368,6 +415,82 @@ function searchByRecNo(inputRecNo, diagnostics) {
     return { found: false, msg: 'ไม่สามารถค้นหาข้อมูลได้' };
   }
 }
+
+function getSearchCacheKey_(recNo) {
+  return SEARCH_CACHE_KEY_PREFIX
+    + getSearchCacheGeneration_()
+    + ':'
+    + normalizeRecNo_(recNo);
+}
+
+function getSearchCacheGeneration_() {
+  const cache = CacheService.getScriptCache();
+  try {
+    const cached = Number(cache.get(SEARCH_CACHE_GENERATION_KEY));
+    if (isFinite(cached) && cached >= 1) return Math.floor(cached);
+  } catch (ignore) {}
+
+  const properties = PropertiesService.getScriptProperties();
+  let generation = Number(properties.getProperty(SEARCH_CACHE_GENERATION_PROPERTY));
+  if (!isFinite(generation) || generation < 1) {
+    generation = 1;
+    properties.setProperty(SEARCH_CACHE_GENERATION_PROPERTY, String(generation));
+  }
+
+  try {
+    cache.put(SEARCH_CACHE_GENERATION_KEY, String(Math.floor(generation)), SEARCH_CACHE_GENERATION_TTL_SECONDS);
+  } catch (ignore) {}
+  return Math.floor(generation);
+}
+
+function invalidateSearchCacheByRecNo_(recNo) {
+  const normalizedRecNo = normalizeRecNo_(recNo);
+  if (!normalizedRecNo) return false;
+  try {
+    CacheService.getScriptCache().remove(getSearchCacheKey_(normalizedRecNo));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Canonical broad invalidation owner. Call AFTER successful MainData writes,
+ * bulk imports, or any write where the affected recNo is not known.
+ */
+function invalidatePublicDataCaches_(reason) {
+  const lock = LockService.getScriptLock();
+  let locked = false;
+  try {
+    locked = lock.tryLock(5000);
+    if (!locked) return { ok: false, code: 'CACHE_INVALIDATION_LOCK_TIMEOUT' };
+
+    const properties = PropertiesService.getScriptProperties();
+    let previous = Number(properties.getProperty(SEARCH_CACHE_GENERATION_PROPERTY));
+    if (!isFinite(previous) || previous < 1) previous = 1;
+    previous = Math.floor(previous);
+    const generation = previous + 1;
+    properties.setProperty(SEARCH_CACHE_GENERATION_PROPERTY, String(generation));
+
+    const cache = CacheService.getScriptCache();
+    try {
+      cache.put(SEARCH_CACHE_GENERATION_KEY, String(generation), SEARCH_CACHE_GENERATION_TTL_SECONDS);
+      cache.remove(DASHBOARD_CACHE_KEY);
+    } catch (ignore) {}
+
+    return {
+      ok: true,
+      previousGeneration: previous,
+      generation: generation,
+      reason: cleanText_(reason)
+    };
+  } finally {
+    if (locked) {
+      try { lock.releaseLock(); } catch (ignore) {}
+    }
+  }
+}
+
 
 /**
  * Fast path: TextFinder searches only MainData column D on the server.
@@ -920,11 +1043,13 @@ function runP1CSearchHotPathSelfTest_() {
     };
   }
 
+  invalidateSearchCacheByRecNo_(sampleRecNo);
   const diagnostics = {};
   const result = searchByRecNo(sampleRecNo, diagnostics);
   const normalizedVariant = sampleRecNo.indexOf('/') >= 0
     ? sampleRecNo.replace('/', ' - ')
     : sampleRecNo;
+  invalidateSearchCacheByRecNo_(sampleRecNo);
   const variantDiagnostics = {};
   const variantResult = searchByRecNo(normalizedVariant, variantDiagnostics);
 
@@ -947,6 +1072,68 @@ function runP1CSearchHotPathSelfTest_() {
     meetingFallbackRowsScanned: diagnostics.meetingFallbackRowsScanned || 0,
     meetingCount: primaryOk && Array.isArray(result.data.meetings) ? result.data.meetings.length : 0,
     normalizedCompatibility: variantOk
+  };
+}
+
+
+/**
+ * P1-D cache self-test. Spreadsheet stays read-only; cache generation is advanced
+ * once to verify that a global invalidation makes the next search cold again.
+ */
+function runP1DSearchCacheSelfTest_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const mainSheet = ss.getSheetByName('MainData');
+  if (!mainSheet || mainSheet.getLastRow() < 2) {
+    return { ok: false, msg: 'ไม่พบข้อมูล MainData สำหรับทดสอบ' };
+  }
+
+  const values = mainSheet
+    .getRange(2, SEARCH_RECNO_COLUMN, mainSheet.getLastRow() - 1, 1)
+    .getValues();
+  let sampleRecNo = '';
+  for (let i = 0; i < values.length; i++) {
+    const candidate = cleanText_(values[i][0]);
+    if (isValidRecNoInput_(candidate)) {
+      sampleRecNo = candidate;
+      break;
+    }
+  }
+  if (!sampleRecNo) return { ok: false, msg: 'ไม่พบเลขรับเรื่องตัวอย่างสำหรับทดสอบ' };
+
+  invalidateSearchCacheByRecNo_(sampleRecNo);
+  const firstDiagnostics = {};
+  const first = searchByRecNo(sampleRecNo, firstDiagnostics);
+  const secondDiagnostics = {};
+  const second = searchByRecNo(sampleRecNo, secondDiagnostics);
+
+  const beforeGeneration = getSearchCacheGeneration_();
+  const invalidation = invalidatePublicDataCaches_('P1-D self-test');
+  const afterGeneration = getSearchCacheGeneration_();
+  const thirdDiagnostics = {};
+  const third = searchByRecNo(sampleRecNo, thirdDiagnostics);
+
+  const sameData = first && second && third
+    && first.found === true && second.found === true && third.found === true
+    && JSON.stringify(first.data) === JSON.stringify(second.data)
+    && JSON.stringify(first.data) === JSON.stringify(third.data);
+
+  return {
+    ok: Boolean(
+      sameData
+      && firstDiagnostics.searchCacheHit === false
+      && secondDiagnostics.searchCacheHit === true
+      && invalidation && invalidation.ok === true
+      && afterGeneration > beforeGeneration
+      && thirdDiagnostics.searchCacheHit === false
+    ),
+    sampleRecNo: sampleRecNo,
+    cacheTtlSeconds: SEARCH_CACHE_TTL_SECONDS,
+    firstRequestCacheHit: firstDiagnostics.searchCacheHit === true,
+    secondRequestCacheHit: secondDiagnostics.searchCacheHit === true,
+    afterInvalidationCacheHit: thirdDiagnostics.searchCacheHit === true,
+    beforeGeneration: beforeGeneration,
+    afterGeneration: afterGeneration,
+    dataMatchesAfterInvalidation: sameData
   };
 }
 
