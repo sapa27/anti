@@ -1064,7 +1064,7 @@
         try {
           return await requestViaFetch(action, params);
         } catch (error) {
-          const mayFallback = !error || (error.code !== 'INVALID_RESPONSE' && error.code !== 'API_VERSION_MISMATCH');
+          const mayFallback = !error || error.code !== 'API_VERSION_MISMATCH';
           if (!mayFallback) throw error;
           return requestViaJsonp(action, params);
         }
