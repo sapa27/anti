@@ -915,9 +915,12 @@
 
   <script>
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbzmjkpigi6XClnZjHTWdU07ACzjJszPPt5gj1qlfjyhN_Jj8_mAjBHLBloqavcJ6Vo95g/exec',
+      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbzlNpsuSV1iI0bMgGEuzRNk-5RvJekmG7YYxgKb65ayJ8MoECsMJIlAfRDXOUPAvXuY1Q/exec',
       apiVersion: '1',
-      requestTimeoutMs: 30000
+      requestTimeoutMs: 45000,
+      retryAttempts: 1,
+      retryDelayMs: 1200,
+      dashboardCacheMaxAgeMs: 86400000
     });
 
     const PublicApiTransport = (() => {
@@ -949,7 +952,13 @@
         return url.toString();
       }
 
-      function request(action, params) {
+      function transportError(message, code) {
+        const error = new Error(message);
+        error.code = code;
+        return error;
+      }
+
+      function requestOnce(action, params) {
         return new Promise((resolve, reject) => {
           const callbackName = '__externalLookupJsonp_' + Date.now() + '_' + (++requestSequence);
           const script = document.createElement('script');
@@ -980,11 +989,11 @@
 
           window[callbackName] = payload => {
             if (!payload || typeof payload !== 'object') {
-              finish(reject, new Error('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง'));
+              finish(reject, transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE'));
               return;
             }
             if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
-              finish(reject, new Error('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน'));
+              finish(reject, transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH'));
               return;
             }
             finish(resolve, payload);
@@ -993,15 +1002,36 @@
           script.async = true;
           script.src = buildUrl(action, params || {}, callbackName);
           script.onerror = () => {
-            finish(reject, new Error('ไม่สามารถเชื่อมต่อ GAS Web App ได้'));
+            finish(reject, transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR'));
           };
 
           timeoutId = window.setTimeout(() => {
-            finish(reject, new Error('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด'));
+            finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
           }, APP_CONFIG.requestTimeoutMs);
 
           document.head.appendChild(script);
         });
+      }
+
+      async function request(action, params) {
+        const maxAttempts = Math.max(1, Number(APP_CONFIG.retryAttempts || 0) + 1);
+        let lastError = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+          try {
+            return await requestOnce(action, params);
+          } catch (error) {
+            lastError = error;
+            const retryable = error && (error.code === 'NETWORK_ERROR' || error.code === 'REQUEST_TIMEOUT');
+            if (!retryable || attempt >= maxAttempts || !navigator.onLine) {
+              break;
+            }
+            await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.retryDelayMs * attempt));
+          }
+        }
+        if (!navigator.onLine) {
+          throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
+        }
+        throw lastError || transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR');
       }
 
       return Object.freeze({
@@ -1028,13 +1058,14 @@
 
     function formatErrorMessage(error) {
       const base = error && error.message ? String(error.message) : 'ไม่สามารถดำเนินการได้';
+      const code = error && error.code ? `\nรหัสข้อผิดพลาด: ${String(error.code)}` : '';
       const retry = error && Number(error.retryAfterSeconds) > 0
         ? `\nกรุณาลองใหม่หลังประมาณ ${Math.ceil(Number(error.retryAfterSeconds))} วินาที`
         : '';
       const reference = error && error.requestId
         ? `\nรหัสอ้างอิง: ${String(error.requestId)}`
         : '';
-      return base + retry + reference;
+      return base + code + retry + reference;
     }
 
     function validateRecNoInput(value) {
@@ -1095,7 +1126,46 @@
       }
     }
 
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV1';
+
+    function readDashboardCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
+        if (!cached || !cached.counts || !Number.isFinite(Number(cached.savedAt))) return null;
+        if (Date.now() - Number(cached.savedAt) > APP_CONFIG.dashboardCacheMaxAgeMs) return null;
+        return cached.counts;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeDashboardCache(counts) {
+      try {
+        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({ counts, savedAt: Date.now() }));
+      } catch (error) {
+        // Private browsing and restricted storage must not block live data.
+      }
+    }
+
+    function renderDashboardCounts(counts) {
+      counts = counts || {};
+      setText('dash-total', counts.total ?? 0);
+      setText('dash-new', counts.new ?? 0);
+      setText('dash-in-progress', counts.inProgress ?? 0);
+      setText('dash-completed', counts.completed ?? 0);
+      setText('dash-users', counts.users ?? 0);
+    }
+
     async function loadDashboard() {
+      const dashboardCards = document.getElementById('dashboard-cards');
+      const cachedCounts = readDashboardCache();
+      if (cachedCounts) {
+        renderDashboardCounts(cachedCounts);
+        if (dashboardCards) {
+          dashboardCards.dataset.dataState = 'stale';
+          dashboardCards.title = 'กำลังตรวจสอบข้อมูลล่าสุด';
+        }
+      }
       try {
         // P1-A: one dashboard request carries the visitor id; no background duplicate request.
         const visitorId = getVisitorId();
@@ -1105,12 +1175,8 @@
         }
         const dashboard = response.data || {};
         const counts = dashboard.counts || {};
-        setText('dash-total', counts.total || 0);
-        setText('dash-new', counts.new || 0);
-        setText('dash-in-progress', counts.inProgress || 0);
-        setText('dash-completed', counts.completed || 0);
-        setText('dash-users', counts.users || 0);
-        const dashboardCards = document.getElementById('dashboard-cards');
+        renderDashboardCounts(counts);
+        writeDashboardCache(counts);
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
           dashboardCards.dataset.dataState = response.degraded ? 'stale' : 'live';
@@ -1119,18 +1185,19 @@
             : '';
         }
       } catch (error) {
-        setText('dash-total', '-');
-        setText('dash-new', '-');
-        setText('dash-in-progress', '-');
-        setText('dash-completed', '-');
-        setText('dash-users', '-');
-        const dashboardCards = document.getElementById('dashboard-cards');
+        if (!cachedCounts) {
+          setText('dash-total', '-');
+          setText('dash-new', '-');
+          setText('dash-in-progress', '-');
+          setText('dash-completed', '-');
+          setText('dash-users', '-');
+        }
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
-          dashboardCards.dataset.dataState = 'error';
+          dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
-        console.warn('dashboard load failed');
+        console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
       }
     }
 
