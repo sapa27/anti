@@ -254,36 +254,6 @@
       animation: loading-shimmer 1.25s linear infinite;
     }
 
-    .dashboard-load-status {
-      display: none;
-      width: min(100%, 760px);
-      margin: 14px auto 0;
-      padding: 11px 14px;
-      border: 1px solid #e6c76d;
-      border-radius: 12px;
-      background: #fff9e8;
-      color: #704f00;
-      font-size: 14px;
-      line-height: 1.5;
-      text-align: center;
-    }
-
-    .dashboard-load-status.is-visible {
-      display: block;
-    }
-
-    .dashboard-retry-button {
-      min-height: 40px;
-      margin-left: 8px;
-      padding: 7px 14px;
-      border: 0;
-      border-radius: 9px;
-      background: var(--color-navy-950);
-      color: #fff;
-      font: inherit;
-      font-weight: 600;
-    }
-
     .search-card {
       width: min(100%, 860px);
       max-width: 860px;
@@ -917,10 +887,6 @@
             </div>
           </div>
         </div>
-        <div class="dashboard-load-status" id="dashboard-load-status" role="alert" aria-live="assertive">
-          <span id="dashboard-load-message"></span>
-          <button type="button" class="dashboard-retry-button" id="dashboard-retry">ลองโหลดอีกครั้ง</button>
-        </div>
       </div>
 
       <div class="search-card text-center" role="search" aria-labelledby="search-heading">
@@ -992,7 +958,58 @@
         return error;
       }
 
-      function requestOnce(action, params) {
+      function validatePayload(payload) {
+        if (!payload || typeof payload !== 'object') {
+          throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
+        }
+        if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
+          throw transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH');
+        }
+        return payload;
+      }
+
+      async function requestViaFetch(action, params) {
+        const callbackName = '__externalLookupFetch_' + Date.now() + '_' + (++requestSequence);
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timeoutId = window.setTimeout(() => {
+          if (controller) controller.abort();
+        }, APP_CONFIG.requestTimeoutMs);
+
+        try {
+          const response = await fetch(buildUrl(action, params || {}, callbackName), {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-store',
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            signal: controller ? controller.signal : undefined
+          });
+          if (!response.ok) {
+            throw transportError('GAS Web App ตอบกลับไม่สำเร็จ', 'HTTP_ERROR');
+          }
+
+          const text = (await response.text()).trim();
+          const prefix = callbackName + '(';
+          if (!text.startsWith(prefix) || !text.endsWith(');')) {
+            throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
+          }
+          return validatePayload(JSON.parse(text.slice(prefix.length, -2)));
+        } catch (error) {
+          if (error && (error.code === 'INVALID_RESPONSE' || error.code === 'API_VERSION_MISMATCH')) {
+            throw error;
+          }
+          const code = error && error.name === 'AbortError' ? 'REQUEST_TIMEOUT' : (error.code || 'NETWORK_ERROR');
+          throw transportError(
+            code === 'REQUEST_TIMEOUT' ? 'การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด' : 'ไม่สามารถเชื่อมต่อ GAS Web App ได้',
+            code
+          );
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      function requestViaJsonp(action, params) {
         return new Promise((resolve, reject) => {
           const callbackName = '__externalLookupJsonp_' + Date.now() + '_' + (++requestSequence);
           const script = document.createElement('script');
@@ -1022,15 +1039,11 @@
           }
 
           window[callbackName] = payload => {
-            if (!payload || typeof payload !== 'object') {
-              finish(reject, transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE'));
-              return;
+            try {
+              finish(resolve, validatePayload(payload));
+            } catch (error) {
+              finish(reject, error);
             }
-            if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
-              finish(reject, transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH'));
-              return;
-            }
-            finish(resolve, payload);
           };
 
           script.async = true;
@@ -1045,6 +1058,16 @@
 
           document.head.appendChild(script);
         });
+      }
+
+      async function requestOnce(action, params) {
+        try {
+          return await requestViaFetch(action, params);
+        } catch (error) {
+          const mayFallback = !error || (error.code !== 'INVALID_RESPONSE' && error.code !== 'API_VERSION_MISMATCH');
+          if (!mayFallback) throw error;
+          return requestViaJsonp(action, params);
+        }
       }
 
       async function request(action, params) {
@@ -1161,7 +1184,6 @@
     }
 
     const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV1';
-    let dashboardLoadInFlight = false;
 
     function readDashboardCache() {
       try {
@@ -1191,22 +1213,9 @@
       setText('dash-users', counts.users ?? 0);
     }
 
-    function setDashboardLoadStatus(message, visible) {
-      const status = document.getElementById('dashboard-load-status');
-      const text = document.getElementById('dashboard-load-message');
-      if (text) text.textContent = String(message || '');
-      if (status) status.classList.toggle('is-visible', visible === true);
-    }
-
     async function loadDashboard() {
-      if (dashboardLoadInFlight) return;
-      dashboardLoadInFlight = true;
       const dashboardCards = document.getElementById('dashboard-cards');
-      const dashboardRetry = document.getElementById('dashboard-retry');
       const cachedCounts = readDashboardCache();
-      if (dashboardCards) dashboardCards.setAttribute('aria-busy', 'true');
-      if (dashboardRetry) dashboardRetry.disabled = true;
-      setDashboardLoadStatus('', false);
       if (cachedCounts) {
         renderDashboardCounts(cachedCounts);
         if (dashboardCards) {
@@ -1245,14 +1254,7 @@
           dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
-        setDashboardLoadStatus(
-          `${error && error.message ? error.message : 'ไม่สามารถโหลดข้อมูลได้'}${error && error.code ? ` (${error.code})` : ''}`,
-          true
-        );
         console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
-      } finally {
-        dashboardLoadInFlight = false;
-        if (dashboardRetry) dashboardRetry.disabled = false;
       }
     }
 
@@ -1500,14 +1502,6 @@
       if (clearButton) {
         clearButton.addEventListener('click', resetSearchUi);
       }
-      const dashboardRetry = document.getElementById('dashboard-retry');
-      if (dashboardRetry) {
-        dashboardRetry.addEventListener('click', loadDashboard);
-      }
-      window.addEventListener('online', () => {
-        const cards = document.getElementById('dashboard-cards');
-        if (cards && cards.dataset.dataState === 'error') loadDashboard();
-      });
 
       loadDashboard();
     }
