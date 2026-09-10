@@ -920,10 +920,10 @@
       gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbzmjkpigi6XClnZjHTWdU07ACzjJszPPt5gj1qlfjyhN_Jj8_mAjBHLBloqavcJ6Vo95g/exec',
       apiVersion: '1',
       requestTimeoutMs: 45000,
-      jsonpTimeoutMs: 12000,
-      bridgeTimeoutMs: 45000,
+      jsonpTimeoutMs: 30000,
+      bridgeTimeoutMs: 20000,
       bridgeChannel: 'sapa27-anti-public-v1',
-      retryAttempts: 1,
+      retryAttempts: 0,
       retryDelayMs: 1200,
       dashboardCacheMaxAgeMs: 86400000
     });
@@ -1252,12 +1252,22 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV1';
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV2';
+
+    function isPlausibleDashboardCounts(counts) {
+      if (!counts || typeof counts !== 'object') return false;
+      const total = Number(counts.total);
+      const grouped = Number(counts.new) + Number(counts.inProgress) + Number(counts.completed);
+      const values = [total, Number(counts.new), Number(counts.inProgress), Number(counts.completed)];
+      return values.every(value => Number.isFinite(value) && value >= 0)
+        && !(total > 0 && grouped === 0);
+    }
 
     function readDashboardCache() {
       try {
         const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
-        if (!cached || !cached.counts || !Number.isFinite(Number(cached.savedAt))) return null;
+        if (!cached || !isPlausibleDashboardCounts(cached.counts)
+            || !Number.isFinite(Number(cached.savedAt))) return null;
         if (Date.now() - Number(cached.savedAt) > APP_CONFIG.dashboardCacheMaxAgeMs) return null;
         return cached.counts;
       } catch (error) {
@@ -1301,6 +1311,11 @@
         }
         const dashboard = response.data || {};
         const counts = dashboard.counts || {};
+        if (!isPlausibleDashboardCounts(counts)) {
+          const invalidCountsError = new Error('ข้อมูลสรุปสถานะจาก GAS ไม่สมบูรณ์');
+          invalidCountsError.code = 'INVALID_DASHBOARD_COUNTS';
+          throw invalidCountsError;
+        }
         renderDashboardCounts(counts);
         writeDashboardCache(counts);
         if (dashboardCards) {
