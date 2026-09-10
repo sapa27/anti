@@ -254,6 +254,44 @@
       animation: loading-shimmer 1.25s linear infinite;
     }
 
+    .dashboard-status {
+      margin: 14px auto 0;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #5b4a13;
+      font-size: 14px;
+      line-height: 1.45;
+      text-align: center;
+      background: #fff9e8;
+      border: 1px solid #ead38b;
+      border-radius: 12px;
+    }
+
+    .dashboard-status[hidden] {
+      display: none;
+    }
+
+    .dashboard-status[data-state='error'] {
+      color: #7f1d1d;
+      background: #fff4f4;
+      border-color: #efb7b7;
+    }
+
+    .dashboard-retry {
+      min-height: 38px;
+      padding: 7px 14px;
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      white-space: nowrap;
+      background: var(--color-navy-950);
+      border: 0;
+      border-radius: 9px;
+    }
+
     .search-card {
       width: min(100%, 860px);
       max-width: 860px;
@@ -725,6 +763,11 @@
         height: 29px;
       }
 
+      .dashboard-status {
+        flex-direction: column;
+        padding: 12px;
+      }
+
       .search-card {
         margin-top: 23px;
         margin-bottom: 25px;
@@ -889,6 +932,10 @@
             </div>
           </div>
         </div>
+        <div class="dashboard-status" id="dashboard-status" role="status" aria-live="polite" data-state="loading">
+          <span id="dashboard-status-text">กำลังโหลดข้อมูล กรุณารอสักครู่</span>
+          <button type="button" class="dashboard-retry" id="dashboard-retry" hidden>ลองโหลดอีกครั้ง</button>
+        </div>
       </div>
 
       <div class="search-card text-center" role="search" aria-labelledby="search-heading">
@@ -920,8 +967,8 @@
       gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbzmjkpigi6XClnZjHTWdU07ACzjJszPPt5gj1qlfjyhN_Jj8_mAjBHLBloqavcJ6Vo95g/exec',
       apiVersion: '1',
       requestTimeoutMs: 45000,
-      jsonpTimeoutMs: 30000,
-      bridgeTimeoutMs: 20000,
+      jsonpTimeoutMs: 45000,
+      bridgeTimeoutMs: 30000,
       bridgeChannel: 'sapa27-anti-public-v1',
       retryAttempts: 0,
       retryDelayMs: 1200,
@@ -1292,11 +1339,24 @@
       setText('dash-users', counts.users ?? 0);
     }
 
+    function setDashboardStatus(state, message) {
+      const status = document.getElementById('dashboard-status');
+      const text = document.getElementById('dashboard-status-text');
+      const retry = document.getElementById('dashboard-retry');
+      if (!status || !text || !retry) return;
+      status.dataset.state = state;
+      text.textContent = message || '';
+      retry.hidden = state !== 'error';
+      status.hidden = state === 'live';
+    }
+
     async function loadDashboard() {
       const dashboardCards = document.getElementById('dashboard-cards');
+      if (dashboardCards) dashboardCards.setAttribute('aria-busy', 'true');
       const cachedCounts = readDashboardCache();
       if (cachedCounts) {
         renderDashboardCounts(cachedCounts);
+        setDashboardStatus('loading', 'กำลังตรวจสอบข้อมูลล่าสุด');
         if (dashboardCards) {
           dashboardCards.dataset.dataState = 'stale';
           dashboardCards.title = 'กำลังตรวจสอบข้อมูลล่าสุด';
@@ -1318,6 +1378,7 @@
         }
         renderDashboardCounts(counts);
         writeDashboardCache(counts);
+        setDashboardStatus('live', '');
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
           dashboardCards.dataset.dataState = response.degraded ? 'stale' : 'live';
@@ -1338,6 +1399,12 @@
           dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
+        setDashboardStatus(
+          'error',
+          cachedCounts
+            ? 'ยังตรวจสอบข้อมูลล่าสุดไม่ได้ ขณะนี้กำลังแสดงข้อมูลที่บันทึกไว้'
+            : 'ไม่สามารถเชื่อมต่อ GAS เพื่อโหลดข้อมูลได้ กรุณาลองอีกครั้ง'
+        );
         console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
       }
     }
@@ -1585,6 +1652,14 @@
       const clearButton = document.getElementById('btn-clear');
       if (clearButton) {
         clearButton.addEventListener('click', resetSearchUi);
+      }
+      const dashboardRetry = document.getElementById('dashboard-retry');
+      if (dashboardRetry) {
+        dashboardRetry.addEventListener('click', () => {
+          dashboardRetry.hidden = true;
+          setDashboardStatus('loading', 'กำลังโหลดข้อมูล กรุณารอสักครู่');
+          loadDashboard();
+        });
       }
 
       loadDashboard();
