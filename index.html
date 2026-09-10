@@ -274,12 +274,6 @@
       display: none;
     }
 
-    .dashboard-status[data-state='error'] {
-      color: #7f1d1d;
-      background: #fff4f4;
-      border-color: #efb7b7;
-    }
-
     .dashboard-retry {
       min-height: 38px;
       padding: 7px 14px;
@@ -1346,6 +1340,7 @@
       if (!status || !text || !retry) return;
       status.dataset.state = state;
       text.textContent = message || '';
+      text.hidden = state === 'error';
       retry.hidden = state !== 'error';
       status.hidden = state === 'live';
     }
@@ -1399,12 +1394,7 @@
           dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
-        setDashboardStatus(
-          'error',
-          cachedCounts
-            ? 'ยังตรวจสอบข้อมูลล่าสุดไม่ได้ ขณะนี้กำลังแสดงข้อมูลที่บันทึกไว้'
-            : 'ไม่สามารถเชื่อมต่อ GAS เพื่อโหลดข้อมูลได้ กรุณาลองอีกครั้ง'
-        );
+        setDashboardStatus('error', '');
         console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
       }
     }
