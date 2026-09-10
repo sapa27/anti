@@ -254,6 +254,36 @@
       animation: loading-shimmer 1.25s linear infinite;
     }
 
+    .dashboard-load-status {
+      display: none;
+      width: min(100%, 760px);
+      margin: 14px auto 0;
+      padding: 11px 14px;
+      border: 1px solid #e6c76d;
+      border-radius: 12px;
+      background: #fff9e8;
+      color: #704f00;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .dashboard-load-status.is-visible {
+      display: block;
+    }
+
+    .dashboard-retry-button {
+      min-height: 40px;
+      margin-left: 8px;
+      padding: 7px 14px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--color-navy-950);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+    }
+
     .search-card {
       width: min(100%, 860px);
       max-width: 860px;
@@ -887,6 +917,10 @@
             </div>
           </div>
         </div>
+        <div class="dashboard-load-status" id="dashboard-load-status" role="alert" aria-live="assertive">
+          <span id="dashboard-load-message"></span>
+          <button type="button" class="dashboard-retry-button" id="dashboard-retry">ลองโหลดอีกครั้ง</button>
+        </div>
       </div>
 
       <div class="search-card text-center" role="search" aria-labelledby="search-heading">
@@ -1127,6 +1161,7 @@
     }
 
     const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV1';
+    let dashboardLoadInFlight = false;
 
     function readDashboardCache() {
       try {
@@ -1156,9 +1191,22 @@
       setText('dash-users', counts.users ?? 0);
     }
 
+    function setDashboardLoadStatus(message, visible) {
+      const status = document.getElementById('dashboard-load-status');
+      const text = document.getElementById('dashboard-load-message');
+      if (text) text.textContent = String(message || '');
+      if (status) status.classList.toggle('is-visible', visible === true);
+    }
+
     async function loadDashboard() {
+      if (dashboardLoadInFlight) return;
+      dashboardLoadInFlight = true;
       const dashboardCards = document.getElementById('dashboard-cards');
+      const dashboardRetry = document.getElementById('dashboard-retry');
       const cachedCounts = readDashboardCache();
+      if (dashboardCards) dashboardCards.setAttribute('aria-busy', 'true');
+      if (dashboardRetry) dashboardRetry.disabled = true;
+      setDashboardLoadStatus('', false);
       if (cachedCounts) {
         renderDashboardCounts(cachedCounts);
         if (dashboardCards) {
@@ -1197,7 +1245,14 @@
           dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
+        setDashboardLoadStatus(
+          `${error && error.message ? error.message : 'ไม่สามารถโหลดข้อมูลได้'}${error && error.code ? ` (${error.code})` : ''}`,
+          true
+        );
         console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
+      } finally {
+        dashboardLoadInFlight = false;
+        if (dashboardRetry) dashboardRetry.disabled = false;
       }
     }
 
@@ -1445,6 +1500,14 @@
       if (clearButton) {
         clearButton.addEventListener('click', resetSearchUi);
       }
+      const dashboardRetry = document.getElementById('dashboard-retry');
+      if (dashboardRetry) {
+        dashboardRetry.addEventListener('click', loadDashboard);
+      }
+      window.addEventListener('online', () => {
+        const cards = document.getElementById('dashboard-cards');
+        if (cards && cards.dataset.dataState === 'error') loadDashboard();
+      });
 
       loadDashboard();
     }
