@@ -524,14 +524,22 @@
     }
 
     .public-footer-user-count {
-      max-width: 1180px;
-      margin: 12px auto 0;
-      padding: 0 5px;
-      color: rgba(255, 255, 255, 0.88);
+      position: fixed;
+      left: max(12px, env(safe-area-inset-left));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 1000;
+      max-width: calc(100vw - 24px);
+      margin: 0;
+      padding: 8px 12px;
+      color: rgba(255, 255, 255, 0.94);
       font-size: 13px;
       line-height: 1.4;
-      text-align: right;
+      text-align: left;
       font-variant-numeric: tabular-nums;
+      background: rgba(0, 30, 60, 0.92);
+      border: 1px solid rgba(255, 202, 44, 0.5);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
 
     .public-footer-user-count span {
@@ -845,8 +853,11 @@
       }
 
       .public-footer-user-count {
-        margin-top: 10px;
-        padding: 0;
+        left: max(8px, env(safe-area-inset-left));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        max-width: calc(100vw - 16px);
+        padding: 7px 10px;
+        font-size: 12px;
       }
     }
 
@@ -952,13 +963,13 @@
     สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
     โทร 0 2242 5900 ต่อ 7171
     <div class="public-footer-user-count" id="public-user-count" aria-live="polite" hidden>
-      จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
+      จำนวนผู้เข้าระบบ: <span id="dash-users">0</span> คน
     </div>
   </footer>
 
   <script>
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbydbkd7p50ZOuGrV5CvgUOnjSt3za-zQRbG93iAUtifpuXZ3pU3GBiT9acOfi9yTdwG_g/exec',
+      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbw-o2_NkmUzPqGVBaBegT1abkUhSQmmsyp9YAnRjYE51delcUNL1pJQMXJiG6dwFyYxjA/exec',
       apiVersion: '1',
       jsonpTimeoutMs: 30000,
       bridgeTimeoutMs: 30000,
