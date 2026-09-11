@@ -5,7 +5,7 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta name="app-build" content="anti-20260911-mobile-search-v6">
+  <meta name="app-build" content="anti-20260911-mobile-footer-v7">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
@@ -507,9 +507,10 @@
     }
 
     .public-footer {
+      position: relative;
       width: 100%;
       margin-top: 42px;
-      padding: 26px 15px 24px;
+      padding: 26px 15px 66px;
       color: rgba(255, 255, 255, 0.74);
       background: linear-gradient(135deg, var(--color-navy-950), var(--color-navy-900));
       border-top: 3px solid var(--color-gold-600);
@@ -525,7 +526,7 @@
     }
 
     .public-footer-user-count {
-      position: fixed;
+      position: absolute;
       left: max(12px, env(safe-area-inset-left));
       bottom: max(12px, env(safe-area-inset-bottom));
       z-index: 1000;
@@ -849,7 +850,7 @@
       }
 
       .public-footer {
-        padding: 21px 14px;
+        padding: 21px 14px 62px;
         font-size: 12px;
       }
 
