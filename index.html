@@ -5,9 +5,9 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -951,17 +951,16 @@
     <strong>กลุ่มงานคณะกรรมาธิการการป้องกันและปราบปรามการทุจริตประพฤติมิชอบ</strong><br>
     สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
     โทร 0 2242 5900 ต่อ 7171
-    <div class="public-footer-user-count" aria-live="polite">
+    <div class="public-footer-user-count" id="public-user-count" aria-live="polite" hidden>
       จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
     </div>
   </footer>
 
   <script>
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbzmjkpigi6XClnZjHTWdU07ACzjJszPPt5gj1qlfjyhN_Jj8_mAjBHLBloqavcJ6Vo95g/exec',
+      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbw-o2_NkmUzPqGVBaBegT1abkUhSQmmsyp9YAnRjYE51delcUNL1pJQMXJiG6dwFyYxjA/exec',
       apiVersion: '1',
-      requestTimeoutMs: 45000,
-      jsonpTimeoutMs: 45000,
+      jsonpTimeoutMs: 30000,
       bridgeTimeoutMs: 30000,
       bridgeChannel: 'sapa27-anti-public-v1',
       retryAttempts: 0,
@@ -1019,47 +1018,6 @@
           throw transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH');
         }
         return payload;
-      }
-
-      async function requestViaFetch(action, params) {
-        const callbackName = '__externalLookupFetch_' + Date.now() + '_' + (++requestSequence);
-        const controller = typeof AbortController === 'function' ? new AbortController() : null;
-        const timeoutId = window.setTimeout(() => {
-          if (controller) controller.abort();
-        }, APP_CONFIG.requestTimeoutMs);
-
-        try {
-          const response = await fetch(buildUrl(action, params || {}, { callbackName }), {
-            method: 'GET',
-            mode: 'cors',
-            credentials: 'omit',
-            cache: 'no-store',
-            redirect: 'follow',
-            referrerPolicy: 'no-referrer',
-            signal: controller ? controller.signal : undefined
-          });
-          if (!response.ok) {
-            throw transportError('GAS Web App ตอบกลับไม่สำเร็จ', 'HTTP_ERROR');
-          }
-
-          const text = (await response.text()).trim();
-          const prefix = callbackName + '(';
-          if (!text.startsWith(prefix) || !text.endsWith(');')) {
-            throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
-          }
-          return validatePayload(JSON.parse(text.slice(prefix.length, -2)));
-        } catch (error) {
-          if (error && (error.code === 'INVALID_RESPONSE' || error.code === 'API_VERSION_MISMATCH')) {
-            throw error;
-          }
-          const code = error && error.name === 'AbortError' ? 'REQUEST_TIMEOUT' : (error.code || 'NETWORK_ERROR');
-          throw transportError(
-            code === 'REQUEST_TIMEOUT' ? 'การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด' : 'ไม่สามารถเชื่อมต่อ GAS Web App ได้',
-            code
-          );
-        } finally {
-          clearTimeout(timeoutId);
-        }
       }
 
       function requestViaJsonp(action, params) {
@@ -1145,7 +1103,7 @@
 
           function onMessage(event) {
             const trustedOrigin = event.origin === 'https://script.google.com'
-              || event.origin === 'https://script.googleusercontent.com';
+              || /^https:\/\/(?:[a-z0-9-]+\.)?script\.googleusercontent\.com$/i.test(event.origin);
             const message = event.data;
             if (!trustedOrigin || event.source !== iframe.contentWindow || !message
                 || message.channel !== APP_CONFIG.bridgeChannel || message.token !== bridgeToken) return;
@@ -1174,8 +1132,9 @@
         try {
           return await requestViaJsonp(action, params);
         } catch (error) {
-          const mayFallback = !error || error.code !== 'API_VERSION_MISMATCH';
-          if (!mayFallback) throw error;
+          // A timeout usually means GAS itself is slow; a duplicate request adds load.
+          // The bridge is only useful when the browser blocks the JSONP script load.
+          if (!error || error.code !== 'NETWORK_ERROR') throw error;
           return requestViaBridge(action, params);
         }
       }
@@ -1293,7 +1252,7 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV2';
+    const DASHBOARD_CACHE_KEY = `externalLookupDashboardCountsV3:${APP_CONFIG.apiVersion}:${APP_CONFIG.gasWebAppUrl}`;
 
     function isPlausibleDashboardCounts(counts) {
       if (!counts || typeof counts !== 'object') return false;
@@ -1301,7 +1260,7 @@
       const grouped = Number(counts.new) + Number(counts.inProgress) + Number(counts.completed);
       const values = [total, Number(counts.new), Number(counts.inProgress), Number(counts.completed)];
       return values.every(value => Number.isFinite(value) && value >= 0)
-        && !(total > 0 && grouped === 0);
+        && grouped <= total;
     }
 
     function readDashboardCache() {
@@ -1330,7 +1289,14 @@
       setText('dash-new', counts.new ?? 0);
       setText('dash-in-progress', counts.inProgress ?? 0);
       setText('dash-completed', counts.completed ?? 0);
-      setText('dash-users', counts.users ?? 0);
+      const users = Number(counts.users);
+      const userCount = document.getElementById('public-user-count');
+      if (Number.isFinite(users) && users > 0) {
+        setText('dash-users', users);
+        if (userCount) userCount.hidden = false;
+      } else if (userCount) {
+        userCount.hidden = true;
+      }
     }
 
     function setDashboardStatus(state, message) {
@@ -1550,7 +1516,7 @@
           html += '<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>';
         }
 
-        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener noreferrer">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี้</a></div>';
+        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener noreferrer">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี่</a></div>';
       }
 
       document.getElementById('result-content').innerHTML = html;
