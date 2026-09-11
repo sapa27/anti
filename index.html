@@ -5,7 +5,7 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta name="app-build" content="anti-20260911-mobile-speed-v8">
+  <meta name="app-build" content="anti-20260911-mobile-timeout-v9">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
@@ -975,6 +975,7 @@
       apiVersion: '1',
       jsonpTimeoutMs: 20000,
       bridgeTimeoutMs: 20000,
+      searchTimeoutMs: 45000,
       bridgeChannel: 'sapa27-anti-public-v1',
       retryAttempts: 0,
       retryDelayMs: 1200,
@@ -1087,7 +1088,7 @@
 
           timeoutId = window.setTimeout(() => {
             finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
-          }, APP_CONFIG.jsonpTimeoutMs);
+          }, action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.jsonpTimeoutMs);
 
           document.head.appendChild(script);
         });
@@ -1145,7 +1146,7 @@
             transportError('ไม่สามารถเชื่อมต่อ GAS Web App ผ่านช่องทางสำรองได้', 'NETWORK_ERROR'));
           timeoutId = window.setTimeout(() => finish(reject,
             transportError('การเชื่อมต่อ GAS ผ่านช่องทางสำรองใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT')),
-          APP_CONFIG.bridgeTimeoutMs);
+          action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.bridgeTimeoutMs);
           document.body.appendChild(iframe);
         });
       }
