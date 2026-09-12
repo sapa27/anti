@@ -9,8 +9,26 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
+  <meta name="app-build" content="anti-20260912-android-native-v23">
   <meta name="gas-webapp-url" content="https://script.google.com/macros/s/AKfycbz2X5BGdO5Up1f2wcTp_Joy_R4zXbhn8CpSWLnN74VayxaiVr8jiAqrHnaoNpd-jHvc9Q/exec">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
+  <script>
+    (() => {
+      const isAndroid = /Android/i.test(String(navigator.userAgent || ''));
+      const isGitHubProduction = String(location.hostname || '').toLowerCase() === 'sapa27.github.io'
+        && /^\/anti(?:\/|$)/.test(String(location.pathname || ''));
+      if (!isAndroid || !isGitHubProduction) return;
+
+      const endpointNode = document.querySelector('meta[name="gas-webapp-url"]');
+      const endpoint = endpointNode ? String(endpointNode.content || '').trim() : '';
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
+
+      const target = new URL(endpoint);
+      target.searchParams.set('source', 'github-android');
+      target.searchParams.set('release', 'anti-20260912-android-native-v23');
+      location.replace(target.toString());
+    })();
+  </script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -979,14 +997,12 @@
       contractId: readRequiredMeta('app-contract'),
       dashboardTimeoutMs: 20000,
       searchTimeoutMs: 30000,
-      networkRetryDelayMs: 700,
-      bridgeChannel: 'sapa27-anti-public-single'
+      networkRetryDelayMs: 700
     });
 
     const PublicApiTransport = (() => {
       let requestSequence = 0;
       const inFlight = Object.create(null);
-      let bridgePreferred = false;
 
       function getConfiguredUrl() {
         const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
@@ -1044,101 +1060,6 @@
         return String(action) + '|'
           + String(safeParams.recNo || '') + '|'
           + String(safeParams.visitorId || safeParams.clientToken || '');
-      }
-
-      function createBridgeToken() {
-        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
-          const bytes = new Uint8Array(18);
-          window.crypto.getRandomValues(bytes);
-          let token = '';
-          for (let i = 0; i < bytes.length; i += 1) {
-            token += bytes[i].toString(16).padStart(2, '0');
-          }
-          return token;
-        }
-        return 'bridge_' + Date.now() + '_' + Math.random().toString(36).slice(2, 14);
-      }
-
-      function buildBridgeUrl(action, params, bridgeToken) {
-        const url = new URL(getConfiguredUrl());
-        url.searchParams.set('action', action);
-        url.searchParams.set('transport', 'bridge');
-        url.searchParams.set('origin', location.origin);
-        url.searchParams.set('bridgeToken', bridgeToken);
-        url.searchParams.set('contract', APP_CONFIG.contractId);
-        url.searchParams.set('_', String(Date.now()));
-        Object.keys(params || {}).forEach(key => {
-          const value = params[key];
-          if (value !== undefined && value !== null && value !== '') {
-            url.searchParams.set(key, String(value));
-          }
-        });
-        return url.toString();
-      }
-
-      function isTrustedGasMessageOrigin(origin) {
-        try {
-          const parsed = new URL(String(origin || ''));
-          const host = parsed.hostname.toLowerCase();
-          return parsed.protocol === 'https:' && (
-            host === 'script.google.com'
-            || host === 'script.googleusercontent.com'
-            || host.endsWith('.googleusercontent.com')
-          );
-        } catch (error) {
-          return false;
-        }
-      }
-
-      function requestViaBridge(action, params) {
-        return new Promise((resolve, reject) => {
-          const bridgeToken = createBridgeToken();
-          const iframe = document.createElement('iframe');
-          let settled = false;
-          let timeoutId = null;
-
-          function cleanup() {
-            if (timeoutId !== null) clearTimeout(timeoutId);
-            window.removeEventListener('message', onMessage);
-            iframe.onerror = null;
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-          }
-
-          function finish(handler, value) {
-            if (settled) return;
-            settled = true;
-            cleanup();
-            handler(value);
-          }
-
-          function onMessage(event) {
-            const message = event.data;
-            if (!isTrustedGasMessageOrigin(event.origin)
-                || !message
-                || message.channel !== APP_CONFIG.bridgeChannel
-                || message.token !== bridgeToken) return;
-            try {
-              const payload = validatePayload(message.payload);
-              bridgePreferred = true;
-              finish(resolve, payload);
-            } catch (error) {
-              finish(reject, error);
-            }
-          }
-
-          window.addEventListener('message', onMessage);
-          iframe.hidden = true;
-          iframe.title = 'GAS transport fallback';
-          iframe.setAttribute('aria-hidden', 'true');
-          iframe.referrerPolicy = 'no-referrer';
-          iframe.onerror = () => finish(reject,
-            transportError('ไม่สามารถเชื่อมต่อ GAS ผ่านช่องทางสำรองได้', 'BRIDGE_NETWORK_ERROR'));
-          timeoutId = window.setTimeout(() => finish(reject,
-            transportError('การเชื่อมต่อ GAS ผ่านช่องทางสำรองใช้เวลานานเกินกำหนด', 'BRIDGE_TIMEOUT')),
-          timeoutForAction(action));
-          iframe.src = buildBridgeUrl(action, params || {}, bridgeToken);
-          document.body.appendChild(iframe);
-        });
       }
 
       function requestViaJsonp(action, params) {
@@ -1214,23 +1135,20 @@
           if (!isOnline()) {
             throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
           }
-          if (bridgePreferred) {
-            return requestViaBridge(action, params);
-          }
+
           try {
             return await requestViaJsonp(action, params);
           } catch (error) {
             if (!isOnline()) {
               throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
             }
-            if (error && error.code === 'NETWORK_ERROR') {
-              await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.networkRetryDelayMs));
-              if (!isOnline()) {
-                throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
-              }
-              return requestViaBridge(action, params);
+            if (!error || error.code !== 'NETWORK_ERROR') throw error;
+
+            await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.networkRetryDelayMs));
+            if (!isOnline()) {
+              throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
             }
-            throw error;
+            return requestViaJsonp(action, params);
           }
         })();
 
@@ -1386,7 +1304,7 @@
     async function loadDashboard() {
       productionReady = false;
       setSearchEnabled(false);
-      setDashboardStatus('loading', 'กำลังโหลดข้อมูล กรุณารอสักครู่');
+      setDashboardStatus('loading', '');
       try {
         const response = await PublicApiTransport.dashboard(getVisitorId());
         const dashboard = response && response.data ? response.data : {};
@@ -1428,11 +1346,6 @@
         }
         setDashboardStatus('error', startupErrorMessage(error));
         console.warn('dashboard load failed', error && error.code ? error.code : error);
-        showAlert(
-          'ไม่สามารถโหลดข้อมูล',
-          formatErrorMessage(error) + (error && error.code ? ' (' + error.code + ')' : ''),
-          'error'
-        );
       }
     }
 
@@ -1479,7 +1392,17 @@
           setSearchEnabled(false);
           setDashboardStatus('error', startupErrorMessage(error));
         }
-        showAlert('ข้อผิดพลาด', formatErrorMessage(error), 'error');
+        const resultCard = document.getElementById('result-card');
+        const resultContent = document.getElementById('result-content');
+        if (resultCard && resultContent) {
+          resultContent.innerHTML = '<div role="alert" class="text-center text-danger py-3">'
+            + 'ไม่สามารถค้นหาข้อมูลได้ กรุณาลองใหม่อีกครั้ง'
+            + '</div>';
+          resultCard.style.display = 'block';
+          resultCard.setAttribute('aria-hidden', 'false');
+          resultCard.dataset.dataState = 'error';
+        }
+        console.warn('search failed', error && error.code ? error.code : error);
       } finally {
         btn.textContent = originalText;
         btn.disabled = !productionReady;
