@@ -8,8 +8,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-build" content="anti-20260912-unified-webapp-v22">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
+  <meta name="app-contract" content="anti-production-20260912-single">
+  <meta name="gas-webapp-url" content="https://script.google.com/macros/s/AKfycbxOAsjsBU3b-p6aBuFZPY17xC1bF7C0Fs9tKZzBv1exyT_Ei-wKijtK7LdO0YgMYRqZMQ/exec">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -966,51 +967,44 @@
   </footer>
 
   <script>
+    function readRequiredMeta(name) {
+      const node = document.querySelector('meta[name="' + name + '"]');
+      const value = node ? String(node.content || '').trim() : '';
+      if (!value) throw new Error('DEPLOYMENT_CONFIG_MISSING: ' + name);
+      return value;
+    }
+
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbxOAsjsBU3b-p6aBuFZPY17xC1bF7C0Fs9tKZzBv1exyT_Ei-wKijtK7LdO0YgMYRqZMQ/exec',
-      apiVersion: '1',
+      gasWebAppUrl: readRequiredMeta('gas-webapp-url'),
+      contractId: readRequiredMeta('app-contract'),
       dashboardTimeoutMs: 12000,
-      searchTimeoutMs: 20000,
-      bridgeChannel: 'sapa27-anti-public-v1',
-      dashboardCacheMaxAgeMs: 1800000,
-      legacyVisitorBaseline: 94,
-      legacyVisitorCounterAtMigration: 16
+      searchTimeoutMs: 20000
     });
 
     const PublicApiTransport = (() => {
       let requestSequence = 0;
       const inFlight = Object.create(null);
 
-      function isGitHubPages() {
-        return String(location.origin || '').toLowerCase() === 'https://sapa27.github.io';
-      }
-
       function getConfiguredUrl() {
         const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
         const isPlaceholder = !url || /YOUR_|PLACEHOLDER|DEPLOYMENT_EXEC_URL/i.test(url);
         const isGasExecUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/i.test(url);
         if (isPlaceholder || !isGasExecUrl) {
-          throw new Error('ยังไม่ได้กำหนด GAS Web App URL ที่ถูกต้องใน APP_CONFIG.gasWebAppUrl');
+          throw transportError('ยังไม่ได้กำหนด GAS Production Deployment URL', 'DEPLOYMENT_NOT_CONFIGURED');
         }
         return url;
       }
 
       function timeoutForAction(action) {
-        return action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.dashboardTimeoutMs;
+        if (action === 'search') return APP_CONFIG.searchTimeoutMs;
+        return APP_CONFIG.dashboardTimeoutMs;
       }
 
-      function buildUrl(action, params, options) {
+      function buildUrl(action, params, callbackName) {
         const url = new URL(getConfiguredUrl());
         url.searchParams.set('action', action);
-        if (options && options.callbackName) {
-          url.searchParams.set('callback', options.callbackName);
-        }
-        if (options && options.bridgeToken) {
-          url.searchParams.set('transport', 'bridge');
-          url.searchParams.set('origin', location.origin);
-          url.searchParams.set('bridgeToken', options.bridgeToken);
-        }
-        url.searchParams.set('v', APP_CONFIG.apiVersion);
+        url.searchParams.set('callback', callbackName);
+        url.searchParams.set('contract', APP_CONFIG.contractId);
         url.searchParams.set('_', String(Date.now()));
 
         Object.keys(params || {}).forEach(key => {
@@ -1032,10 +1026,21 @@
         if (!payload || typeof payload !== 'object') {
           throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
         }
-        if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
-          throw transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH');
+        if (String(payload.contractId || '') !== String(APP_CONFIG.contractId)) {
+          throw transportError('หน้าเว็บและ GAS Production ไม่ใช่ชุดเดียวกัน', 'CONTRACT_MISMATCH');
         }
         return payload;
+      }
+
+      function isOnline() {
+        return typeof navigator.onLine !== 'boolean' || navigator.onLine;
+      }
+
+      function makeRequestKey(action, params) {
+        const safeParams = params || {};
+        return String(action) + '|'
+          + String(safeParams.recNo || '') + '|'
+          + String(safeParams.visitorId || safeParams.clientToken || '');
       }
 
       function requestViaJsonp(action, params) {
@@ -1071,109 +1076,22 @@
             }
           };
 
-          script.async = true;
-          script.src = buildUrl(action, params || {}, { callbackName });
-          script.onerror = () => {
-            finish(reject, transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR'));
-          };
+          try {
+            script.async = true;
+            script.src = buildUrl(action, params || {}, callbackName);
+          } catch (error) {
+            finish(reject, error);
+            return;
+          }
 
+          script.onerror = () => {
+            finish(reject, transportError('ไม่สามารถเชื่อมต่อ GAS Production ได้', 'NETWORK_ERROR'));
+          };
           timeoutId = window.setTimeout(() => {
             finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
           }, timeoutForAction(action));
-
           document.head.appendChild(script);
         });
-      }
-
-      function createBridgeToken() {
-        if (window.crypto && typeof window.crypto.getRandomValues === 'function' && typeof Uint8Array === 'function') {
-          const bytes = new Uint8Array(18);
-          window.crypto.getRandomValues(bytes);
-          let token = '';
-          for (let i = 0; i < bytes.length; i += 1) {
-            const part = bytes[i].toString(16);
-            token += part.length === 1 ? '0' + part : part;
-          }
-          return token;
-        }
-        return 'bridge_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
-      }
-
-      function requestViaBridge(action, params) {
-        return new Promise((resolve, reject) => {
-          const bridgeToken = createBridgeToken();
-          const iframe = document.createElement('iframe');
-          let settled = false;
-          let timeoutId = null;
-
-          function cleanup() {
-            if (timeoutId !== null) clearTimeout(timeoutId);
-            window.removeEventListener('message', onMessage);
-            iframe.onerror = null;
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-          }
-
-          function finish(handler, value) {
-            if (settled) return;
-            settled = true;
-            cleanup();
-            handler(value);
-          }
-
-          function onMessage(event) {
-            const trustedOrigin = event.origin === 'https://script.google.com'
-              || event.origin === 'https://script.googleusercontent.com';
-            const message = event.data;
-            if (!trustedOrigin || event.source !== iframe.contentWindow || !message
-                || message.channel !== APP_CONFIG.bridgeChannel || message.token !== bridgeToken) return;
-            try {
-              finish(resolve, validatePayload(message.payload));
-            } catch (error) {
-              finish(reject, error);
-            }
-          }
-
-          window.addEventListener('message', onMessage);
-          iframe.hidden = true;
-          iframe.title = 'GAS data bridge';
-          iframe.setAttribute('aria-hidden', 'true');
-          iframe.src = buildUrl(action, params || {}, { bridgeToken });
-          iframe.onerror = () => finish(reject,
-            transportError('ไม่สามารถเชื่อมต่อ GAS Web App ผ่านช่องทางสำรองได้', 'NETWORK_ERROR'));
-          timeoutId = window.setTimeout(() => finish(reject,
-            transportError('การเชื่อมต่อ GAS ผ่านช่องทางสำรองใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT')),
-          timeoutForAction(action));
-          document.body.appendChild(iframe);
-        });
-      }
-
-      /**
-       * Backward-compatible single-execution transport policy:
-       * - JSONP is primary on every device because it works with both legacy and V13 GAS.
-       * - Bridge is a GitHub-only fallback after an immediate NETWORK_ERROR.
-       * - REQUEST_TIMEOUT never starts a second GAS execution.
-       */
-      async function requestOnce(action, params) {
-        try {
-          return await requestViaJsonp(action, params);
-        } catch (error) {
-          const canUseBridgeFallback = isGitHubPages()
-            && error
-            && error.code === 'NETWORK_ERROR';
-          if (!canUseBridgeFallback) throw error;
-          return requestViaBridge(action, params);
-        }
-      }
-
-      function isOnline() {
-        return typeof navigator.onLine !== 'boolean' || navigator.onLine;
-      }
-
-      function makeRequestKey(action, params) {
-        const safeParams = params || {};
-        return String(action) + '|'
-          + String(safeParams.recNo || '') + '|'
-          + String(safeParams.visitorId || safeParams.clientToken || '');
       }
 
       async function request(action, params) {
@@ -1185,7 +1103,7 @@
             throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
           }
           try {
-            return await requestOnce(action, params);
+            return await requestViaJsonp(action, params);
           } catch (error) {
             if (!isOnline()) {
               throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
@@ -1279,7 +1197,7 @@
     }
 
     function getVisitorId() {
-      const storageKey = 'externalLookupVisitSessionIdV16';
+      const storageKey = 'externalLookupVisitSessionId:' + APP_CONFIG.contractId;
       try {
         let visitorId = sessionStorage.getItem(storageKey);
         if (!visitorId) {
@@ -1294,86 +1212,10 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV9:' + APP_CONFIG.apiVersion + ':' + APP_CONFIG.gasWebAppUrl;
 
-    function isPlausibleDashboardCounts(counts) {
-      if (!counts || typeof counts !== 'object') return false;
-      const total = Number(counts.total);
-      const grouped = Number(counts.new) + Number(counts.inProgress) + Number(counts.completed);
-      const values = [
-        total,
-        Number(counts.new),
-        Number(counts.inProgress),
-        Number(counts.completed),
-        Number(counts.users)
-      ];
-      return values.every(value => Number.isFinite(value) && value >= 0)
-        && !(total > 0 && grouped === 0);
-    }
-
-    function readDashboardCache() {
-      try {
-        const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
-        if (!cached || !isPlausibleDashboardCounts(cached.counts)
-            || !Number.isFinite(Number(cached.savedAt))) return null;
-        if (Date.now() - Number(cached.savedAt) > APP_CONFIG.dashboardCacheMaxAgeMs) return null;
-        return cached.counts;
-      } catch (error) {
-        return null;
-      }
-    }
-
-    function writeDashboardCache(counts) {
-      try {
-        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({ counts, savedAt: Date.now() }));
-      } catch (error) {
-        // Private browsing and restricted storage must not block live data.
-      }
-    }
-
-    function valueOrZero(value) {
-      return value === undefined || value === null || value === '' ? 0 : value;
-    }
-
-    function normalizeDashboardForDisplay(counts, responseMeta) {
-      const source = counts || {};
-      const normalized = {
-        total: valueOrZero(source.total),
-        new: valueOrZero(source.new),
-        inProgress: valueOrZero(source.inProgress),
-        completed: valueOrZero(source.completed),
-        users: 0
-      };
-      const rawUsers = Number(source.users);
-      const safeUsers = Number.isFinite(rawUsers) && rawUsers >= 0 ? Math.floor(rawUsers) : 0;
-      const counterVersion = String(responseMeta && responseMeta.visitorCounterVersion || '');
-      normalized.users = counterVersion === '3'
-        ? safeUsers
-        : APP_CONFIG.legacyVisitorBaseline
-          + Math.max(0, safeUsers - APP_CONFIG.legacyVisitorCounterAtMigration);
-      return normalized;
-    }
-
-    function renderVisitorCount(value, responseMeta) {
-      const normalized = normalizeDashboardForDisplay(
-        { users: value },
-        responseMeta || {}
-      );
-      setText('dash-users', normalized.users);
-      const userCount = document.getElementById('public-user-count');
-      if (userCount) userCount.hidden = false;
-    }
-
-    function renderDashboardCounts(counts) {
-      counts = counts || {};
-      setText('dash-total', valueOrZero(counts.total));
-      setText('dash-new', valueOrZero(counts.new));
-      setText('dash-in-progress', valueOrZero(counts.inProgress));
-      setText('dash-completed', valueOrZero(counts.completed));
-      const currentUsers = Number(counts.users);
-      const users = Number.isFinite(currentUsers) && currentUsers >= 0
-        ? Math.floor(currentUsers)
-        : 0;
+    function renderVisitorCount(value) {
+      const rawUsers = Number(value);
+      const users = Number.isFinite(rawUsers) && rawUsers >= 0 ? Math.floor(rawUsers) : 0;
       setText('dash-users', users);
       const userCount = document.getElementById('public-user-count');
       if (userCount) userCount.hidden = false;
@@ -1384,14 +1226,45 @@
       const text = document.getElementById('dashboard-status-text');
       const retry = document.getElementById('dashboard-retry');
       if (!status || !text || !retry) return;
+      const visible = state === 'loading' || state === 'error';
       status.dataset.state = state;
       text.textContent = message || '';
-      text.hidden = true;
+      text.hidden = !visible || !message;
       retry.hidden = state !== 'error';
-      status.hidden = state !== 'error';
+      status.hidden = !visible;
     }
 
+    let productionReady = false;
+
+    function setSearchEnabled(enabled) {
+      const input = document.getElementById('recNo');
+      const searchButton = document.getElementById('btn-search');
+      const clearButton = document.getElementById('btn-clear');
+      [input, searchButton, clearButton].forEach(node => {
+        if (node) node.disabled = !enabled;
+      });
+    }
+
+    function startupErrorMessage(error) {
+      const code = error && error.code ? String(error.code) : '';
+      if (code === 'DEPLOYMENT_NOT_CONFIGURED') {
+        return 'ยังไม่ได้กำหนด GAS Production Deployment จึงหยุดการโหลดข้อมูล';
+      }
+      if (code === 'CONTRACT_MISMATCH') {
+        return 'หน้าเว็บและ GAS Production ไม่ใช่ชุดเดียวกัน ระบบหยุดการโหลดเพื่อป้องกันข้อมูลผิดพลาด';
+      }
+      if (code === 'REQUEST_TIMEOUT') {
+        return 'ตรวจสอบ GAS Production ไม่สำเร็จภายในเวลาที่กำหนด กรุณาลองใหม่อีกครั้ง';
+      }
+      if (code === 'OFFLINE') return 'อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต';
+      return error && error.message ? String(error.message) : 'ไม่สามารถตรวจสอบสถานะ Production ได้';
+    }
+
+
     async function loadDashboard() {
+      productionReady = false;
+      setSearchEnabled(false);
+      setDashboardStatus('loading', 'กำลังโหลดข้อมูล กรุณารอสักครู่');
       try {
         const response = await PublicApiTransport.dashboard(getVisitorId());
         const dashboard = response && response.data ? response.data : {};
@@ -1399,12 +1272,14 @@
 
         // Visitor count is independent from Spreadsheet data. Render it even when
         // the backend reports a database/config problem.
-        renderVisitorCount(counts.users, response && response.meta ? response.meta : {});
+        renderVisitorCount(counts.users);
 
         if (!response || !response.ok) {
           throw createApiError(response, 'ไม่สามารถโหลดข้อมูล Dashboard ได้');
         }
 
+        productionReady = true;
+        setSearchEnabled(true);
         setText('dash-total', counts.total || 0);
         setText('dash-new', counts.new || 0);
         setText('dash-in-progress', counts.inProgress || 0);
@@ -1415,7 +1290,10 @@
           dashboardCards.dataset.dataState = 'live';
           dashboardCards.title = '';
         }
+        setDashboardStatus('ready', '');
       } catch (error) {
+        productionReady = false;
+        setSearchEnabled(false);
         setText('dash-total', '-');
         setText('dash-new', '-');
         setText('dash-in-progress', '-');
@@ -1426,6 +1304,7 @@
           dashboardCards.dataset.dataState = 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
+        setDashboardStatus('error', startupErrorMessage(error));
         console.warn('dashboard load failed', error && error.code ? error.code : error);
         showAlert(
           'ไม่สามารถโหลดข้อมูล',
@@ -1436,6 +1315,10 @@
     }
 
     async function doSearch() {
+      if (!productionReady) {
+        setDashboardStatus('error', 'Production ยังไม่พร้อมใช้งาน กรุณากดลองโหลดอีกครั้ง');
+        return;
+      }
       const btn = document.getElementById('btn-search');
       const clearBtn = document.getElementById('btn-clear');
       const originalText = btn.textContent;
@@ -1469,11 +1352,16 @@
           resultCard.title = '';
         }
       } catch (error) {
+        if (error && error.code === 'CONTRACT_MISMATCH') {
+          productionReady = false;
+          setSearchEnabled(false);
+          setDashboardStatus('error', startupErrorMessage(error));
+        }
         showAlert('ข้อผิดพลาด', formatErrorMessage(error), 'error');
       } finally {
         btn.textContent = originalText;
-        btn.disabled = false;
-        if (clearBtn) clearBtn.disabled = false;
+        btn.disabled = !productionReady;
+        if (clearBtn) clearBtn.disabled = !productionReady;
         btn.setAttribute('aria-busy', 'false');
         const resultCard = document.getElementById('result-card');
         if (resultCard) {
@@ -1666,7 +1554,7 @@
     }
 
 
-    function initializeUi() {
+    async function initializeUi() {
       const searchForm = document.getElementById('search-form');
       if (searchForm) {
         searchForm.addEventListener('submit', event => {
@@ -1680,14 +1568,13 @@
       }
       const dashboardRetry = document.getElementById('dashboard-retry');
       if (dashboardRetry) {
-        dashboardRetry.addEventListener('click', () => {
+        dashboardRetry.addEventListener('click', async () => {
           dashboardRetry.hidden = true;
-          setDashboardStatus('loading', '');
-          loadDashboard();
+          await loadDashboard();
         });
       }
 
-      loadDashboard();
+      await loadDashboard();
     }
 
     if (document.readyState === 'loading') {
