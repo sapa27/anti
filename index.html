@@ -5,7 +5,7 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta name="app-build" content="anti-20260911-mobile-timeout-v9">
+  <meta name="app-build" content="anti-20260912-bottleneck-cleanup-v12">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
@@ -288,7 +288,7 @@
     }
 
     .search-card {
-      width: min(100%, 860px);
+      width: 100%;
       max-width: 860px;
       margin: 36px auto;
       padding: 38px 40px;
@@ -507,10 +507,9 @@
     }
 
     .public-footer {
-      position: relative;
       width: 100%;
       margin-top: 42px;
-      padding: 26px 15px 66px;
+      padding: 26px 15px 24px;
       color: rgba(255, 255, 255, 0.74);
       background: linear-gradient(135deg, var(--color-navy-950), var(--color-navy-900));
       border-top: 3px solid var(--color-gold-600);
@@ -526,22 +525,18 @@
     }
 
     .public-footer-user-count {
-      position: absolute;
-      left: max(12px, env(safe-area-inset-left));
-      bottom: max(12px, env(safe-area-inset-bottom));
-      z-index: 1000;
-      max-width: calc(100vw - 24px);
-      margin: 0;
-      padding: 8px 12px;
-      color: rgba(255, 255, 255, 0.94);
+      width: 100%;
+      max-width: 1180px;
+      margin: 12px auto 0;
+      padding: 0 18px 0 5px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.88);
       font-size: 13px;
       line-height: 1.4;
-      text-align: left;
+      text-align: right;
       font-variant-numeric: tabular-nums;
-      background: rgba(0, 30, 60, 0.92);
-      border: 1px solid rgba(255, 202, 44, 0.5);
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
 
     .public-footer-user-count span {
@@ -850,16 +845,14 @@
       }
 
       .public-footer {
-        padding: 21px 14px 62px;
+        padding: 21px 14px;
         font-size: 12px;
       }
 
       .public-footer-user-count {
-        left: max(8px, env(safe-area-inset-left));
-        bottom: max(8px, env(safe-area-inset-bottom));
-        max-width: calc(100vw - 16px);
-        padding: 7px 10px;
-        font-size: 12px;
+        margin-top: 10px;
+        padding: 0 6px;
+        justify-content: flex-end;
       }
     }
 
@@ -973,26 +966,28 @@
     const APP_CONFIG = Object.freeze({
       gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbwj8TjNz2KsJB7VaIivyBFuhWiIZC8YAPv2_azImNibsCh-R9xSO4hBu44coINMLCCF/exec',
       apiVersion: '1',
-      jsonpTimeoutMs: 20000,
-      bridgeTimeoutMs: 20000,
-      searchTimeoutMs: 45000,
+      dashboardTimeoutMs: 12000,
+      searchTimeoutMs: 20000,
       bridgeChannel: 'sapa27-anti-public-v1',
-      retryAttempts: 0,
-      retryDelayMs: 1200,
-      dashboardCacheMaxAgeMs: 1800000,
-      legacyVisitorBaseline: 94,
-      visitorCounterAtMigration: 16,
-      mobileBridgeHedgeDelayMs: 1200,
-      mobileDashboardDelayMs: 0
+      dashboardCacheMaxAgeMs: 1800000
     });
-
-    function isMobileClient() {
-      return window.matchMedia('(max-width: 767.98px)').matches
-        || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-    }
 
     const PublicApiTransport = (() => {
       let requestSequence = 0;
+      const inFlight = Object.create(null);
+
+      function isMobileClient() {
+        try {
+          if (typeof window.matchMedia === 'function') {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+          }
+        } catch (error) {}
+        return Number(window.innerWidth || 0) > 0 && Number(window.innerWidth || 0) <= 768;
+      }
+
+      function isGitHubPages() {
+        return String(location.origin || '').toLowerCase() === 'https://sapa27.github.io';
+      }
 
       function getConfiguredUrl() {
         const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
@@ -1002,6 +997,10 @@
           throw new Error('ยังไม่ได้กำหนด GAS Web App URL ที่ถูกต้องใน APP_CONFIG.gasWebAppUrl');
         }
         return url;
+      }
+
+      function timeoutForAction(action) {
+        return action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.dashboardTimeoutMs;
       }
 
       function buildUrl(action, params, options) {
@@ -1051,13 +1050,9 @@
           let timeoutId = null;
 
           function cleanup() {
-            if (timeoutId !== null) {
-              clearTimeout(timeoutId);
-            }
+            if (timeoutId !== null) clearTimeout(timeoutId);
             script.onerror = null;
-            if (script.parentNode) {
-              script.parentNode.removeChild(script);
-            }
+            if (script.parentNode) script.parentNode.removeChild(script);
             try {
               delete window[callbackName];
             } catch (error) {
@@ -1088,17 +1083,22 @@
 
           timeoutId = window.setTimeout(() => {
             finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
-          }, action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.jsonpTimeoutMs);
+          }, timeoutForAction(action));
 
           document.head.appendChild(script);
         });
       }
 
       function createBridgeToken() {
-        const bytes = new Uint8Array(18);
-        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function' && typeof Uint8Array === 'function') {
+          const bytes = new Uint8Array(18);
           window.crypto.getRandomValues(bytes);
-          return Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+          let token = '';
+          for (let i = 0; i < bytes.length; i += 1) {
+            const part = bytes[i].toString(16);
+            token += part.length === 1 ? '0' + part : part;
+          }
+          return token;
         }
         return 'bridge_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
       }
@@ -1126,7 +1126,7 @@
 
           function onMessage(event) {
             const trustedOrigin = event.origin === 'https://script.google.com'
-              || /^https:\/\/(?:[a-z0-9-]+\.)?script\.googleusercontent\.com$/i.test(event.origin);
+              || event.origin === 'https://script.googleusercontent.com';
             const message = event.data;
             if (!trustedOrigin || event.source !== iframe.contentWindow || !message
                 || message.channel !== APP_CONFIG.bridgeChannel || message.token !== bridgeToken) return;
@@ -1146,75 +1146,78 @@
             transportError('ไม่สามารถเชื่อมต่อ GAS Web App ผ่านช่องทางสำรองได้', 'NETWORK_ERROR'));
           timeoutId = window.setTimeout(() => finish(reject,
             transportError('การเชื่อมต่อ GAS ผ่านช่องทางสำรองใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT')),
-          action === 'search' ? APP_CONFIG.searchTimeoutMs : APP_CONFIG.bridgeTimeoutMs);
+          timeoutForAction(action));
           document.body.appendChild(iframe);
         });
       }
 
-      function requestMobileHedged(action, params) {
-        return new Promise((resolve, reject) => {
-          let settled = false;
-          let failures = 0;
-          let lastError = null;
-          let hedgeTimer = null;
-
-          function succeed(payload) {
-            if (settled) return;
-            settled = true;
-            if (hedgeTimer !== null) clearTimeout(hedgeTimer);
-            resolve(payload);
-          }
-
-          function fail(error) {
-            lastError = error;
-            failures += 1;
-            if (!settled && failures >= 2) {
-              settled = true;
-              reject(lastError || transportError('ไม่สามารถเชื่อมต่อระบบข้อมูลได้', 'NETWORK_ERROR'));
-            }
-          }
-
-          requestViaJsonp(action, params).then(succeed, fail);
-          hedgeTimer = window.setTimeout(() => {
-            if (!settled) {
-              requestViaBridge(action, params).then(succeed, fail);
-            }
-          }, APP_CONFIG.mobileBridgeHedgeDelayMs);
-        });
-      }
-
+      /**
+       * Single-execution transport policy:
+       * - GitHub mobile: bridge is primary (the previously fragile path is now supported).
+       * - Other clients: JSONP is primary.
+       * - Fallback happens only after an immediate NETWORK_ERROR.
+       * - REQUEST_TIMEOUT never starts a second request, preventing duplicate GAS executions.
+       */
       async function requestOnce(action, params) {
-        if (isMobileClient() && (action === 'dashboard' || action === 'search')) {
-          return requestMobileHedged(action, params);
+        const mobileGitHub = isGitHubPages()
+          && isMobileClient()
+          && (action === 'dashboard' || action === 'search');
+
+        if (mobileGitHub) {
+          try {
+            return await requestViaBridge(action, params);
+          } catch (error) {
+            if (!error || error.code !== 'NETWORK_ERROR') throw error;
+            return requestViaJsonp(action, params);
+          }
         }
+
         try {
           return await requestViaJsonp(action, params);
         } catch (error) {
-          // When the script request is blocked, retry through the authenticated iframe boundary.
-          if (!error || error.code !== 'NETWORK_ERROR') throw error;
+          const canUseBridgeFallback = isGitHubPages()
+            && error
+            && error.code === 'NETWORK_ERROR';
+          if (!canUseBridgeFallback) throw error;
           return requestViaBridge(action, params);
         }
       }
 
+      function isOnline() {
+        return typeof navigator.onLine !== 'boolean' || navigator.onLine;
+      }
+
+      function makeRequestKey(action, params) {
+        const safeParams = params || {};
+        return String(action) + '|'
+          + String(safeParams.recNo || '') + '|'
+          + String(safeParams.visitorId || safeParams.clientToken || '');
+      }
+
       async function request(action, params) {
-        const maxAttempts = Math.max(1, Number(APP_CONFIG.retryAttempts || 0) + 1);
-        let lastError = null;
-        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        const requestKey = makeRequestKey(action, params);
+        if (inFlight[requestKey]) return inFlight[requestKey];
+
+        const promise = (async () => {
+          if (!isOnline()) {
+            throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
+          }
           try {
             return await requestOnce(action, params);
           } catch (error) {
-            lastError = error;
-            const retryable = error && (error.code === 'NETWORK_ERROR' || error.code === 'REQUEST_TIMEOUT');
-            if (!retryable || attempt >= maxAttempts || !navigator.onLine) {
-              break;
+            if (!isOnline()) {
+              throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
             }
-            await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.retryDelayMs * attempt));
+            throw error;
           }
+        })();
+
+        inFlight[requestKey] = promise;
+        try {
+          return await promise;
+        } finally {
+          if (inFlight[requestKey] === promise) delete inFlight[requestKey];
         }
-        if (!navigator.onLine) {
-          throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
-        }
-        throw lastError || transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR');
       }
 
       return Object.freeze({
@@ -1309,22 +1312,21 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = `externalLookupDashboardCountsV6:${APP_CONFIG.apiVersion}:${APP_CONFIG.gasWebAppUrl}`;
-    const LAST_KNOWN_GOOD_DASHBOARD_COUNTS = Object.freeze({
-      total: 80,
-      new: 2,
-      inProgress: 41,
-      completed: 37,
-      users: 0
-    });
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV8:' + APP_CONFIG.apiVersion + ':' + APP_CONFIG.gasWebAppUrl;
 
     function isPlausibleDashboardCounts(counts) {
       if (!counts || typeof counts !== 'object') return false;
       const total = Number(counts.total);
       const grouped = Number(counts.new) + Number(counts.inProgress) + Number(counts.completed);
-      const values = [total, Number(counts.new), Number(counts.inProgress), Number(counts.completed)];
+      const values = [
+        total,
+        Number(counts.new),
+        Number(counts.inProgress),
+        Number(counts.completed),
+        Number(counts.users)
+      ];
       return values.every(value => Number.isFinite(value) && value >= 0)
-        && grouped === total;
+        && !(total > 0 && grouped === 0);
     }
 
     function readDashboardCache() {
@@ -1347,17 +1349,22 @@
       }
     }
 
+    function valueOrZero(value) {
+      return value === undefined || value === null || value === '' ? 0 : value;
+    }
+
     function renderDashboardCounts(counts) {
       counts = counts || {};
-      setText('dash-total', counts.total ?? 0);
-      setText('dash-new', counts.new ?? 0);
-      setText('dash-in-progress', counts.inProgress ?? 0);
-      setText('dash-completed', counts.completed ?? 0);
+      setText('dash-total', valueOrZero(counts.total));
+      setText('dash-new', valueOrZero(counts.new));
+      setText('dash-in-progress', valueOrZero(counts.inProgress));
+      setText('dash-completed', valueOrZero(counts.completed));
       const currentUsers = Number(counts.users);
-      const users = APP_CONFIG.legacyVisitorBaseline
-        + Math.max(0, (Number.isFinite(currentUsers) ? currentUsers : 0) - APP_CONFIG.visitorCounterAtMigration);
-      const userCount = document.getElementById('public-user-count');
+      const users = Number.isFinite(currentUsers) && currentUsers >= 0
+        ? Math.floor(currentUsers)
+        : 0;
       setText('dash-users', users);
+      const userCount = document.getElementById('public-user-count');
       if (userCount) userCount.hidden = false;
     }
 
@@ -1375,16 +1382,15 @@
 
     async function loadDashboard() {
       const dashboardCards = document.getElementById('dashboard-cards');
+      if (dashboardCards) dashboardCards.setAttribute('aria-busy', 'true');
       const cachedCounts = readDashboardCache();
-      renderDashboardCounts(cachedCounts || LAST_KNOWN_GOOD_DASHBOARD_COUNTS);
-      setDashboardStatus(
-        'loading',
-        cachedCounts ? 'กำลังตรวจสอบข้อมูลล่าสุด' : 'แสดงข้อมูลล่าสุดแล้ว กำลังตรวจสอบข้อมูลปัจจุบัน'
-      );
-      if (dashboardCards) {
-        dashboardCards.setAttribute('aria-busy', 'false');
-        dashboardCards.dataset.dataState = 'stale';
-        dashboardCards.title = 'กำลังตรวจสอบข้อมูลล่าสุด';
+      if (cachedCounts) {
+        renderDashboardCounts(cachedCounts);
+        setDashboardStatus('hidden', '');
+        if (dashboardCards) {
+          dashboardCards.dataset.dataState = 'stale';
+          dashboardCards.title = '';
+        }
       }
       try {
         // P1-A: one dashboard request carries the visitor id; no background duplicate request.
@@ -1405,20 +1411,23 @@
         setDashboardStatus('live', '');
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
-          dashboardCards.dataset.dataState = response.degraded ? 'stale' : 'live';
-          dashboardCards.title = response.degraded
-            ? `${response.msg || 'แสดงข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว'}${response.requestId ? ` (รหัสอ้างอิง: ${response.requestId})` : ''}`
-            : '';
+          dashboardCards.dataset.dataState = 'live';
+          dashboardCards.title = '';
         }
       } catch (error) {
-        const fallbackCounts = cachedCounts || LAST_KNOWN_GOOD_DASHBOARD_COUNTS;
-        renderDashboardCounts(fallbackCounts);
+        if (!cachedCounts) {
+          setText('dash-total', '-');
+          setText('dash-new', '-');
+          setText('dash-in-progress', '-');
+          setText('dash-completed', '-');
+          setText('dash-users', '-');
+        }
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
-          dashboardCards.dataset.dataState = 'stale';
+          dashboardCards.dataset.dataState = cachedCounts ? 'stale' : 'error';
           dashboardCards.title = formatErrorMessage(error);
         }
-        setDashboardStatus('stale', 'แสดงข้อมูลล่าสุดที่ยืนยันได้ ขณะรอข้อมูลปัจจุบันจากระบบ');
+        setDashboardStatus('error', '');
         console.warn('dashboard load failed', error && error.code ? error.code : 'UNKNOWN_ERROR');
       }
     }
@@ -1453,10 +1462,8 @@
         }
         renderResult(response.data || {});
         if (resultCard) {
-          resultCard.dataset.dataState = response.degraded ? 'stale' : 'live';
-          resultCard.title = response.degraded
-            ? `${response.msg || 'แสดงข้อมูลล่าสุดที่บันทึกไว้ชั่วคราว'}${response.requestId ? ` (รหัสอ้างอิง: ${response.requestId})` : ''}`
-            : '';
+          resultCard.dataset.dataState = 'live';
+          resultCard.title = '';
         }
       } catch (error) {
         showAlert('ข้อผิดพลาด', formatErrorMessage(error), 'error');
@@ -1480,7 +1487,7 @@
 
       if (searchForm) searchForm.reset();
       if (input) input.value = '';
-      if (resultContent) resultContent.replaceChildren();
+      if (resultContent) resultContent.innerHTML = '';
 
       if (resultCard) {
         resultCard.style.display = 'none';
@@ -1574,7 +1581,7 @@
           html += '<div class="alert alert-secondary text-center small py-2 mb-0">ยังไม่มีประวัติการพิจารณา</div>';
         }
 
-        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener noreferrer">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี่</a></div>';
+        html += '<div class="small text-muted text-end mt-2"><a href="https://www.parliament.go.th/view/623/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%8A%E0%B8%B8%E0%B8%A1/TH-TH" target="_blank" rel="noopener noreferrer">สามารถตรวจสอบรายละเอียดจากบันทึกการประชุมได้ที่นี้</a></div>';
       }
 
       document.getElementById('result-content').innerHTML = html;
@@ -1676,16 +1683,14 @@
         });
       }
 
-      if (isMobileClient()) {
-        renderDashboardCounts(readDashboardCache() || LAST_KNOWN_GOOD_DASHBOARD_COUNTS);
-        setDashboardStatus('loading', 'แสดงข้อมูลล่าสุดแล้ว กำลังตรวจสอบข้อมูลปัจจุบัน');
-        window.setTimeout(loadDashboard, APP_CONFIG.mobileDashboardDelayMs);
-      } else {
-        loadDashboard();
-      }
+      loadDashboard();
     }
 
-    document.addEventListener('DOMContentLoaded', initializeUi);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeUi);
+    } else {
+      initializeUi();
+    }
   </script>
 </body>
 </html>
