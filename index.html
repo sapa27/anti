@@ -5,7 +5,10 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta name="app-build" content="anti-20260912-bottleneck-cleanup-v12">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="app-build" content="anti-20260912-backward-compatible-v13">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
@@ -964,26 +967,19 @@
 
   <script>
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbxf1IOG5Vx3nK2hXyJZpM7XQAU5kFosdzR-xNmRbpPy-SPB6bhYBLpFXnGGTAYTSH115A/exec',
+      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbwj8TjNz2KsJB7VaIivyBFuhWiIZC8YAPv2_azImNibsCh-R9xSO4hBu44coINMLCCF/exec',
       apiVersion: '1',
       dashboardTimeoutMs: 12000,
       searchTimeoutMs: 20000,
       bridgeChannel: 'sapa27-anti-public-v1',
-      dashboardCacheMaxAgeMs: 1800000
+      dashboardCacheMaxAgeMs: 1800000,
+      legacyVisitorBaseline: 94,
+      legacyVisitorCounterAtMigration: 16
     });
 
     const PublicApiTransport = (() => {
       let requestSequence = 0;
       const inFlight = Object.create(null);
-
-      function isMobileClient() {
-        try {
-          if (typeof window.matchMedia === 'function') {
-            return window.matchMedia('(max-width: 767.98px)').matches;
-          }
-        } catch (error) {}
-        return Number(window.innerWidth || 0) > 0 && Number(window.innerWidth || 0) <= 768;
-      }
 
       function isGitHubPages() {
         return String(location.origin || '').toLowerCase() === 'https://sapa27.github.io';
@@ -1152,26 +1148,12 @@
       }
 
       /**
-       * Single-execution transport policy:
-       * - GitHub mobile: bridge is primary (the previously fragile path is now supported).
-       * - Other clients: JSONP is primary.
-       * - Fallback happens only after an immediate NETWORK_ERROR.
-       * - REQUEST_TIMEOUT never starts a second request, preventing duplicate GAS executions.
+       * Backward-compatible single-execution transport policy:
+       * - JSONP is primary on every device because it works with both legacy and V13 GAS.
+       * - Bridge is a GitHub-only fallback after an immediate NETWORK_ERROR.
+       * - REQUEST_TIMEOUT never starts a second GAS execution.
        */
       async function requestOnce(action, params) {
-        const mobileGitHub = isGitHubPages()
-          && isMobileClient()
-          && (action === 'dashboard' || action === 'search');
-
-        if (mobileGitHub) {
-          try {
-            return await requestViaBridge(action, params);
-          } catch (error) {
-            if (!error || error.code !== 'NETWORK_ERROR') throw error;
-            return requestViaJsonp(action, params);
-          }
-        }
-
         try {
           return await requestViaJsonp(action, params);
         } catch (error) {
@@ -1312,7 +1294,7 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV8:' + APP_CONFIG.apiVersion + ':' + APP_CONFIG.gasWebAppUrl;
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV9:' + APP_CONFIG.apiVersion + ':' + APP_CONFIG.gasWebAppUrl;
 
     function isPlausibleDashboardCounts(counts) {
       if (!counts || typeof counts !== 'object') return false;
@@ -1351,6 +1333,25 @@
 
     function valueOrZero(value) {
       return value === undefined || value === null || value === '' ? 0 : value;
+    }
+
+    function normalizeDashboardForDisplay(counts, responseMeta) {
+      const source = counts || {};
+      const normalized = {
+        total: valueOrZero(source.total),
+        new: valueOrZero(source.new),
+        inProgress: valueOrZero(source.inProgress),
+        completed: valueOrZero(source.completed),
+        users: 0
+      };
+      const rawUsers = Number(source.users);
+      const safeUsers = Number.isFinite(rawUsers) && rawUsers >= 0 ? Math.floor(rawUsers) : 0;
+      const counterVersion = String(responseMeta && responseMeta.visitorCounterVersion || '');
+      normalized.users = counterVersion === '3'
+        ? safeUsers
+        : APP_CONFIG.legacyVisitorBaseline
+          + Math.max(0, safeUsers - APP_CONFIG.legacyVisitorCounterAtMigration);
+      return normalized;
     }
 
     function renderDashboardCounts(counts) {
@@ -1406,8 +1407,9 @@
           invalidCountsError.code = 'INVALID_DASHBOARD_COUNTS';
           throw invalidCountsError;
         }
-        renderDashboardCounts(counts);
-        writeDashboardCache(counts);
+        const displayCounts = normalizeDashboardForDisplay(counts, response.meta || {});
+        renderDashboardCounts(displayCounts);
+        writeDashboardCache(displayCounts);
         setDashboardStatus('live', '');
         if (dashboardCards) {
           dashboardCards.setAttribute('aria-busy', 'false');
