@@ -9,26 +9,9 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
-  <meta name="app-build" content="anti-20260912-android-native-v23">
+  <meta name="app-build" content="anti-20260913-gateway-ready-v24">
   <meta name="gas-webapp-url" content="https://script.google.com/macros/s/AKfycbz2X5BGdO5Up1f2wcTp_Joy_R4zXbhn8CpSWLnN74VayxaiVr8jiAqrHnaoNpd-jHvc9Q/exec">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
-  <script>
-    (() => {
-      const isAndroid = /Android/i.test(String(navigator.userAgent || ''));
-      const isGitHubProduction = String(location.hostname || '').toLowerCase() === 'sapa27.github.io'
-        && /^\/anti(?:\/|$)/.test(String(location.pathname || ''));
-      if (!isAndroid || !isGitHubProduction) return;
-
-      const endpointNode = document.querySelector('meta[name="gas-webapp-url"]');
-      const endpoint = endpointNode ? String(endpointNode.content || '').trim() : '';
-      if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
-
-      const target = new URL(endpoint);
-      target.searchParams.set('source', 'github-android');
-      target.searchParams.set('release', 'anti-20260912-android-native-v23');
-      location.replace(target.toString());
-    })();
-  </script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
