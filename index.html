@@ -9,9 +9,9 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
-  <meta name="app-build" content="anti-20260913-gateway-ready-v24">
-  <meta name="gas-webapp-url" content="https://script.google.com/macros/s/AKfycbz2X5BGdO5Up1f2wcTp_Joy_R4zXbhn8CpSWLnN74VayxaiVr8jiAqrHnaoNpd-jHvc9Q/exec">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; upgrade-insecure-requests">
+  <meta name="app-build" content="anti-20260913-netlify-edge-v25">
+  <meta name="api-gateway-url" content="https://sapa27-anti-gateway.netlify.app/api/anti">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://sapa27-anti-gateway.netlify.app; frame-src 'none'; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -976,39 +976,35 @@
     }
 
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: readRequiredMeta('gas-webapp-url'),
+      apiGatewayUrl: readRequiredMeta('api-gateway-url'),
       contractId: readRequiredMeta('app-contract'),
       dashboardTimeoutMs: 20000,
-      searchTimeoutMs: 30000,
-      networkRetryDelayMs: 700
+      searchTimeoutMs: 30000
     });
 
     const PublicApiTransport = (() => {
-      let requestSequence = 0;
       const inFlight = Object.create(null);
 
       function getConfiguredUrl() {
-        const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
-        const isPlaceholder = !url || /YOUR_|PLACEHOLDER|DEPLOYMENT_EXEC_URL/i.test(url);
-        const isGasExecUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/i.test(url);
-        if (isPlaceholder || !isGasExecUrl) {
-          throw transportError('ยังไม่ได้กำหนด GAS Production Deployment URL', 'DEPLOYMENT_NOT_CONFIGURED');
+        const url = String(APP_CONFIG.apiGatewayUrl || '').trim();
+        const isPlaceholder = !url || /YOUR_|PLACEHOLDER|GATEWAY_URL/i.test(url);
+        const isGatewayUrl = /^https:\/\/sapa27-anti-gateway\.netlify\.app\/api\/anti(?:\?.*)?$/i.test(url);
+        if (isPlaceholder || !isGatewayUrl) {
+          throw transportError('ยังไม่ได้กำหนด API Gateway Production', 'DEPLOYMENT_NOT_CONFIGURED');
         }
         return url;
       }
 
       function timeoutForAction(action) {
-        if (action === 'search') return APP_CONFIG.searchTimeoutMs;
-        return APP_CONFIG.dashboardTimeoutMs;
+        return action === 'search'
+          ? APP_CONFIG.searchTimeoutMs
+          : APP_CONFIG.dashboardTimeoutMs;
       }
 
-      function buildUrl(action, params, callbackName) {
+      function buildUrl(action, params) {
         const url = new URL(getConfiguredUrl());
         url.searchParams.set('action', action);
-        url.searchParams.set('callback', callbackName);
-        url.searchParams.set('contract', APP_CONFIG.contractId);
         url.searchParams.set('_', String(Date.now()));
-
         Object.keys(params || {}).forEach(key => {
           const value = params[key];
           if (value !== undefined && value !== null && value !== '') {
@@ -1026,10 +1022,10 @@
 
       function validatePayload(payload) {
         if (!payload || typeof payload !== 'object') {
-          throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
+          throw transportError('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง', 'INVALID_RESPONSE');
         }
         if (String(payload.contractId || '') !== String(APP_CONFIG.contractId)) {
-          throw transportError('หน้าเว็บและ GAS Production ไม่ใช่ชุดเดียวกัน', 'CONTRACT_MISMATCH');
+          throw transportError('หน้าเว็บและ Backend Production ไม่ใช่ชุดเดียวกัน', 'CONTRACT_MISMATCH');
         }
         return payload;
       }
@@ -1045,69 +1041,48 @@
           + String(safeParams.visitorId || safeParams.clientToken || '');
       }
 
-      function requestViaJsonp(action, params) {
-        return new Promise((resolve, reject) => {
-          const callbackName = '__externalLookupJsonp_' + Date.now() + '_' + (++requestSequence);
-          const script = document.createElement('script');
-          let settled = false;
-          let timeoutId = null;
+      async function requestViaGateway(action, params) {
+        const controller = typeof AbortController === 'function'
+          ? new AbortController()
+          : null;
+        const timeoutId = window.setTimeout(() => {
+          if (controller) controller.abort();
+        }, timeoutForAction(action));
 
-          function cleanup() {
-            if (timeoutId !== null) clearTimeout(timeoutId);
-            script.onerror = null;
-            script.onload = null;
-            if (script.parentNode) script.parentNode.removeChild(script);
-            try {
-              delete window[callbackName];
-            } catch (error) {
-              window[callbackName] = undefined;
-            }
-          }
+        try {
+          const response = await fetch(buildUrl(action, params || {}), {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: { Accept: 'application/json' },
+            signal: controller ? controller.signal : undefined
+          });
 
-          function finish(handler, value) {
-            if (settled) return;
-            settled = true;
-            cleanup();
-            handler(value);
-          }
-
-          window[callbackName] = payload => {
-            try {
-              finish(resolve, validatePayload(payload));
-            } catch (error) {
-              finish(reject, error);
-            }
-          };
-
+          let payload;
           try {
-            script.async = true;
-            script.referrerPolicy = 'no-referrer';
-            script.src = buildUrl(action, params || {}, callbackName);
+            payload = await response.json();
           } catch (error) {
-            finish(reject, error);
-            return;
+            throw transportError('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง', 'INVALID_RESPONSE');
           }
 
-          script.onerror = () => {
-            finish(reject, transportError('ไม่สามารถเชื่อมต่อ GAS Production ได้', 'NETWORK_ERROR'));
-          };
-          script.onload = () => {
-            if (!settled) {
-              window.setTimeout(() => {
-                if (!settled) {
-                  finish(reject, transportError(
-                    'GAS ตอบกลับแล้ว แต่ไม่ได้เรียก callback ที่กำหนด',
-                    'CALLBACK_NOT_RECEIVED'
-                  ));
-                }
-              }, 0);
-            }
-          };
-          timeoutId = window.setTimeout(() => {
-            finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
-          }, timeoutForAction(action));
-          (document.head || document.documentElement).appendChild(script);
-        });
+          if (!response.ok) {
+            throw transportError(
+              'ไม่สามารถเชื่อมต่อระบบข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+              payload && payload.code ? String(payload.code) : 'GATEWAY_HTTP_ERROR'
+            );
+          }
+          return validatePayload(payload);
+        } catch (error) {
+          if (error && error.code) throw error;
+          if (error && error.name === 'AbortError') {
+            throw transportError('การเชื่อมต่อระบบข้อมูลใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT');
+          }
+          throw transportError('ไม่สามารถเชื่อมต่อระบบข้อมูลได้', 'NETWORK_ERROR');
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
       }
 
       async function request(action, params) {
@@ -1118,21 +1093,7 @@
           if (!isOnline()) {
             throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
           }
-
-          try {
-            return await requestViaJsonp(action, params);
-          } catch (error) {
-            if (!isOnline()) {
-              throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
-            }
-            if (!error || error.code !== 'NETWORK_ERROR') throw error;
-
-            await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.networkRetryDelayMs));
-            if (!isOnline()) {
-              throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
-            }
-            return requestViaJsonp(action, params);
-          }
+          return requestViaGateway(action, params);
         })();
 
         inFlight[requestKey] = promise;
@@ -1271,13 +1232,13 @@
     function startupErrorMessage(error) {
       const code = error && error.code ? String(error.code) : '';
       if (code === 'DEPLOYMENT_NOT_CONFIGURED') {
-        return 'ยังไม่ได้กำหนด GAS Production Deployment จึงหยุดการโหลดข้อมูล';
+        return 'ยังไม่ได้กำหนด Backend Production Deployment จึงหยุดการโหลดข้อมูล';
       }
       if (code === 'CONTRACT_MISMATCH') {
-        return 'หน้าเว็บและ GAS Production ไม่ใช่ชุดเดียวกัน ระบบหยุดการโหลดเพื่อป้องกันข้อมูลผิดพลาด';
+        return 'หน้าเว็บและ Backend Production ไม่ใช่ชุดเดียวกัน ระบบหยุดการโหลดเพื่อป้องกันข้อมูลผิดพลาด';
       }
       if (code === 'REQUEST_TIMEOUT') {
-        return 'ตรวจสอบ GAS Production ไม่สำเร็จภายในเวลาที่กำหนด กรุณาลองใหม่อีกครั้ง';
+        return 'ตรวจสอบ Backend Production ไม่สำเร็จภายในเวลาที่กำหนด กรุณาลองใหม่อีกครั้ง';
       }
       if (code === 'OFFLINE') return 'อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต';
       return error && error.message ? String(error.message) : 'ไม่สามารถตรวจสอบสถานะ Production ได้';
