@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
-  <meta name="app-build" content="anti-20260913-netlify-edge-v25">
+  <meta name="app-build" content="anti-20260913-mobile-resilient-v26">
   <meta name="api-gateway-url" content="https://sapa27-anti-gateway.netlify.app/api/anti">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://sapa27-anti-gateway.netlify.app; frame-src 'none'; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -978,8 +978,12 @@
     const APP_CONFIG = Object.freeze({
       apiGatewayUrl: readRequiredMeta('api-gateway-url'),
       contractId: readRequiredMeta('app-contract'),
-      dashboardTimeoutMs: 20000,
-      searchTimeoutMs: 30000
+      // Client timeouts must exceed the Edge upstream timeouts (35s/38s).
+      // The previous 20s dashboard timeout aborted valid cold-start responses on Android.
+      dashboardTimeoutMs: 42000,
+      searchTimeoutMs: 45000,
+      transportAttempts: 2,
+      retryDelayMs: 400
     });
 
     const PublicApiTransport = (() => {
@@ -1075,14 +1079,55 @@
           }
           return validatePayload(payload);
         } catch (error) {
-          if (error && error.code) throw error;
-          if (error && error.name === 'AbortError') {
+          // DOMException.code is numeric (often 20 on Android). Only our own
+          // string codes may pass through unchanged.
+          if (error && typeof error.code === 'string' && error.code) throw error;
+          const errorName = error && error.name ? String(error.name) : '';
+          const errorMessage = error && error.message ? String(error.message) : '';
+          if (
+            errorName === 'AbortError'
+            || errorName === 'TimeoutError'
+            || /(?:aborted|abort|signal)/i.test(errorMessage)
+          ) {
             throw transportError('การเชื่อมต่อระบบข้อมูลใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT');
           }
           throw transportError('ไม่สามารถเชื่อมต่อระบบข้อมูลได้', 'NETWORK_ERROR');
         } finally {
           window.clearTimeout(timeoutId);
         }
+      }
+
+      function isRetryableTransportError(error) {
+        const code = error && typeof error.code === 'string' ? error.code : '';
+        return [
+          'NETWORK_ERROR',
+          'REQUEST_TIMEOUT',
+          'UPSTREAM_UNAVAILABLE',
+          'UPSTREAM_HTTP_ERROR',
+          'GATEWAY_HTTP_ERROR'
+        ].includes(code);
+      }
+
+      function waitBeforeRetry(attempt) {
+        return new Promise(resolve => {
+          window.setTimeout(resolve, APP_CONFIG.retryDelayMs * attempt);
+        });
+      }
+
+      async function requestWithRetry(action, params) {
+        let lastError = null;
+        for (let attempt = 1; attempt <= APP_CONFIG.transportAttempts; attempt += 1) {
+          try {
+            return await requestViaGateway(action, params);
+          } catch (error) {
+            lastError = error;
+            if (attempt >= APP_CONFIG.transportAttempts || !isRetryableTransportError(error)) {
+              throw error;
+            }
+            await waitBeforeRetry(attempt);
+          }
+        }
+        throw lastError || transportError('ไม่สามารถเชื่อมต่อระบบข้อมูลได้', 'NETWORK_ERROR');
       }
 
       async function request(action, params) {
@@ -1093,7 +1138,7 @@
           if (!isOnline()) {
             throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
           }
-          return requestViaGateway(action, params);
+          return requestWithRetry(action, params);
         })();
 
         inFlight[requestKey] = promise;
@@ -1241,7 +1286,7 @@
         return 'ตรวจสอบ Backend Production ไม่สำเร็จภายในเวลาที่กำหนด กรุณาลองใหม่อีกครั้ง';
       }
       if (code === 'OFFLINE') return 'อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต';
-      return error && error.message ? String(error.message) : 'ไม่สามารถตรวจสอบสถานะ Production ได้';
+      return 'ไม่สามารถเชื่อมต่อระบบข้อมูลได้ กรุณาลองใหม่อีกครั้ง';
     }
 
 
