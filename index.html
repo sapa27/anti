@@ -9,9 +9,9 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
-  <meta name="app-build" content="anti-20260913-fast-mobile-v29">
-  <meta name="api-gateway-url" content="https://sapa27-anti-gateway.netlify.app/api/anti">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://sapa27-anti-gateway.netlify.app; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="app-build" content="anti-20260913-cloudflare-primary-v30">
+  <meta name="api-gateway-url" content="https://sapa27-anti-gateway.ntpthai9.workers.dev/api/anti">\n  <meta name="api-gateway-fallback-url" content="https://sapa27-anti-gateway.netlify.app/api/anti">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://sapa27-anti-gateway.ntpthai9.workers.dev https://sapa27-anti-gateway.netlify.app; frame-src 'none'; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -977,28 +977,35 @@
 
     const APP_CONFIG = Object.freeze({
       apiGatewayUrl: readRequiredMeta('api-gateway-url'),
+      apiGatewayFallbackUrl: readRequiredMeta('api-gateway-fallback-url'),
       contractId: readRequiredMeta('app-contract'),
       // Client timeouts must exceed the Edge upstream timeouts (35s/38s).
       // The previous 20s dashboard timeout aborted valid cold-start responses on Android.
       dashboardTimeoutMs: 42000,
       searchTimeoutMs: 45000,
-      transportAttempts: 2,
       retryDelayMs: 400,
-      dashboardStorageKey: 'anti.dashboard.fast.v27',
+      dashboardStorageKey: 'anti.dashboard.cloudflare.v30',
       dashboardStorageTtlMs: 10 * 60 * 1000
     });
 
     const PublicApiTransport = (() => {
       const inFlight = Object.create(null);
 
-      function getConfiguredUrl() {
-        const url = String(APP_CONFIG.apiGatewayUrl || '').trim();
-        const isPlaceholder = !url || /YOUR_|PLACEHOLDER|GATEWAY_URL/i.test(url);
-        const isGatewayUrl = /^https:\/\/sapa27-anti-gateway\.netlify\.app\/api\/anti(?:\?.*)?$/i.test(url);
-        if (isPlaceholder || !isGatewayUrl) {
+      function getConfiguredUrls() {
+        const urls = [
+          APP_CONFIG.apiGatewayUrl,
+          APP_CONFIG.apiGatewayFallbackUrl
+        ].map(value => String(value || '').trim());
+        const isAllowedGateway = url => /^https:\/\/(?:sapa27-anti-gateway\.ntpthai9\.workers\.dev|sapa27-anti-gateway\.netlify\.app)\/api\/anti(?:\?.*)?$/i.test(url);
+        const invalid = urls.some(url =>
+          !url
+          || /YOUR_|PLACEHOLDER|GATEWAY_URL/i.test(url)
+          || !isAllowedGateway(url)
+        );
+        if (invalid) {
           throw transportError('ยังไม่ได้กำหนด API Gateway Production', 'DEPLOYMENT_NOT_CONFIGURED');
         }
-        return url;
+        return urls;
       }
 
       function timeoutForAction(action) {
@@ -1012,8 +1019,8 @@
           || (action === 'dashboard' && String((params || {}).summary || '') === '1');
       }
 
-      function buildUrl(action, params) {
-        const url = new URL(getConfiguredUrl());
+      function buildUrl(action, params, gatewayUrl) {
+        const url = new URL(gatewayUrl);
         url.searchParams.set('action', action);
         if (!isCacheEligible(action, params)) {
           url.searchParams.set('_', String(Date.now()));
@@ -1055,7 +1062,7 @@
           + String(safeParams.visitorId || safeParams.clientToken || '');
       }
 
-      async function requestViaGateway(action, params) {
+      async function requestViaGateway(action, params, gatewayUrl) {
         const controller = typeof AbortController === 'function'
           ? new AbortController()
           : null;
@@ -1064,7 +1071,7 @@
         }, timeoutForAction(action));
 
         try {
-          const response = await fetch(buildUrl(action, params || {}), {
+          const response = await fetch(buildUrl(action, params || {}, gatewayUrl), {
             method: 'GET',
             mode: 'cors',
             credentials: 'omit',
@@ -1125,16 +1132,18 @@
       }
 
       async function requestWithRetry(action, params) {
+        const gateways = getConfiguredUrls();
         let lastError = null;
-        for (let attempt = 1; attempt <= APP_CONFIG.transportAttempts; attempt += 1) {
+        for (let index = 0; index < gateways.length; index += 1) {
           try {
-            return await requestViaGateway(action, params);
+            return await requestViaGateway(action, params, gateways[index]);
           } catch (error) {
             lastError = error;
-            if (attempt >= APP_CONFIG.transportAttempts || !isRetryableTransportError(error)) {
+            const isLastGateway = index >= gateways.length - 1;
+            if (isLastGateway || !isRetryableTransportError(error)) {
               throw error;
             }
-            await waitBeforeRetry(attempt);
+            await waitBeforeRetry(index + 1);
           }
         }
         throw lastError || transportError('ไม่สามารถเชื่อมต่อระบบข้อมูลได้', 'NETWORK_ERROR');
