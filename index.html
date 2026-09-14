@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-contract" content="anti-production-20260912-single">
-  <meta name="app-build" content="anti-20260914-cloudflare-resilience-v32">
+  <meta name="app-build" content="anti-20260914-cloudflare-resilience-v33">
   <meta name="api-gateway-url" content="https://sapa27-anti-gateway.ntpthai9.workers.dev/api/anti">
   <meta name="api-gateway-fallback-url" content="https://sapa27-anti-gateway.netlify.app/api/anti">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://cdn.jsdelivr.net https://sapa27-anti-gateway.ntpthai9.workers.dev https://sapa27-anti-gateway.netlify.app; frame-src 'none'; upgrade-insecure-requests">
@@ -1344,11 +1344,16 @@
       const counts = {};
       for (const key of keys) {
         const numeric = Number(source[key]);
+        const fallbackNumeric = Number(fallbackSource[key]);
         if (Number.isFinite(numeric) && numeric >= 0) {
-          counts[key] = Math.floor(numeric);
+          const currentValue = Math.floor(numeric);
+          counts[key] = key === 'users'
+            && Number.isFinite(fallbackNumeric)
+            && fallbackNumeric >= 0
+            ? Math.max(currentValue, Math.floor(fallbackNumeric))
+            : currentValue;
           continue;
         }
-        const fallbackNumeric = Number(fallbackSource[key]);
         if (!Number.isFinite(fallbackNumeric) || fallbackNumeric < 0) return null;
         counts[key] = Math.floor(fallbackNumeric);
       }
