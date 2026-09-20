@@ -5,7 +5,9 @@
   <title>ระบบตรวจสอบสถานะเรื่องร้องเรียน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com; frame-src https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <meta name="app-contract" content="anti-public-json-v1">
+  <meta name="app-build" content="anti-20260920-cloud-run-v34">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://sapa27-gateway-asxuzzwspa-eu.a.run.app; frame-src 'none'; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -933,103 +935,89 @@
 
   <script>
     const APP_CONFIG = Object.freeze({
-      gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbw-o2_NkmUzPqGVBaBegT1abkUhSQmmsyp9YAnRjYE51delcUNL1pJQMXJiG6dwFyYxjA/exec',
+      apiUrl: 'https://sapa27-gateway-asxuzzwspa-eu.a.run.app/api/anti',
       apiVersion: '1',
       requestTimeoutMs: 45000,
-      jsonpTimeoutMs: 12000,
-      bridgeTimeoutMs: 45000,
-      bridgeChannel: 'sapa27-anti-public-v1',
       retryAttempts: 1,
       retryDelayMs: 1200,
-      dashboardCacheMaxAgeMs: 86400000
+      dashboardCacheMaxAgeMs: 300000
     });
 
     const PublicApiTransport = (() => {
-      let requestSequence = 0;
-
-      function getConfiguredUrl() {
-        const url = String(APP_CONFIG.gasWebAppUrl || '').trim();
-        const isPlaceholder = !url || /YOUR_|PLACEHOLDER|DEPLOYMENT_EXEC_URL/i.test(url);
-        const isGasExecUrl = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:\?.*)?$/i.test(url);
-        if (isPlaceholder || !isGasExecUrl) {
-          throw new Error('ยังไม่ได้กำหนด GAS Web App URL ที่ถูกต้องใน APP_CONFIG.gasWebAppUrl');
-        }
-        return url;
-      }
-
-      function buildUrl(action, params, options) {
-        const url = new URL(getConfiguredUrl());
-        url.searchParams.set('action', action);
-        if (options && options.callbackName) {
-          url.searchParams.set('callback', options.callbackName);
-        }
-        if (options && options.bridgeToken) {
-          url.searchParams.set('transport', 'bridge');
-          url.searchParams.set('origin', location.origin);
-          url.searchParams.set('bridgeToken', options.bridgeToken);
-        }
-        url.searchParams.set('v', APP_CONFIG.apiVersion);
-        url.searchParams.set('_', String(Date.now()));
-
-        Object.keys(params || {}).forEach(key => {
-          const value = params[key];
-          if (value !== undefined && value !== null && value !== '') {
-            url.searchParams.set(key, String(value));
-          }
-        });
-        return url.toString();
-      }
-
       function transportError(message, code) {
         const error = new Error(message);
         error.code = code;
         return error;
       }
 
+      function getConfiguredUrl() {
+        const url = String(APP_CONFIG.apiUrl || '').trim();
+        const isExpectedGateway = /^https:\/\/sapa27-gateway-asxuzzwspa-eu\.a\.run\.app\/api\/anti$/i.test(url);
+        if (!isExpectedGateway) {
+          throw transportError(
+            'ยังไม่ได้กำหนด Public Gateway URL ที่ถูกต้องใน APP_CONFIG.apiUrl',
+            'GATEWAY_URL_INVALID'
+          );
+        }
+        return url;
+      }
+
       function validatePayload(payload) {
         if (!payload || typeof payload !== 'object') {
-          throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
+          throw transportError('รูปแบบข้อมูลตอบกลับจาก Public Gateway ไม่ถูกต้อง', 'INVALID_RESPONSE');
         }
         if (String(payload.apiVersion || '') !== String(APP_CONFIG.apiVersion)) {
-          throw transportError('เวอร์ชัน API ระหว่าง GitHub และ GAS ไม่ตรงกัน', 'API_VERSION_MISMATCH');
+          throw transportError('เวอร์ชัน API ระหว่าง GitHub และ Public Gateway ไม่ตรงกัน', 'API_VERSION_MISMATCH');
         }
         return payload;
       }
 
-      async function requestViaFetch(action, params) {
-        const callbackName = '__externalLookupFetch_' + Date.now() + '_' + (++requestSequence);
+      async function requestOnce(action, params) {
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
         const timeoutId = window.setTimeout(() => {
           if (controller) controller.abort();
         }, APP_CONFIG.requestTimeoutMs);
 
         try {
-          const response = await fetch(buildUrl(action, params || {}, { callbackName }), {
-            method: 'GET',
+          const response = await fetch(getConfiguredUrl(), {
+            method: 'POST',
             mode: 'cors',
             credentials: 'omit',
             cache: 'no-store',
             redirect: 'follow',
             referrerPolicy: 'no-referrer',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ action, payload: params || {} }),
             signal: controller ? controller.signal : undefined
           });
+
           if (!response.ok) {
-            throw transportError('GAS Web App ตอบกลับไม่สำเร็จ', 'HTTP_ERROR');
+            throw transportError('Public Gateway ตอบกลับไม่สำเร็จ', 'HTTP_ERROR');
           }
 
-          const text = (await response.text()).trim();
-          const prefix = callbackName + '(';
-          if (!text.startsWith(prefix) || !text.endsWith(');')) {
-            throw transportError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ถูกต้อง', 'INVALID_RESPONSE');
+          const contract = response.headers.get('X-GAS-Response-Contract');
+          if (contract !== 'anti-public-json-v1') {
+            throw transportError('สัญญาข้อมูล Public Gateway ไม่ตรงกัน', 'CONTRACT_MISMATCH');
           }
-          return validatePayload(JSON.parse(text.slice(prefix.length, -2)));
+          return validatePayload(await response.json());
         } catch (error) {
-          if (error && (error.code === 'INVALID_RESPONSE' || error.code === 'API_VERSION_MISMATCH')) {
+          if (error && (error.code === 'INVALID_RESPONSE'
+            || error.code === 'API_VERSION_MISMATCH'
+            || error.code === 'CONTRACT_MISMATCH'
+            || error.code === 'GATEWAY_URL_INVALID'
+            || error.code === 'HTTP_ERROR')) {
             throw error;
           }
-          const code = error && error.name === 'AbortError' ? 'REQUEST_TIMEOUT' : (error.code || 'NETWORK_ERROR');
+          const code = error && error.name === 'AbortError'
+            ? 'REQUEST_TIMEOUT'
+            : (error && error.code ? error.code : 'NETWORK_ERROR');
           throw transportError(
-            code === 'REQUEST_TIMEOUT' ? 'การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด' : 'ไม่สามารถเชื่อมต่อ GAS Web App ได้',
+            code === 'REQUEST_TIMEOUT'
+              ? 'การเชื่อมต่อ Public Gateway ใช้เวลานานเกินกำหนด'
+              : 'ไม่สามารถเชื่อมต่อ Public Gateway ได้',
             code
           );
         } finally {
@@ -1037,143 +1025,34 @@
         }
       }
 
-      function requestViaJsonp(action, params) {
-        return new Promise((resolve, reject) => {
-          const callbackName = '__externalLookupJsonp_' + Date.now() + '_' + (++requestSequence);
-          const script = document.createElement('script');
-          let settled = false;
-          let timeoutId = null;
-
-          function cleanup() {
-            if (timeoutId !== null) {
-              clearTimeout(timeoutId);
-            }
-            script.onerror = null;
-            if (script.parentNode) {
-              script.parentNode.removeChild(script);
-            }
-            try {
-              delete window[callbackName];
-            } catch (error) {
-              window[callbackName] = undefined;
-            }
-          }
-
-          function finish(handler, value) {
-            if (settled) return;
-            settled = true;
-            cleanup();
-            handler(value);
-          }
-
-          window[callbackName] = payload => {
-            try {
-              finish(resolve, validatePayload(payload));
-            } catch (error) {
-              finish(reject, error);
-            }
-          };
-
-          script.async = true;
-          script.src = buildUrl(action, params || {}, { callbackName });
-          script.onerror = () => {
-            finish(reject, transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR'));
-          };
-
-          timeoutId = window.setTimeout(() => {
-            finish(reject, transportError('การเชื่อมต่อ GAS ใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT'));
-          }, APP_CONFIG.jsonpTimeoutMs);
-
-          document.head.appendChild(script);
-        });
-      }
-
-      function createBridgeToken() {
-        const bytes = new Uint8Array(18);
-        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
-          window.crypto.getRandomValues(bytes);
-          return Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
-        }
-        return 'bridge_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
-      }
-
-      function requestViaBridge(action, params) {
-        return new Promise((resolve, reject) => {
-          const bridgeToken = createBridgeToken();
-          const iframe = document.createElement('iframe');
-          let settled = false;
-          let timeoutId = null;
-
-          function cleanup() {
-            if (timeoutId !== null) clearTimeout(timeoutId);
-            window.removeEventListener('message', onMessage);
-            iframe.onerror = null;
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-          }
-
-          function finish(handler, value) {
-            if (settled) return;
-            settled = true;
-            cleanup();
-            handler(value);
-          }
-
-          function onMessage(event) {
-            const trustedOrigin = event.origin === 'https://script.google.com'
-              || event.origin === 'https://script.googleusercontent.com';
-            const message = event.data;
-            if (!trustedOrigin || event.source !== iframe.contentWindow || !message
-                || message.channel !== APP_CONFIG.bridgeChannel || message.token !== bridgeToken) return;
-            try {
-              finish(resolve, validatePayload(message.payload));
-            } catch (error) {
-              finish(reject, error);
-            }
-          }
-
-          window.addEventListener('message', onMessage);
-          iframe.hidden = true;
-          iframe.title = 'GAS data bridge';
-          iframe.setAttribute('aria-hidden', 'true');
-          iframe.src = buildUrl(action, params || {}, { bridgeToken });
-          iframe.onerror = () => finish(reject,
-            transportError('ไม่สามารถเชื่อมต่อ GAS Web App ผ่านช่องทางสำรองได้', 'NETWORK_ERROR'));
-          timeoutId = window.setTimeout(() => finish(reject,
-            transportError('การเชื่อมต่อ GAS ผ่านช่องทางสำรองใช้เวลานานเกินกำหนด', 'REQUEST_TIMEOUT')),
-          APP_CONFIG.bridgeTimeoutMs);
-          document.body.appendChild(iframe);
-        });
-      }
-
-      async function requestOnce(action, params) {
-        try {
-          return await requestViaJsonp(action, params);
-        } catch (error) {
-          const mayFallback = !error || error.code !== 'API_VERSION_MISMATCH';
-          if (!mayFallback) throw error;
-          return requestViaBridge(action, params);
-        }
-      }
-
       async function request(action, params) {
         const maxAttempts = Math.max(1, Number(APP_CONFIG.retryAttempts || 0) + 1);
         let lastError = null;
+
         for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
           try {
             return await requestOnce(action, params);
           } catch (error) {
             lastError = error;
-            const retryable = error && (error.code === 'NETWORK_ERROR' || error.code === 'REQUEST_TIMEOUT');
-            if (!retryable || attempt >= maxAttempts || !navigator.onLine) {
-              break;
-            }
-            await new Promise(resolve => window.setTimeout(resolve, APP_CONFIG.retryDelayMs * attempt));
+            const retryable = error
+              && (error.code === 'NETWORK_ERROR'
+                || error.code === 'REQUEST_TIMEOUT'
+                || error.code === 'HTTP_ERROR');
+            if (!retryable || attempt >= maxAttempts || !navigator.onLine) break;
+            await new Promise(resolve => window.setTimeout(
+              resolve,
+              APP_CONFIG.retryDelayMs * attempt
+            ));
           }
         }
+
         if (!navigator.onLine) {
           throw transportError('อุปกรณ์ไม่ได้เชื่อมต่ออินเทอร์เน็ต', 'OFFLINE');
         }
-        throw lastError || transportError('ไม่สามารถเชื่อมต่อ GAS Web App ได้', 'NETWORK_ERROR');
+        throw lastError || transportError(
+          'ไม่สามารถเชื่อมต่อ Public Gateway ได้',
+          'NETWORK_ERROR'
+        );
       }
 
       return Object.freeze({
@@ -1268,12 +1147,25 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV1';
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV2Gateway';
+
+    function isDashboardCountsValid(counts) {
+      if (!counts || typeof counts !== 'object') return false;
+      const keys = ['total', 'new', 'inProgress', 'completed', 'users'];
+      if (!keys.every(key => Number.isFinite(Number(counts[key])) && Number(counts[key]) >= 0)) {
+        return false;
+      }
+      const total = Number(counts.total);
+      const classified = Number(counts.new) + Number(counts.inProgress) + Number(counts.completed);
+      const other = Number.isFinite(Number(counts.other)) ? Number(counts.other) : 0;
+      return classified + other === total;
+    }
 
     function readDashboardCache() {
       try {
         const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
-        if (!cached || !cached.counts || !Number.isFinite(Number(cached.savedAt))) return null;
+        if (!cached || !isDashboardCountsValid(cached.counts)
+          || !Number.isFinite(Number(cached.savedAt))) return null;
         if (Date.now() - Number(cached.savedAt) > APP_CONFIG.dashboardCacheMaxAgeMs) return null;
         return cached.counts;
       } catch (error) {
@@ -1317,6 +1209,11 @@
         }
         const dashboard = response.data || {};
         const counts = dashboard.counts || {};
+        if (!isDashboardCountsValid(counts)) {
+          const integrityError = new Error('ข้อมูลสรุป Dashboard ไม่สอดคล้องกัน');
+          integrityError.code = 'DASHBOARD_COUNTS_INVALID';
+          throw integrityError;
+        }
         renderDashboardCounts(counts);
         writeDashboardCache(counts);
         if (dashboardCards) {
