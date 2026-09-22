@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <meta name="app-contract" content="anti-public-json-v1">
-  <meta name="app-build" content="anti-20260920-cloud-run-v34">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self' https://sapa27-gateway-asxuzzwspa-eu.a.run.app; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="app-build" content="anti-20260922-cloudflare-edge-v35">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self'; frame-src 'none'; upgrade-insecure-requests">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js" referrerpolicy="no-referrer"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -935,7 +935,7 @@
 
   <script>
     const APP_CONFIG = Object.freeze({
-      apiUrl: 'https://sapa27-gateway-asxuzzwspa-eu.a.run.app/api/anti',
+      apiUrl: '/api/anti',
       apiVersion: '1',
       requestTimeoutMs: 45000,
       retryAttempts: 1,
@@ -951,15 +951,24 @@
       }
 
       function getConfiguredUrl() {
-        const url = String(APP_CONFIG.apiUrl || '').trim();
-        const isExpectedGateway = /^https:\/\/sapa27-gateway-asxuzzwspa-eu\.a\.run\.app\/api\/anti$/i.test(url);
-        if (!isExpectedGateway) {
+        const configured = String(APP_CONFIG.apiUrl || '').trim();
+        let url;
+        try {
+          url = new URL(configured, window.location.origin);
+        } catch (_) {
           throw transportError(
             'ยังไม่ได้กำหนด Public Gateway URL ที่ถูกต้องใน APP_CONFIG.apiUrl',
             'GATEWAY_URL_INVALID'
           );
         }
-        return url;
+        const isSameOriginAnti = url.origin === window.location.origin && url.pathname === '/api/anti';
+        if (!isSameOriginAnti) {
+          throw transportError(
+            'Public Gateway ต้องใช้ same-origin /api/anti เท่านั้น',
+            'GATEWAY_URL_INVALID'
+          );
+        }
+        return url.toString();
       }
 
       function validatePayload(payload) {
