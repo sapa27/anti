@@ -929,7 +929,7 @@
     สำนักกรรมาธิการ 3 สำนักงานเลขาธิการสภาผู้แทนราษฎร<br>
     โทร 0 2242 5900 ต่อ 7171
     <div class="public-footer-user-count" aria-live="polite">
-      จำนวนผู้ใช้งาน: <span id="dash-users">0</span> คน
+      จำนวนผู้ใช้งานสะสม: <span id="dash-users">–</span> คน
     </div>
   </footer>
 
@@ -1198,7 +1198,7 @@
       setText('dash-new', counts.new ?? 0);
       setText('dash-in-progress', counts.inProgress ?? 0);
       setText('dash-completed', counts.completed ?? 0);
-      setText('dash-users', counts.users ?? 0);
+      setText('dash-users', Number.isSafeInteger(counts.users) && counts.users >= 0 ? counts.users.toLocaleString('th-TH') : '–');
     }
 
     async function loadDashboard() {
