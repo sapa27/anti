@@ -1158,7 +1158,7 @@
       }
     }
 
-    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV2Gateway';
+    const DASHBOARD_CACHE_KEY = 'externalLookupDashboardCountsV3Cumulative';
 
     function isDashboardCountsValid(counts) {
       if (!counts || typeof counts !== 'object') return false;
@@ -1499,7 +1499,11 @@
       loadDashboard();
     }
 
-    document.addEventListener('DOMContentLoaded', initializeUi);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeUi, { once: true });
+    } else {
+      initializeUi();
+    }
   </script>
 </body>
 </html>
